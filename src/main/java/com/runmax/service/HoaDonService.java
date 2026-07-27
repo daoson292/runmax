@@ -200,6 +200,15 @@ public class HoaDonService {
         } else {
             PhieuGiamGia phieu = new PhieuGiamGiaRepository().findById(phieuGiamGiaId);
             if (phieu == null) return false;
+
+            List<HoaDonChiTiet> chiTiets = hdRepo.findChiTietByHoaDonId(hoaDonId);
+            BigDecimal total = chiTiets.stream()
+                .map(HoaDonChiTiet::getThanhTien)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (phieu.getDieuKienGiam() != null && total.compareTo(phieu.getDieuKienGiam()) < 0) {
+                return false;
+            }
+
             hd.setPhieuGiamGia(phieu);
         }
         List<HoaDonChiTiet> chiTiets = hdRepo.findChiTietByHoaDonId(hoaDonId);
@@ -232,16 +241,21 @@ public class HoaDonService {
 
         BigDecimal soTienGiam = BigDecimal.ZERO;
         if (phieu != null) {
-            if (phieu.getLoaiGiam() == 1) {
-                // Giảm %
-                soTienGiam = tienHang.multiply(phieu.getGiaTrigiam()).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-                if (phieu.getGiamToiDa() != null && soTienGiam.compareTo(phieu.getGiamToiDa()) > 0) {
-                    soTienGiam = phieu.getGiamToiDa();
+            if (phieu.getDieuKienGiam() != null && tienHang.compareTo(phieu.getDieuKienGiam()) >= 0) {
+                if (phieu.getLoaiGiam() == 1) {
+                    // Giảm %
+                    soTienGiam = tienHang.multiply(phieu.getGiaTrigiam()).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+                    if (phieu.getGiamToiDa() != null && soTienGiam.compareTo(phieu.getGiamToiDa()) > 0) {
+                        soTienGiam = phieu.getGiamToiDa();
+                    }
+                } else {
+                    soTienGiam = phieu.getGiaTrigiam();
                 }
+                hd.setPhieuGiamGia(phieu);
             } else {
-                soTienGiam = phieu.getGiaTrigiam();
+                hd.setPhieuGiamGia(null);
+                soTienGiam = BigDecimal.ZERO;
             }
-            hd.setPhieuGiamGia(phieu);
         }
 
         BigDecimal tongTien = tienHang.subtract(soTienGiam);
@@ -330,13 +344,17 @@ public class HoaDonService {
         BigDecimal soTienGiam = BigDecimal.ZERO;
         PhieuGiamGia phieu = hd.getPhieuGiamGia();
         if (phieu != null) {
-            if (phieu.getLoaiGiam() == 1) {
-                soTienGiam = total.multiply(phieu.getGiaTrigiam()).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-                if (phieu.getGiamToiDa() != null && soTienGiam.compareTo(phieu.getGiamToiDa()) > 0) {
-                    soTienGiam = phieu.getGiamToiDa();
+            if (phieu.getDieuKienGiam() != null && total.compareTo(phieu.getDieuKienGiam()) >= 0) {
+                if (phieu.getLoaiGiam() == 1) {
+                    soTienGiam = total.multiply(phieu.getGiaTrigiam()).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+                    if (phieu.getGiamToiDa() != null && soTienGiam.compareTo(phieu.getGiamToiDa()) > 0) {
+                        soTienGiam = phieu.getGiamToiDa();
+                    }
+                } else {
+                    soTienGiam = phieu.getGiaTrigiam();
                 }
             } else {
-                soTienGiam = phieu.getGiaTrigiam();
+                hd.setPhieuGiamGia(null);
             }
         } else if (hd.getSoTienGiam() != null) {
             soTienGiam = hd.getSoTienGiam();

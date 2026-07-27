@@ -106,6 +106,8 @@ public class BanHangServlet extends HttpServlet {
             req.setAttribute("errorMessage", "Đơn hàng chưa có sản phẩm nào để thanh toán hoặc áp dụng giảm giá!");
         } else if ("chua-chon-hd".equals(error)) {
             req.setAttribute("errorMessage", "Vui lòng chọn hoặc tạo hóa đơn chờ trước khi thực hiện thao tác!");
+        } else if ("khong-du-dieu-kien".equals(error)) {
+            req.setAttribute("errorMessage", "Đơn hàng chưa đủ điều kiện (tổng tiền chưa đạt tối thiểu) để áp dụng mã giảm giá này!");
         }
 
         req.getRequestDispatcher("/WEB-INF/ban_hang_tai_quay/pos.jsp").forward(req, resp);
@@ -230,7 +232,11 @@ public class BanHangServlet extends HttpServlet {
             return;
         }
 
-        hdService.apDungPhieuGiamGia(hdId, pggId);
+        boolean ok = hdService.apDungPhieuGiamGia(hdId, pggId);
+        if (!ok && pggId != null) {
+            resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId + "&error=khong-du-dieu-kien");
+            return;
+        }
         resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId);
     }
 
