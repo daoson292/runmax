@@ -49,15 +49,20 @@ public class HoaDonController extends HttpServlet {
                 if (maHd == null || maHd.trim().isEmpty()) {
                     maHd = new com.runmax.repository.HoaDonRepository().getNextMaHd();
                 }
-                String tenKhachHang = req.getParameter("tenKhachHang");
-                String sdt = req.getParameter("sdt");
+                String tenKhachHang = req.getParameter("tenKhachHang"); // giữ lại để ghi chú nếu cần
                 BigDecimal tongTien = BigDecimal.ZERO;
                 try {
                     tongTien = new BigDecimal(req.getParameter("tongTien"));
                 } catch (Exception ignored) {}
                 String ghiChu = req.getParameter("ghiChu");
+                // Ghi chú thêm tên khách nếu có (vì không có field riêng nữa)
+                if (tenKhachHang != null && !tenKhachHang.trim().isEmpty()) {
+                    ghiChu = (ghiChu != null && !ghiChu.trim().isEmpty())
+                        ? "Khách: " + tenKhachHang + " - " + ghiChu
+                        : "Khách: " + tenKhachHang;
+                }
 
-                service.create(maHd, tenKhachHang, sdt, tongTien, ghiChu);
+                service.create(maHd, tongTien, ghiChu);
                 break;
             }
             case "/admin/hoa-don/update-status": {

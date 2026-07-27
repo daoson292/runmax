@@ -36,15 +36,6 @@ public class HoaDon {
     @Column(name = "ma_hd", nullable = false, unique = true, length = 50)
     private String maHd;
 
-    @Column(name = "ten_khach_hang", length = 100)
-    private String tenKhachHang;
-
-    @Column(name = "sdt", length = 20)
-    private String sdt;
-
-    @Column(name = "email", length = 100)
-    private String email;
-
     @Column(name = "tien_hang", nullable = false, precision = 18, scale = 2)
     @Builder.Default
     private BigDecimal tienHang = BigDecimal.ZERO;
@@ -146,13 +137,12 @@ public class HoaDon {
     }
 
     /**
-     * Lấy tên khách hàng hiển thị (ưu tiên tên lưu trên hóa đơn, sau đó đến object Khách Hàng, nếu null thì là Khách lẻ).
+     * Lấy tên khách hàng hiển thị.
+     * Nếu khach_hang_id = NULL (khách lẻ) thì trả về "Khách lẻ".
+     * Ngược lại lấy hoTen từ object KhachHang.
      */
     @Transient
     public String getTenKhachHangHienThi() {
-        if (tenKhachHang != null && !tenKhachHang.trim().isEmpty()) {
-            return tenKhachHang;
-        }
         if (khachHang != null && khachHang.getHoTen() != null && !khachHang.getHoTen().trim().isEmpty()) {
             return khachHang.getHoTen();
         }
@@ -161,12 +151,10 @@ public class HoaDon {
 
     /**
      * Lấy số điện thoại hiển thị.
+     * Nếu khách lẻ (khachHang = null) thì trả về "--".
      */
     @Transient
     public String getSdtHienThi() {
-        if (sdt != null && !sdt.trim().isEmpty()) {
-            return sdt;
-        }
         if (khachHang != null && khachHang.getSdt() != null && !khachHang.getSdt().trim().isEmpty()) {
             return khachHang.getSdt();
         }

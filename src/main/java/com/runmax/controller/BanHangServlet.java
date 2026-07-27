@@ -224,16 +224,13 @@ public class BanHangServlet extends HttpServlet {
         String pggIdStr = req.getParameter("phieuGiamGiaId");
         Long pggId = (pggIdStr != null && !pggIdStr.isEmpty()) ? Long.parseLong(pggIdStr) : null;
 
-        String tenKh = req.getParameter("tenKhachHang");
-        String sdt = req.getParameter("sdt");
-
         List<HoaDonChiTiet> chiTiets = hdService.findChiTiet(hdId);
         if (chiTiets.isEmpty() && pggId != null) {
             resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId + "&error=chua-co-sp");
             return;
         }
 
-        hdService.apDungPhieuGiamGia(hdId, pggId, tenKh, sdt);
+        hdService.apDungPhieuGiamGia(hdId, pggId);
         resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId);
     }
 
@@ -271,13 +268,14 @@ public class BanHangServlet extends HttpServlet {
         String pggIdStr = req.getParameter("phieuGiamGiaId");
         Long pggId      = (pggIdStr != null && !pggIdStr.isEmpty()) ? Long.parseLong(pggIdStr) : null;
 
-        String tenKh    = req.getParameter("tenKhachHang");
-        String sdt      = req.getParameter("sdt");
+        // Lấy khachHangId từ form (null = khách lẻ)
+        String khIdStr = req.getParameter("khachHangId");
+        Long khachHangId = (khIdStr != null && !khIdStr.isEmpty()) ? Long.parseLong(khIdStr) : null;
 
         PhuongThucThanhToan pttt = new PhuongThucThanhToanRepository().findById(ptttId);
         PhieuGiamGia pgg = (pggId != null) ? pggService.findById(pggId) : null;
 
-        boolean ok = hdService.thanhToan(hdId, ptttId, pggId, tenKh, sdt, pttt, pgg, nv.getTenDangNhap());
+        boolean ok = hdService.thanhToan(hdId, ptttId, pggId, khachHangId, pttt, pgg, nv.getTenDangNhap());
         if (ok) {
             resp.sendRedirect(req.getContextPath() + "/ban-hang?success=thanh-toan-thanh-cong&printHdId=" + hdId);
         } else {
@@ -304,32 +302,53 @@ public class BanHangServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/ban-hang");
     }
 
+    /**
+     * Lưu Khách Hàng vào Hóa đơn qua FK.
+     * Tìm KhachHang theo SĐT, nếu có thì gán vào hd.setKhachHang().
+     * Nếu không có SĐT (khách lẻ) thì set null.
+     */
     private void saveCustomerInfoIfPresent(Long hdId, HttpServletRequest req) {
         if (hdId == null) return;
         String sdt = req.getParameter("sdt");
-        String tenKh = req.getParameter("tenKhachHang");
-        if (sdt != null || tenKh != null) {
-            HoaDon hd = hdService.findById(hdId);
-            if (hd != null) {
-                boolean changed = false;
-                if (sdt != null) {
-                    String cleanSdt = sdt.trim().isEmpty() ? null : sdt.trim();
-                    if (!java.util.Objects.equals(hd.getSdt(), cleanSdt)) {
-                        hd.setSdt(cleanSdt);
+        String khIdStr = req.getParameter("khachHangId");
+        if (sdt == null && khIdStr == null) return;
+
+        HoaDon hd = hdService.findById(hdId);
+        if (hd == null) return;
+
+        boolean changed = false;
+
+        // Ưu tiên: nếu có khachHangId trực tiếp
+        if (khIdStr != null && !khIdStr.trim().isEmpty()) {
+            try {
+                Long khId = Long.parseLong(khIdStr);
+                KhachHang kh = new com.runmax.repository.KhachHangRepository().findById(khId);
+                if (kh != null && !java.util.Objects.equals(
+                        hd.getKhachHang() != null ? hd.getKhachHang().getId() : null, khId)) {
+                    hd.setKhachHang(kh);
+                    changed = true;
+                }
+            } catch (NumberFormatException ignored) {}
+        } else if (sdt != null) {
+            // Tìm theo SĐT
+            String sdtClean = sdt.trim().isEmpty() ? null : sdt.trim();
+            if (sdtClean != null) {
+                KhachHang kh = new com.runmax.repository.KhachHangRepository().findBySdt(sdtClean);
+                if (kh != null) {
+                    Long currentKhId = hd.getKhachHang() != null ? hd.getKhachHang().getId() : null;
+                    if (!java.util.Objects.equals(currentKhId, kh.getId())) {
+                        hd.setKhachHang(kh);
                         changed = true;
                     }
                 }
-                if (tenKh != null) {
-                    String cleanTen = tenKh.trim().isEmpty() ? null : tenKh.trim();
-                    if (!java.util.Objects.equals(hd.getTenKhachHang(), cleanTen)) {
-                        hd.setTenKhachHang(cleanTen);
-                        changed = true;
-                    }
-                }
-                if (changed) {
-                    new com.runmax.repository.HoaDonRepository().update(hd);
-                }
+            } else if (hd.getKhachHang() != null) {
+                hd.setKhachHang(null);
+                changed = true;
             }
+        }
+
+        if (changed) {
+            new com.runmax.repository.HoaDonRepository().update(hd);
         }
     }
 

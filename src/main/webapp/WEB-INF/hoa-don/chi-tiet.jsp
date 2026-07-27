@@ -461,11 +461,7 @@
                 <div class="runmax-card p-0 mb-4 overflow-hidden">
                     <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
                         <span class="fw-bold text-dark"><i class="bi bi-bag-check-fill text-danger me-2"></i>Danh sách Sản phẩm giày trong hóa đơn <span class="badge bg-secondary ms-1" id="badgeCountHDCT">${fn:length(chiTiets)}</span></span>
-                        <c:if test="${hoaDon.trangThai == 0 || hoaDon.trangThai == 1}">
-                            <button type="button" class="btn btn-sm btn-danger fw-bold d-flex align-items-center gap-2 px-3 py-1 shadow-sm" onclick="openInvoiceScanQRModal('${hoaDon.id}')" title="Quét mã QR sản phẩm bằng Camera">
-                                <i class="bi bi-qr-code-scan fs-6"></i> Quét QR Thêm Sản Phẩm
-                            </button>
-                        </c:if>
+
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">

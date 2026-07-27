@@ -199,9 +199,6 @@ CREATE TABLE hoa_don (
     nhan_vien_id       BIGINT NOT NULL,
     phieu_giam_gia_id  BIGINT NULL,          -- NULL khi không áp dụng voucher
     ma_hd              VARCHAR(50)    NOT NULL UNIQUE,
-    ten_khach_hang     NVARCHAR(100)  NULL,
-    sdt                VARCHAR(20)    NULL,
-    email              VARCHAR(100)   NULL,
     tien_hang          DECIMAL(18, 2) NOT NULL DEFAULT 0,
     so_tien_giam       DECIMAL(18, 2) NOT NULL DEFAULT 0,
     tong_tien          DECIMAL(18, 2) NOT NULL DEFAULT 0,
@@ -385,11 +382,11 @@ VALUES
 
 -- Hóa đơn mẫu
 INSERT INTO hoa_don (khach_hang_id, nhan_vien_id, phieu_giam_gia_id, ma_hd,
-                     ten_khach_hang, sdt, tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao)
+                     tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao)
 VALUES
-    (1, 2, NULL, 'HD00001', N'Nguyễn Văn A', '0911111111', 2200000, 0, 2200000, 1, '2026-04-29 10:30:00'),
-    (2, 2, 1,    'HD00002', N'Trần Văn B',   '0922222222', 2300000, 230000, 2070000, 1, '2026-04-29 14:15:00'),
-    (NULL, 2, NULL, 'HD00003', N'Khách lẻ', '0909999999', 4700000, 0, 4700000, 1, '2026-04-29 16:00:00');
+    (1,    2, NULL, 'HD00001', 2200000, 0,      2200000, 1, '2026-04-29 10:30:00'),
+    (2,    2, 1,    'HD00002', 2300000, 230000, 2070000, 1, '2026-04-29 14:15:00'),
+    (NULL, 2, NULL, 'HD00003', 4700000, 0,      4700000, 1, '2026-04-29 16:00:00');
 
 -- Chi tiết hóa đơn mẫu
 INSERT INTO hoa_don_chi_tiet (hoa_don_id, spct_id, so_luong, don_gia, thanh_tien, trang_thai)
@@ -441,11 +438,11 @@ VALUES
 
 -- Bổ sung Hóa đơn chờ thanh toán (trang_thai = 0) phục vụ ngay cho quầy POS Bán hàng
 INSERT INTO hoa_don (khach_hang_id, nhan_vien_id, phieu_giam_gia_id, ma_hd,
-                     ten_khach_hang, sdt, tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao)
+                     tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao)
 VALUES
-    (3, 2, NULL, 'HD00004', N'Lê Thị C', '0933333333', 3190000, 0, 3190000, 0, GETDATE()),
-    (NULL, 3, NULL, 'HD00005', N'Khách vãng lai POS 1', '0988888888', 850000, 0, 850000, 0, GETDATE()),
-    (NULL, 3, NULL, 'HD00006', N'Khách vãng lai POS 2', '0977777777', 2050000, 0, 2050000, 0, GETDATE());
+    (3,    2, NULL, 'HD00004', 3190000, 0,    3190000, 0, GETDATE()),
+    (NULL, 3, NULL, 'HD00005',  850000, 0,     850000, 0, GETDATE()),
+    (NULL, 3, NULL, 'HD00006', 2050000, 0,    2050000, 0, GETDATE());
 
 INSERT INTO hoa_don_chi_tiet (hoa_don_id, spct_id, so_luong, don_gia, thanh_tien, trang_thai)
 VALUES

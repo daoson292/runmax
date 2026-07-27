@@ -29,11 +29,9 @@ public class HoaDonService {
     public HoaDon getById(Long id)         { return hdRepo.findById(id); }
     public HoaDon findByMaHd(String maHd)  { return hdRepo.findByMaHd(maHd); }
 
-    public boolean create(String maHd, String tenKhachHang, String sdt, BigDecimal tongTien, String ghiChu) {
+    public boolean create(String maHd, BigDecimal tongTien, String ghiChu) {
         HoaDon hd = HoaDon.builder()
             .maHd(maHd)
-            .tenKhachHang(tenKhachHang)
-            .sdt(sdt)
             .tongTien(tongTien)
             .ghiChu(ghiChu)
             .trangThai(1)
@@ -193,14 +191,8 @@ public class HoaDonService {
 
     /** Áp dụng phiếu giảm giá vào hóa đơn POS */
     public boolean apDungPhieuGiamGia(Long hoaDonId, Long phieuGiamGiaId) {
-        return apDungPhieuGiamGia(hoaDonId, phieuGiamGiaId, null, null);
-    }
-
-    public boolean apDungPhieuGiamGia(Long hoaDonId, Long phieuGiamGiaId, String tenKhachHang, String sdt) {
         HoaDon hd = hdRepo.findById(hoaDonId);
         if (hd == null) return false;
-        if (tenKhachHang != null) hd.setTenKhachHang(tenKhachHang.trim());
-        if (sdt != null) hd.setSdt(sdt.trim());
 
         if (phieuGiamGiaId == null || phieuGiamGiaId <= 0) {
             hd.setPhieuGiamGia(null);
@@ -217,7 +209,7 @@ public class HoaDonService {
 
     /** Thanh toán hóa đơn */
     public boolean thanhToan(Long hoaDonId, Long ptttId, Long phieuGiamGiaId,
-                              String tenKhachHang, String sdt,
+                              Long khachHangId,
                               PhuongThucThanhToan pttt, PhieuGiamGia phieu,
                               String nguoiThaoTac) {
         HoaDon hd = hdRepo.findById(hoaDonId);
@@ -259,31 +251,17 @@ public class HoaDonService {
         hd.setSoTienGiam(soTienGiam);
         hd.setTongTien(tongTien);
         hd.setTrangThai(1);
-        if (tenKhachHang != null) hd.setTenKhachHang(tenKhachHang);
-        if (sdt != null) hd.setSdt(sdt);
 
-        // Tự động tạo hoặc cập nhật Khách hàng khi có thông tin SĐT mua hàng
-        if (sdt != null && !sdt.trim().isEmpty()) {
-            String sdtClean = sdt.trim();
-            KhachHang kh = khRepo.findBySdt(sdtClean);
-            if (kh == null) {
-                kh = KhachHang.builder()
-                    .maKh(khRepo.getNextMaKh())
-                    .hoTen((tenKhachHang != null && !tenKhachHang.trim().isEmpty()) ? tenKhachHang.trim() : "Khách hàng " + sdtClean)
-                    .sdt(sdtClean)
-                    .email("")
-                    .trangThai(1)
-                    .build();
-                kh = khRepo.saveAndReturn(kh);
-            } else {
-                if (tenKhachHang != null && !tenKhachHang.trim().isEmpty()) {
-                    kh.setHoTen(tenKhachHang.trim());
-                }
-                kh = khRepo.saveAndReturn(kh);
-            }
+        // Gắn Khách Hàng vào hóa đơn nếu có ID
+        if (khachHangId != null) {
+            KhachHang kh = khRepo.findById(khachHangId);
             if (kh != null) {
                 hd.setKhachHang(kh);
             }
+        }
+        // Khách lẻ -> đảm bảo khachHang = null
+        if (khachHangId == null) {
+            hd.setKhachHang(null);
         }
 
         hdRepo.update(hd);
