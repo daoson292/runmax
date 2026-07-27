@@ -79,12 +79,13 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold small">Thông tin khách hàng</label>
                                     <div class="row g-2">
-                                        <div class="col-md-6">
-                                            <input type="text" id="ttInputTenKh" name="tenKhachHang" class="form-control" placeholder="Tên khách hàng (Khách lẻ)" value="${currentHd.tenKhachHang != null ? currentHd.tenKhachHang : ''}">
+                                        <div class="col-md-6 position-relative">
+                                            <input type="text" id="ttInputTenKh" name="tenKhachHang" class="form-control" placeholder="Tên khách hàng (Khách lẻ)" value="${currentHd.khachHang != null ? currentHd.khachHang.hoTen : ''}">
                                         </div>
-                                        <div class="col-md-6">
-                                            <input type="text" id="ttInputSdt" name="sdt" class="form-control" placeholder="Số điện thoại (10 số)" value="${currentHd.sdt}" maxlength="11" pattern="[0-9]{10,11}">
+                                        <div class="col-md-6 position-relative">
+                                            <input type="text" id="ttInputSdt" name="sdt" class="form-control" placeholder="Số điện thoại (10 số)" value="${currentHd.khachHang != null ? currentHd.khachHang.sdt : ''}" maxlength="11" pattern="[0-9]{10,11}">
                                             <div class="invalid-feedback">Số điện thoại phải từ 10 đến 11 chữ số!</div>
+                                            <ul class="dropdown-menu w-100 shadow-sm" id="ttSdtSuggestions" style="display: none; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1000;"></ul>
                                         </div>
                                     </div>
                                 </div>

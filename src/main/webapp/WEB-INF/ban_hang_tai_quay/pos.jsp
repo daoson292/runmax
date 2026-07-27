@@ -95,7 +95,7 @@
                                            href="${pageContext.request.contextPath}/ban-hang?hdId=${hd.id}"
                                            title="${isQuanLy ? 'NV: '.concat(hd.nhanVien != null ? hd.nhanVien.hoTen : 'N/A') : ''}">
                                             <i class="bi bi-tag-fill me-1"></i> ${hd.maHd}
-                                            <span class="badge bg-secondary ms-1">${hd.tenKhachHang != null ? hd.tenKhachHang : 'Khách lẻ'}</span>
+                                            <span class="badge bg-secondary ms-1">${hd.tenKhachHangHienThi}</span>
                                             <c:if test="${isQuanLy}">
                                                 <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">
                                                     <i class="bi bi-person-fill"></i> ${hd.nhanVien != null ? hd.nhanVien.hoTen : '?'}
@@ -305,14 +305,14 @@
                                         <div class="mb-3 position-relative">
                                             <label class="form-label small fw-semibold text-muted">Số điện thoại tích điểm</label>
                                             <input type="text" name="sdt" id="posInputSdt" class="form-control"
-                                                   value="${currentHd.sdt}" placeholder="Nhập SĐT khách hàng (10 số)..." maxlength="11" pattern="[0-9]{10,11}" autocomplete="off">
+                                                   value="${currentHd.khachHang != null ? currentHd.khachHang.sdt : ''}" placeholder="Nhập SĐT khách hàng (10 số)..." maxlength="11" pattern="[0-9]{10,11}" autocomplete="off">
                                             <ul class="dropdown-menu w-100 shadow-sm" id="sdtSuggestions" style="display: none; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1000;"></ul>
                                         </div>
 
                                         <div class="mb-3">
                                             <label class="form-label small fw-semibold text-muted">Tên khách hàng Runner</label>
                                             <input type="text" name="tenKhachHang" id="posInputTenKh" class="form-control"
-                                                   value="${currentHd.tenKhachHang != null ? currentHd.tenKhachHang : ''}"
+                                                   value="${currentHd.khachHang != null ? currentHd.khachHang.hoTen : ''}"
                                                    placeholder="Tên khách hàng...">
                                         </div>
 

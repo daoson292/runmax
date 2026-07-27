@@ -338,7 +338,7 @@
                                 </div>
                                 <div class="info-row">
                                     <span class="info-label">Email:</span>
-                                    <span class="info-value">${not empty hoaDon.email ? hoaDon.email : '--'}</span>
+                                    <span class="info-value">${hoaDon.khachHang != null && not empty hoaDon.khachHang.email ? hoaDon.khachHang.email : '--'}</span>
                                 </div>
                                 <hr class="my-2 text-muted">
                                 <div class="small">

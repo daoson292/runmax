@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
 Created-By: IntelliJ IDEA
-Built-By: KhanhBe
-Build-Jdk: Oracle OpenJDK 17.0.1
+Built-By: DaoSon
+Build-Jdk: Azul Zulu 17.0.18
 

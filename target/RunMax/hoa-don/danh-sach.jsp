@@ -97,8 +97,8 @@
                                 <tr>
                                     <td class="fw-bold text-secondary">#${hd.id}</td>
                                     <td><span class="badge bg-light text-dark border fw-bold">${hd.maHd}</span></td>
-                                    <td class="fw-semibold text-dark">${hd.tenKhachHang}</td>
-                                    <td class="text-secondary">${hd.sdt != null ? hd.sdt : '---'}</td>
+                                    <td class="fw-semibold text-dark">${hd.tenKhachHangHienThi}</td>
+                                    <td class="text-secondary">${hd.sdtHienThi}</td>
                                     <td class="fw-bold text-primary">
                                         <%= hd.getTongTien() != null ? String.format("%,d VNĐ", hd.getTongTien().longValue()) : "0 VNĐ" %>
                                     </td>
