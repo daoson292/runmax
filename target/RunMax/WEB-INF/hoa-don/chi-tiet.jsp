@@ -1011,6 +1011,15 @@
                     correctLevel : QRCode.CorrectLevel.M
                 });
             }
+            
+            // Auto print if requested from POS
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('print') === 'true') {
+                // Wait slightly for QR code and fonts to render
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            }
         });
     </script>
 </body>

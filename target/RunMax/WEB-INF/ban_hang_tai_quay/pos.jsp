@@ -862,7 +862,34 @@
 
         <c:if test="${not empty param.printHdId}">
         window.addEventListener('DOMContentLoaded', function() {
-            window.open('${pageContext.request.contextPath}/hoa-don?action=detail&id=${param.printHdId}&print=true', '_blank');
+            // Load SweetAlert2 dynamically if not present
+            if (typeof Swal === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                script.onload = showPrintConfirm;
+                document.head.appendChild(script);
+            } else {
+                showPrintConfirm();
+            }
+            
+            function showPrintConfirm() {
+                Swal.fire({
+                    title: 'Thanh toán thành công!',
+                    text: 'Bạn có muốn in hóa đơn cho khách không?',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-printer me-1"></i> Có, in ngay',
+                    cancelButtonText: 'Không, bỏ qua'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '${pageContext.request.contextPath}/hoa-don?action=detail&id=${param.printHdId}&print=true';
+                    } else {
+                        window.location.href = '${pageContext.request.contextPath}/ban-hang';
+                    }
+                });
+            }
         });
         </c:if>
     </script>
