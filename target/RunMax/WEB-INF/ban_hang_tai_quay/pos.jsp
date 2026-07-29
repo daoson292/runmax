@@ -378,19 +378,28 @@
         });
 
         function validateThanhToanPOS(event, chiTietCount) {
+            // Ngăn chặn form submit mặc định để dùng hộp thoại bất đồng bộ
+            event.preventDefault();
+            event.stopPropagation();
+
             if (chiTietCount <= 0) {
-                event.preventDefault();
-                event.stopPropagation();
                 showBootstrapAlert('Hóa đơn hiện tại chưa có sản phẩm nào. Vui lòng chọn ít nhất 1 sản phẩm vào đơn!', 'warning');
                 return false;
             }
+            
             const form = event.target;
             if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
+                form.classList.add('was-validated');
+                return false;
             }
             form.classList.add('was-validated');
-            return form.checkValidity();
+            
+            // Gọi custom bootstrap confirm thay vì trình duyệt mặc định
+            showBootstrapConfirm('Bạn có chắc chắn muốn chốt đơn này?', function() {
+                submitPosFormWithCustomer(form);
+            });
+            
+            return false;
         }
 
         function apDungVoucherPOS(hdId) {
@@ -532,7 +541,7 @@
         let activeScanHdId = null;
         let qrCameraScannerObj = null;
 
-        // Danh sách toàn bộ SPCT từ server để tra cứu nhanh khi quét
+        // Danh sách toàn bộ SPCT từ server để tra cứu nhanh khi quét và Lọc/Phân trang Client-Side
         const availableSpctList = [
             <c:forEach var="item" items="${allSpct}" varStatus="st">
             {
@@ -540,9 +549,14 @@
                 maSpct: '${item.maSpct != null ? item.maSpct : "SPCT".concat(item.id)}',
                 maSp: '${item.sanPham.maSp}',
                 tenSp: '${fn:escapeXml(item.sanPham.tenSp)}',
+                thuongHieu: '${item.sanPham.thuongHieu != null ? fn:escapeXml(item.sanPham.thuongHieu.ten) : ""}',
+                chatLieu: '${item.sanPham.chatLieu != null ? fn:escapeXml(item.sanPham.chatLieu.ten) : ""}',
+                deGiay: '${item.deGiay != null ? fn:escapeXml(item.deGiay.ten) : ""}',
                 mauSac: '${fn:escapeXml(item.mauSac.ten)}',
                 kichCo: '${fn:escapeXml(item.kichCo.ten)}',
-                soLuongTon: ${item.soLuongTon}
+                giaBan: ${item.giaBan != null ? item.giaBan : 0},
+                soLuongTon: ${item.soLuongTon},
+                soLuongKhaDung: ${item.soLuongKhaDung}
             }<c:if test="${!st.last}">,</c:if>
             </c:forEach>
         ];
@@ -580,7 +594,7 @@
             ).then(() => {
                 if (statusEl) statusEl.innerHTML = '<span class="text-success"><i class="bi bi-camera-video-fill"></i> Camera đang quét... Đưa tem QR vào khung</span>';
             }).catch(err => {
-                if (statusEl) statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Không thể mở Camera: ${err}. Bạn có thể nhập mã ở dưới.</span>`;
+                if (statusEl) statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Không thể mở Camera: \${err}. Bạn có thể nhập mã ở dưới.</span>`;
             });
         }
 
@@ -618,7 +632,7 @@
             if (!code || !activeScanHdId) return;
 
             const statusEl = document.getElementById('qr-scan-status');
-            if (statusEl) statusEl.innerHTML = `<i class="bi bi-check-circle-fill text-success"></i> Đã nhận diện mã: <b class="text-danger">${code}</b>`;
+            if (statusEl) statusEl.innerHTML = `<i class="bi bi-check-circle-fill text-success"></i> Đã nhận diện mã: <b class="text-danger">\${code}</b>`;
 
             // Tìm sản phẩm trong availableSpctList
             const matched = availableSpctList.find(p => 
@@ -629,7 +643,7 @@
 
             if (matched) {
                 if (matched.soLuongTon <= 0) {
-                    alert(`Sản phẩm "${matched.tenSp} (Size ${matched.kichCo} - ${matched.mauSac})" đã HẾT HÀNG trong kho (${matched.soLuongTon})!`);
+                    alert(`Sản phẩm "\${matched.tenSp} (Size \${matched.kichCo} - \${matched.mauSac})" đã HẾT HÀNG trong kho (\${matched.soLuongTon})!`);
                     return;
                 }
 
@@ -680,7 +694,7 @@
                 document.body.appendChild(form);
                 form.submit();
             } else {
-                alert(`Không tìm thấy biến thể giày nào trong kho ứng với mã QR: "${code}"!`);
+                alert(`Không tìm thấy biến thể giày nào trong kho ứng với mã QR: "\${code}"!`);
             }
         }
 
@@ -713,7 +727,7 @@
             ).then(() => {
                 if (statusEl) statusEl.innerHTML = '<span class="text-success"><i class="bi bi-camera-video-fill"></i> Camera đang quét... Đưa tem QR vào khung</span>';
             }).catch(err => {
-                if (statusEl) statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Không thể mở Camera: ${err}. Bạn có thể nhập mã ở dưới.</span>`;
+                if (statusEl) statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Không thể mở Camera: \${err}. Bạn có thể nhập mã ở dưới.</span>`;
             });
         }
 
@@ -771,7 +785,7 @@
 
     <!-- MODAL TÌM KIẾM SẢN PHẨM (POS) -->
     <div class="modal fade" id="modalSearchProduct" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                 <div class="modal-header bg-danger text-white p-3">
                     <h5 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2">
@@ -780,91 +794,78 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-light">
-                    <!-- Form Tìm kiếm -->
-                    <form id="posSearchForm" action="${pageContext.request.contextPath}/ban-hang" method="GET" class="row g-2 mb-3" onsubmit="attachPosCustomerInfoToForm(this)">
-                        <c:if test="${currentHd != null}">
-                            <input type="hidden" name="hdId" value="${currentHd.id}">
-                        </c:if>
-                        <div class="col-md-9">
-                            <input type="text" name="kw" class="form-control form-control-lg shadow-sm" placeholder="Nhập tên giày, size 39-44, hoặc mã ID..." value="${param.kw}">
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-outline-danger btn-lg w-100 fw-bold shadow-sm">
-                                <i class="bi bi-search"></i> Tìm kiếm
-                            </button>
-                        </div>
-                    </form>
+                    <div class="row h-100">
+                        <!-- Cột Trái: Tìm kiếm & Kết quả (70%) -->
+                        <div class="col-lg-8 d-flex flex-column h-100 pe-4">
+                            <!-- Khối Lọc -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-12">
+                                    <input type="text" id="posFilterKeyword" class="form-control form-control-lg shadow-sm" placeholder="Nhập tên giày, mã SP, phân loại...">
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="posFilterSize" class="form-select shadow-sm"><option value="">Tất cả Size</option></select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="posFilterColor" class="form-select shadow-sm"><option value="">Tất cả Màu</option></select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="posFilterSole" class="form-select shadow-sm"><option value="">Tất cả Đế</option></select>
+                                </div>
+                            </div>
 
-                    <!-- Danh sách kết quả -->
-                    <div class="table-responsive bg-white rounded-3 shadow-sm border" style="max-height: 400px;">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th>Sản phẩm</th>
-                                    <th>Size / Màu / Đế / Chất liệu</th>
-                                    <th>Đơn giá</th>
-                                    <th>Tồn</th>
-                                    <th class="text-end pe-3">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <c:forEach var="spct" items="${allSpct}">
-                                    <tr class="${spct.soLuongKhaDung <= 0 ? 'table-secondary opacity-75' : ''}">
-                                        <td class="fw-bold text-dark">
-                                            <span class="badge bg-secondary me-1">${spct.sanPham.thuongHieu != null ? spct.sanPham.thuongHieu.ten : ''}</span>
-                                            ${spct.sanPham.tenSp}
-                                            <small class="text-muted d-block fw-normal">[Mã: ${spct.sanPham.maSp}]</small>
-                                        </td>
-                                        <td>
-                                            <div class="mb-1">Size <b>${spct.kichCo.ten}</b> | ${spct.mauSac.ten}</div>
-                                            <span class="badge bg-info text-dark bg-opacity-10 border border-info" style="font-size: 0.7rem;">Đế: ${spct.deGiay.ten}</span>
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: ${spct.sanPham.chatLieu.ten}</span>
-                                        </td>
-                                        <td class="text-danger fw-semibold">
-                                            <fmt:formatNumber value="${spct.giaBan}" type="number" /> đ
-                                        </td>
-                                        <td>
-                                            <c:choose>
-                                                <c:when test="${spct.soLuongKhaDung <= 0}">
-                                                    <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-x-circle me-1"></i>Hết hàng (0)</span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span class="fw-bold text-dark">${spct.soLuongKhaDung}</span>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </td>
-                                        <td class="text-end pe-3">
-                                            <c:choose>
-                                                <c:when test="${currentHd != null && spct.soLuongKhaDung > 0}">
-                                                    <form class="ajax-add-to-cart-form d-inline" onsubmit="return handleAjaxAddToCart(event, this)">
-                                                        <input type="hidden" name="action" value="them-sp">
-                                                        <input type="hidden" name="hdId" value="${currentHd.id}">
-                                                        <input type="hidden" name="spctId" value="${spct.id}">
-                                                        <input type="hidden" name="soLuong" value="1">
-                                                        <button type="submit" class="btn btn-danger fw-bold shadow-sm px-3" style="border-radius: 8px;">
-                                                            <i class="bi bi-cart-plus me-1"></i> Chọn
-                                                        </button>
-                                                    </form>
-                                                </c:when>
-                                                <c:when test="${spct.soLuongKhaDung <= 0}">
-                                                    <button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
-                                                        <i class="bi bi-cart-x me-1"></i> Hết
-                                                    </button>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <button type="button" class="btn btn-light border text-muted opacity-50 px-3" disabled title="Tạo/chọn Hóa Đơn trước" style="border-radius: 8px;">
-                                                        <i class="bi bi-cart-plus me-1"></i> Chọn
-                                                    </button>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </td>
-                                    </tr>
-                                </c:forEach>
-                                <c:if test="${empty allSpct}">
-                                    <tr><td colspan="5" class="text-center text-muted py-4">Chưa có sản phẩm nào để hiển thị!</td></tr>
-                                </c:if>
-                            </tbody>
-                        </table>
+                            <!-- Danh sách kết quả (Render bằng JS) -->
+                            <div class="table-responsive bg-white rounded-3 shadow-sm border flex-grow-1 mb-3" style="min-height: 400px; max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Sản phẩm</th>
+                                            <th>Phân loại</th>
+                                            <th>Đơn giá</th>
+                                            <th>Tồn</th>
+                                            <th class="text-end pe-3">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="posProductTableBody">
+                                        <!-- JS Render here -->
+                                        <tr><td colspan="5" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang tải...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Phân trang -->
+                            <nav>
+                                <ul class="pagination justify-content-center mb-0" id="posProductPagination">
+                                    <!-- JS Render here -->
+                                </ul>
+                            </nav>
+                        </div>
+
+                        <!-- Cột Phải: Giỏ Hàng Nháp (30%) -->
+                        <div class="col-lg-4 d-flex flex-column h-100 border-start border-2 border-danger border-opacity-25 ps-4">
+                            <h5 class="fw-bold text-dark mb-3">
+                                <i class="bi bi-cart4 text-danger me-2"></i>Giỏ Hàng Nháp
+                            </h5>
+                            
+                            <div id="stagingCartContainer" class="flex-grow-1 overflow-auto bg-white rounded-3 shadow-sm border mb-3 p-2" style="min-height: 400px; max-height: 400px;">
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-box-seam opacity-25" style="font-size: 3rem;"></i>
+                                    <p class="mt-2 mb-0">Chưa chọn sản phẩm nào</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-3 shadow-sm border p-3 mt-auto">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted fw-semibold">Tổng số lượng:</span>
+                                    <span class="fw-bold" id="stagingTotalQty">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="text-muted fw-semibold">Tạm tính:</span>
+                                    <span class="text-danger fw-bold fs-5" id="stagingTotalPrice">0 đ</span>
+                                </div>
+                                <button type="button" class="btn btn-runmax btn-lg w-100 fw-bold shadow-sm py-2" onclick="submitStagingCart(${currentHd != null ? currentHd.id : 'null'})">
+                                    <i class="bi bi-check2-all me-2"></i> XÁC NHẬN ĐẨY ĐƠN
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -945,6 +946,324 @@
             }
             return false;
         }
+        
+        // --- STAGING CART LOGIC ---
+        let stagingCartItems = [];
+
+        function addToStagingCart(id, name, size, color, price, maxQty) {
+            let existing = stagingCartItems.find(item => item.id === id);
+            if (existing) {
+                if (existing.qty < maxQty) {
+                    existing.qty++;
+                } else {
+                    showBootstrapAlert('Đã đạt số lượng tồn kho tối đa!', 'warning');
+                }
+            } else {
+                stagingCartItems.push({
+                    id: id,
+                    name: name,
+                    size: size,
+                    color: color,
+                    price: price,
+                    maxQty: maxQty,
+                    qty: 1
+                });
+            }
+            renderStagingCart();
+        }
+
+        function updateStagingCartQty(id, newQty) {
+            let item = stagingCartItems.find(i => i.id === id);
+            if (item) {
+                newQty = parseInt(newQty);
+                if (isNaN(newQty) || newQty < 1) newQty = 1;
+                if (newQty > item.maxQty) {
+                    newQty = item.maxQty;
+                    showBootstrapAlert('Số lượng vượt quá tồn kho khả dụng (' + item.maxQty + ')!', 'warning');
+                }
+                item.qty = newQty;
+                renderStagingCart();
+            }
+        }
+
+        function removeStagingCartItem(id) {
+            stagingCartItems = stagingCartItems.filter(item => item.id !== id);
+            renderStagingCart();
+        }
+
+        function renderStagingCart() {
+            const container = document.getElementById('stagingCartContainer');
+            if (stagingCartItems.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-box-seam opacity-25" style="font-size: 3rem;"></i>
+                        <p class="mt-2 mb-0">Chưa chọn sản phẩm nào</p>
+                    </div>
+                `;
+                document.getElementById('stagingTotalQty').innerText = '0';
+                document.getElementById('stagingTotalPrice').innerText = '0 đ';
+                return;
+            }
+
+            let html = '<ul class="list-group list-group-flush">';
+            let totalQty = 0;
+            let totalPrice = 0;
+
+            stagingCartItems.forEach(item => {
+                totalQty += item.qty;
+                totalPrice += (item.qty * item.price);
+                html += `
+                    <li class="list-group-item px-0 py-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="pe-2">
+                                <h6 class="fw-bold text-dark mb-1">\${item.name}</h6>
+                                <div class="small text-muted">Size: <b>\${item.size}</b> | Màu: <b>\${item.color}</b></div>
+                                <div class="text-danger fw-semibold mt-1">\${new Intl.NumberFormat('vi-VN').format(item.price)} đ</div>
+                            </div>
+                            <button class="btn btn-sm btn-link text-danger p-0 ms-auto" onclick="removeStagingCartItem(\${item.id})">
+                                <i class="bi bi-trash3 fs-5"></i>
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="small text-muted">Tồn: \${item.maxQty}</span>
+                            <div class="input-group input-group-sm" style="width: 110px;">
+                                <button class="btn btn-outline-secondary px-2" type="button" onclick="updateStagingCartQty(\${item.id}, \${item.qty - 1})">-</button>
+                                <input type="number" class="form-control text-center px-1" value="\${item.qty}" min="1" max="\${item.maxQty}" onchange="updateStagingCartQty(\${item.id}, this.value)">
+                                <button class="btn btn-outline-secondary px-2" type="button" onclick="updateStagingCartQty(\${item.id}, \${item.qty + 1})">+</button>
+                            </div>
+                        </div>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            
+            container.innerHTML = html;
+            document.getElementById('stagingTotalQty').innerText = totalQty;
+            document.getElementById('stagingTotalPrice').innerText = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' đ';
+        }
+
+        async function submitStagingCart(hdId) {
+            if (!hdId) {
+                showBootstrapAlert('Vui lòng chọn hoặc tạo hóa đơn trước khi thêm sản phẩm!', 'warning');
+                return;
+            }
+            if (stagingCartItems.length === 0) {
+                showBootstrapAlert('Giỏ hàng nháp đang trống!', 'warning');
+                return;
+            }
+
+            // Lấy id nút bấm để disable tạm thời
+            const btn = event.currentTarget || event.target;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
+            btn.disabled = true;
+
+            const formData = new URLSearchParams();
+            formData.append('action', 'them-nhieu-sp');
+            formData.append('hdId', hdId);
+            stagingCartItems.forEach(item => {
+                formData.append('spctIds[]', item.id);
+                formData.append('soLuongs[]', item.qty);
+            });
+
+            try {
+                const response = await fetch('${pageContext.request.contextPath}/ban-hang', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                
+                const htmlText = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+
+                const newCart = doc.getElementById('pos-cart-container');
+                if (newCart) {
+                    document.getElementById('pos-cart-container').innerHTML = newCart.innerHTML;
+                }
+                
+                const oldPaymentBlock = document.getElementById('pos-payment-block');
+                const newPaymentBlock = doc.getElementById('pos-payment-block');
+                if (oldPaymentBlock && newPaymentBlock) {
+                    oldPaymentBlock.innerHTML = newPaymentBlock.innerHTML;
+                }
+
+                showBootstrapAlert('Đã đẩy thành công ' + stagingCartItems.length + ' sản phẩm vào hóa đơn!', 'success');
+
+                // Clear and close
+                stagingCartItems = [];
+                renderStagingCart();
+                const modalEl = document.getElementById('modalSearchProduct');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                
+            } catch (err) {
+                showBootstrapAlert('Lỗi kết nối khi đẩy vào hóa đơn!', 'danger');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        // --- CLIENT-SIDE FILTERING & PAGINATION LOGIC ---
+        let filteredSpctList = [];
+        let posCurrentPage = 1;
+        const posItemsPerPage = 10;
+
+        function initPosFilters() {
+            if (typeof availableSpctList === 'undefined' || availableSpctList.length === 0) return;
+
+            // Extract unique values
+            const sizes = [...new Set(availableSpctList.map(item => item.kichCo).filter(Boolean))].sort((a,b) => a - b);
+            const colors = [...new Set(availableSpctList.map(item => item.mauSac).filter(Boolean))].sort();
+            const soles = [...new Set(availableSpctList.map(item => item.deGiay).filter(Boolean))].sort();
+
+            const sizeSelect = document.getElementById('posFilterSize');
+            const colorSelect = document.getElementById('posFilterColor');
+            const soleSelect = document.getElementById('posFilterSole');
+
+            if(sizeSelect) sizes.forEach(s => sizeSelect.add(new Option(s, s)));
+            if(colorSelect) colors.forEach(c => colorSelect.add(new Option(c, c)));
+            if(soleSelect) soles.forEach(s => soleSelect.add(new Option(s, s)));
+
+            // Add event listeners
+            document.getElementById('posFilterKeyword').addEventListener('input', applyPosFilters);
+            if(sizeSelect) sizeSelect.addEventListener('change', applyPosFilters);
+            if(colorSelect) colorSelect.addEventListener('change', applyPosFilters);
+            if(soleSelect) soleSelect.addEventListener('change', applyPosFilters);
+
+            // Initial render
+            applyPosFilters();
+        }
+
+        function applyPosFilters() {
+            const kw = document.getElementById('posFilterKeyword').value.toLowerCase().trim();
+            const size = document.getElementById('posFilterSize').value;
+            const color = document.getElementById('posFilterColor').value;
+            const sole = document.getElementById('posFilterSole').value;
+
+            filteredSpctList = availableSpctList.filter(item => {
+                let match = true;
+                if (kw) {
+                    const searchStr = `\${item.tenSp} \${item.maSp} \${item.maSpct} \${item.thuongHieu}`.toLowerCase();
+                    if (!searchStr.includes(kw)) match = false;
+                }
+                if (size && item.kichCo !== size) match = false;
+                if (color && item.mauSac !== color) match = false;
+                if (sole && item.deGiay !== sole) match = false;
+                return match;
+            });
+
+            posCurrentPage = 1;
+            renderPosProductTable();
+        }
+
+        function renderPosProductTable() {
+            const tbody = document.getElementById('posProductTableBody');
+            const pagination = document.getElementById('posProductPagination');
+            
+            if (!tbody || !pagination) return;
+
+            if (filteredSpctList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Không tìm thấy sản phẩm nào phù hợp!</td></tr>';
+                pagination.innerHTML = '';
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredSpctList.length / posItemsPerPage);
+            if (posCurrentPage > totalPages) posCurrentPage = totalPages;
+
+            const startIndex = (posCurrentPage - 1) * posItemsPerPage;
+            const endIndex = startIndex + posItemsPerPage;
+            const currentItems = filteredSpctList.slice(startIndex, endIndex);
+
+            let html = '';
+            currentItems.forEach(spct => {
+                const isOutOfStock = spct.soLuongKhaDung <= 0;
+                const rowClass = isOutOfStock ? 'table-secondary opacity-75' : '';
+                const brandBadge = spct.thuongHieu ? `<span class="badge bg-secondary me-1">\${spct.thuongHieu}</span>` : '';
+                const stockHtml = isOutOfStock 
+                    ? `<span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-x-circle me-1"></i>Hết hàng (0)</span>`
+                    : `<span class="fw-bold text-dark">\${spct.soLuongKhaDung}</span>`;
+                
+                const actionHtml = (!isOutOfStock)
+                    ? `<button type="button" class="btn btn-danger fw-bold shadow-sm px-3" style="border-radius: 8px;"
+                                onclick="addToStagingCart(\${spct.id}, '\${spct.tenSp.replace(/'/g, "\\'")}', '\${spct.kichCo}', '\${spct.mauSac}', \${spct.giaBan}, \${spct.soLuongKhaDung})">
+                            <i class="bi bi-cart-plus me-1"></i> Chọn
+                        </button>`
+                    : `<button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
+                            <i class="bi bi-cart-x me-1"></i> Hết
+                        </button>`;
+
+                html += `
+                    <tr class="\${rowClass}">
+                        <td class="fw-bold text-dark">
+                            \${brandBadge}
+                            \${spct.tenSp}
+                            <small class="text-muted d-block fw-normal">[Mã: \${spct.maSp}]</small>
+                        </td>
+                        <td>
+                            <div class="mb-1">Size <b>\${spct.kichCo}</b> | \${spct.mauSac}</div>
+                            <span class="badge bg-info text-dark bg-opacity-10 border border-info" style="font-size: 0.7rem;">Đế: \${spct.deGiay}</span>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: \${spct.chatLieu}</span>
+                        </td>
+                        <td class="text-danger fw-semibold">
+                            \${new Intl.NumberFormat('vi-VN').format(spct.giaBan)} đ
+                        </td>
+                        <td>\${stockHtml}</td>
+                        <td class="text-end pe-3">\${actionHtml}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+
+            // Render pagination
+            let pageHtml = '';
+            if (totalPages > 1) {
+                const prevDisabled = posCurrentPage === 1 ? 'disabled' : '';
+                const nextDisabled = posCurrentPage === totalPages ? 'disabled' : '';
+                
+                pageHtml += `<li class="page-item \${prevDisabled}">
+                                <a class="page-link text-danger" href="#" onclick="changePosPage(event, \${posCurrentPage - 1})">Trước</a>
+                             </li>`;
+                             
+                for (let i = 1; i <= totalPages; i++) {
+                    if (totalPages > 7) {
+                        if (i !== 1 && i !== totalPages && Math.abs(i - posCurrentPage) > 2) {
+                            if (i === 2 || i === totalPages - 1) {
+                                pageHtml += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+                            }
+                            continue;
+                        }
+                    }
+                    const activeClass = i === posCurrentPage ? 'active' : '';
+                    const linkClass = i === posCurrentPage ? 'bg-danger border-danger' : 'text-danger';
+                    pageHtml += `<li class="page-item \${activeClass}">
+                                    <a class="page-link \${linkClass}" href="#" onclick="changePosPage(event, \${i})">\${i}</a>
+                                 </li>`;
+                }
+                
+                pageHtml += `<li class="page-item \${nextDisabled}">
+                                <a class="page-link text-danger" href="#" onclick="changePosPage(event, \${posCurrentPage + 1})">Sau</a>
+                             </li>`;
+            }
+            pagination.innerHTML = pageHtml;
+        }
+
+        function changePosPage(event, newPage) {
+            event.preventDefault();
+            const totalPages = Math.ceil(filteredSpctList.length / posItemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                posCurrentPage = newPage;
+                renderPosProductTable();
+            }
+        }
+
+        // Initialize when modal is fully opened to avoid DOM issues, or just on DOM ready.
+        document.addEventListener('DOMContentLoaded', function() {
+            initPosFilters();
+        });
     </script>
 
     <!-- MODAL QUÉT QR TRA CỨU HÓA ĐƠN (POS) -->

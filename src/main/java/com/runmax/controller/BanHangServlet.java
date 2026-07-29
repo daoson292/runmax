@@ -135,6 +135,7 @@ public class BanHangServlet extends HttpServlet {
         switch (action) {
             case "tao-don", "taoHoaDon"       -> handleTaoDon(req, resp, nv);
             case "them-sp", "themSanPham"     -> handleThemSP(req, resp);
+            case "them-nhieu-sp"              -> handleThemNhieuSP(req, resp);
             case "cap-nhat-sl", "capNhatSoLuong" -> handleCapNhatSL(req, resp);
             case "xoa-sp", "xoaSanPham"       -> handleXoaSP(req, resp);
             case "ap-voucher", "apVoucher"    -> handleApVoucher(req, resp);
@@ -177,6 +178,26 @@ public class BanHangServlet extends HttpServlet {
         if (!ok) {
             resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId + "&error=sl-vuot-ton");
             return;
+        }
+        resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId);
+    }
+
+    private void handleThemNhieuSP(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String hdIdStr = req.getParameter("hdId");
+        if (hdIdStr == null || hdIdStr.isEmpty()) hdIdStr = req.getParameter("hoaDonId");
+        Long hdId = Long.parseLong(hdIdStr);
+
+        String[] spctIdsStr = req.getParameterValues("spctIds[]");
+        String[] soLuongsStr = req.getParameterValues("soLuongs[]");
+
+        if (spctIdsStr != null && soLuongsStr != null && spctIdsStr.length == soLuongsStr.length) {
+            java.util.List<Long> spctIds = new java.util.ArrayList<>();
+            java.util.List<Integer> soLuongs = new java.util.ArrayList<>();
+            for (int i = 0; i < spctIdsStr.length; i++) {
+                spctIds.add(Long.parseLong(spctIdsStr[i]));
+                soLuongs.add(Integer.parseInt(soLuongsStr[i]));
+            }
+            hdService.themNhieuSanPham(hdId, spctIds, soLuongs);
         }
         resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId);
     }

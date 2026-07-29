@@ -97,6 +97,17 @@ public class HoaDonService {
         return hdRepo.save(hd);
     }
 
+    /** Thêm nhiều sản phẩm cùng lúc từ giỏ hàng nháp */
+    public boolean themNhieuSanPham(Long hoaDonId, java.util.List<Long> spctIds, java.util.List<Integer> soLuongs) {
+        if (spctIds == null || soLuongs == null || spctIds.size() != soLuongs.size()) return false;
+        boolean anySuccess = false;
+        for (int i = 0; i < spctIds.size(); i++) {
+            boolean ok = themSanPham(hoaDonId, spctIds.get(i), soLuongs.get(i));
+            if (ok) anySuccess = true;
+        }
+        return anySuccess;
+    }
+
     /** Thêm sản phẩm vào giỏ (hóa đơn) */
     public boolean themSanPham(Long hoaDonId, Long spctId, int soLuong) {
         HoaDon hd = hdRepo.findById(hoaDonId);
