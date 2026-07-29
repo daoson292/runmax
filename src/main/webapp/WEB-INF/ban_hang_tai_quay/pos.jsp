@@ -257,40 +257,27 @@
                                         </div>
 
                                         <!-- Chọn và Áp Dụng Phiếu Giảm Giá -->
-                                        <div class="mb-3">
+                                        <div class="mb-3" id="posVoucherContainer">
                                             <label class="form-label small fw-semibold text-muted">Mã Giảm Giá / Voucher</label>
                                             <input type="hidden" id="selectPgg" value="${currentHd.phieuGiamGia != null ? currentHd.phieuGiamGia.id : ''}">
                                             
                                             <c:choose>
                                                 <c:when test="${currentHd.phieuGiamGia != null}">
-                                                    <div class="voucher-ticket active mb-0" style="cursor: default;">
-                                                        <style>
-                                                            /* Overrides for mini ticket on white background */
-                                                            .mini-ticket-bg::before, .mini-ticket-bg::after { background: #fff !important; }
-                                                        </style>
-                                                        <div class="voucher-ticket mini-ticket-bg w-100 m-0" style="height: 65px; border: 1px solid #198754; box-shadow: 0 0 0 2px rgba(25,135,84,0.1);">
-                                                            <div class="voucher-left bg-success bg-opacity-10 text-success d-flex flex-column justify-content-center align-items-center border-end border-success border-opacity-25" style="width: 30%;">
-                                                                <span class="fs-5 fw-bold">
-                                                                    <c:choose>
-                                                                        <c:when test="${currentHd.phieuGiamGia.loaiGiam == 1}">
-                                                                            <fmt:formatNumber value="${currentHd.phieuGiamGia.giaTrigiam}" type="number" maxFractionDigits="0"/>%
-                                                                        </c:when>
-                                                                        <c:otherwise>
-                                                                            <fmt:formatNumber value="${currentHd.phieuGiamGia.giaTrigiam / 1000}" type="number" maxFractionDigits="0"/>K
-                                                                        </c:otherwise>
-                                                                    </c:choose>
+                                                    <div class="mini-ticket-tag w-100">
+                                                        <div class="d-flex align-items-center flex-grow-1">
+                                                            <i class="bi bi-ticket-perforated text-primary fs-5 me-3"></i>
+                                                            <div>
+                                                                <div class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">
+                                                                    ${currentHd.phieuGiamGia.tenPhieu != null ? currentHd.phieuGiamGia.tenPhieu : currentHd.phieuGiamGia.maPhieu}
+                                                                </div>
+                                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.75rem;">
+                                                                    Mã: ${currentHd.phieuGiamGia.maPhieu}
                                                                 </span>
                                                             </div>
-                                                            <div class="voucher-right flex-grow-1 p-2 d-flex flex-column justify-content-center position-relative">
-                                                                <div class="fw-bold text-success mb-1" style="font-size: 0.9rem;">
-                                                                    <i class="bi bi-ticket-perforated-fill me-1"></i>${currentHd.phieuGiamGia.maPhieu}
-                                                                </div>
-                                                                <div class="small text-muted" style="font-size: 0.75rem;">
-                                                                    Đơn từ <fmt:formatNumber value="${currentHd.phieuGiamGia.dieuKienGiam}" type="number"/>đ
-                                                                </div>
-                                                                <button type="button" class="btn-close btn-sm position-absolute top-50 end-0 translate-middle-y me-2" aria-label="Close" title="Gỡ Voucher" onclick="document.getElementById('selectPgg').value=''; apDungVoucherPOS(${currentHd.id});"></button>
-                                                            </div>
                                                         </div>
+                                                        <button type="button" class="btn text-muted p-1 border-0 ms-2" aria-label="Close" title="Gỡ Voucher" onclick="apDungVoucherPOS(${currentHd.id}, true);">
+                                                            <i class="bi bi-trash3"></i>
+                                                        </button>
                                                     </div>
                                                 </c:when>
                                                 <c:otherwise>
@@ -303,22 +290,23 @@
 
                                         <!-- Tính toán tổng tiền -->
                                         <div class="bg-light p-3 rounded-3 mb-4">
+                                            <input type="hidden" id="currentTienHang" value="${currentHd.tienHang != null ? currentHd.tienHang : 0}">
                                             <div class="d-flex justify-content-between mb-2">
                                                 <span class="text-muted">Tổng tiền hàng:</span>
-                                                <span class="fw-semibold">
+                                                <span class="fw-semibold" id="posTienHang">
                                                     <fmt:formatNumber value="${currentHd.tienHang != null ? currentHd.tienHang : 0}" type="number"/> đ
                                                 </span>
                                             </div>
                                             <div class="d-flex justify-content-between mb-2">
                                                 <span class="text-muted">Giảm giá voucher:</span>
-                                                <span class="text-success fw-semibold">
+                                                <span class="text-success fw-semibold" id="posTienGiam">
                                                     - <fmt:formatNumber value="${currentHd.soTienGiam != null ? currentHd.soTienGiam : 0}" type="number"/> đ
                                                 </span>
                                             </div>
                                             <hr class="my-2">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <span class="fw-bold text-dark">KHÁCH PHẢI TRẢ:</span>
-                                                <span class="fw-bold text-danger fs-5">
+                                                <span class="fw-bold text-danger fs-5" id="posTongTien">
                                                     <fmt:formatNumber value="${currentHd.tongTien != null ? currentHd.tongTien : 0}" type="number"/> đ
                                                 </span>
                                             </div>
@@ -435,64 +423,106 @@
             return false;
         }
 
-        function apDungVoucherPOS(hdId) {
+        function formatCurrency(number) {
+            return new Intl.NumberFormat('vi-VN').format(number) + ' đ';
+        }
+
+        function apDungVoucherPOS(hdId, isRemove = false) {
             if (!hdId) {
                 showBootstrapAlert('Vui lòng chọn hoặc tạo hóa đơn đang chờ trước khi áp dụng voucher!', 'warning');
                 return;
             }
-            const chiTietCount = ${empty chiTiets ? 0 : chiTiets.size()};
+            
             const selectPgg = document.getElementById('selectPgg');
-            if (chiTietCount <= 0 && selectPgg && selectPgg.value !== '') {
-                showBootstrapAlert('Đơn hàng chưa có sản phẩm nào để áp dụng giảm giá!', 'warning');
-                return;
+            if (isRemove) {
+                if (selectPgg) selectPgg.value = '';
+            } else {
+                const chiTietCount = ${empty chiTiets ? 0 : chiTiets.size()};
+                if (chiTietCount <= 0 && selectPgg && selectPgg.value !== '') {
+                    showBootstrapAlert('Đơn hàng chưa có sản phẩm nào để áp dụng giảm giá!', 'warning');
+                    return;
+                }
             }
-            const sdtInput = document.getElementById('posInputSdt');
-            const tenKhInput = document.getElementById('posInputTenKh');
-            if (sdtInput && sdtInput.value.trim() !== '' && !/^[0-9]{10,11}$/.test(sdtInput.value.trim())) {
-                showBootstrapAlert('Số điện thoại phải từ 10 đến 11 chữ số hợp lệ!', 'warning');
-                if (sdtInput.focus) sdtInput.focus();
-                return;
-            }
+
             const formData = new URLSearchParams();
-            formData.append('action', 'ap-voucher');
             formData.append('hdId', hdId);
             formData.append('phieuGiamGiaId', selectPgg ? selectPgg.value : '');
+            formData.append('action', isRemove ? 'xoa-voucher-ajax' : 'ap-voucher-ajax');
             
-            // Send AJAX request
-            fetch('${pageContext.request.contextPath}/ban-hang', {
+            const actionUrl = '${pageContext.request.contextPath}/ban-hang';
+
+            // Send AJAX request via API
+            fetch(actionUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData.toString()
             })
-            .then(res => res.text().then(html => ({ url: res.url, html })))
-            .then(({url, html}) => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newPaymentBlock = doc.getElementById('pos-payment-block');
+            .then(res => res.json())
+            .then(resJson => {
+                if (resJson.status === 'error') {
+                    showBootstrapAlert(resJson.message || 'Có lỗi xảy ra khi xử lý voucher!', 'danger');
+                    // Reset value if fail
+                    if (isRemove === false && selectPgg) selectPgg.value = '';
+                    return;
+                }
+
+                // Cập nhật lại số tiền
+                const data = resJson.data;
+                if (data) {
+                    const tienHangEl = document.getElementById('posTienHang');
+                    const tienGiamEl = document.getElementById('posTienGiam');
+                    const tongTienEl = document.getElementById('posTongTien');
+                    
+                    if (tienHangEl) tienHangEl.innerText = formatCurrency(data.tienHang || 0);
+                    if (tienGiamEl) tienGiamEl.innerText = '- ' + formatCurrency(data.soTienGiam || 0);
+                    if (tongTienEl) tongTienEl.innerText = formatCurrency(data.tongTien || 0);
+                    
+                    // Render lại container voucher
+                    const container = document.getElementById('posVoucherContainer');
+                    if (container) {
+                        let html = '';
+                        html += '<label class="form-label small fw-semibold text-muted">Mã Giảm Giá / Voucher</label>';
+                        html += '<input type="hidden" id="selectPgg" value="' + (data.pggId ? data.pggId : '') + '">';
+                        
+                        if (data.pggId && isRemove === false) {
+                            let giamText = data.pggLoaiGiam === 1 ? formatCurrency(data.pggGiaTri).replace(' đ', '%') : formatCurrency(data.pggGiaTri / 1000).replace(' đ', 'K');
+                            
+                            html += `
+                                <div class="mini-ticket-tag w-100">
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <i class="bi bi-ticket-perforated text-primary fs-5 me-3"></i>
+                                        <div>
+                                            <div class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">
+                                                \${data.pggTen ? data.pggTen : data.pggMa}
+                                            </div>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.75rem;">
+                                                Mã: \${data.pggMa}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn text-muted p-1 border-0 ms-2" aria-label="Close" title="Gỡ Voucher" onclick="apDungVoucherPOS(\${hdId}, true);">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            html += `
+                                <button type="button" class="btn btn-outline-danger w-100 fw-bold d-flex align-items-center justify-content-center gap-2" style="border-style: dashed; padding: 10px;" onclick="new bootstrap.Modal(document.getElementById('modalVoucherPicker')).show()">
+                                    <i class="bi bi-ticket-perforated"></i> Chọn Mã Giảm Giá
+                                </button>
+                            `;
+                        }
+                        container.innerHTML = html;
+                    }
+                }
                 
-                if (newPaymentBlock) {
-                    document.getElementById('pos-payment-block').innerHTML = newPaymentBlock.innerHTML;
-                    
-                    // Kiểm tra URL xem có params lỗi không
-                    const urlParams = new URL(url).searchParams;
-                    const error = urlParams.get('error');
-                    if (error) {
-                        let errorMsg = 'Có lỗi xảy ra khi áp dụng mã!';
-                        if (error === 'khong-du-dieu-kien') errorMsg = 'Hóa đơn không đủ điều kiện để áp dụng mã giảm giá này!';
-                        else if (error === 'het-so-luong') errorMsg = 'Mã giảm giá đã hết lượt sử dụng!';
-                        showBootstrapAlert(errorMsg, 'danger');
-                    } else if (selectPgg && selectPgg.value !== '') {
-                        showBootstrapAlert('Áp dụng mã giảm giá thành công!', 'success');
-                    } else {
-                        showBootstrapAlert('Đã gỡ mã giảm giá!', 'info');
-                    }
-                    
-                    // Ẩn modal nếu đang mở
-                    const modalEl = document.getElementById('modalVoucherPicker');
-                    if (modalEl) {
-                        const modal = bootstrap.Modal.getInstance(modalEl);
-                        if (modal) modal.hide();
-                    }
+                showBootstrapAlert(resJson.message, resJson.status === 'success' ? 'success' : 'danger');
+
+                // Ẩn modal nếu đang mở
+                const modalEl = document.getElementById('modalVoucherPicker');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
                 }
             })
             .catch(err => {
@@ -1503,38 +1533,60 @@
             border-color: #198754;
             box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.25);
         }
-        .voucher-ticket::before,
-        .voucher-ticket::after {
-            content: '';
-            position: absolute;
-            width: 24px; height: 24px;
-            background: #f8f9fa; /* modal body bg */
-            border-radius: 50%;
-            top: 50%;
-            transform: translateY(-50%);
-            border: 1px solid #dee2e6;
-            z-index: 1;
+        /* --- NEW MINIMALIST VOUCHER CSS --- */
+        .voucher-ticket {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
         }
-        .voucher-ticket::before { left: -13px; border-left-color: transparent; border-top-color: transparent; border-bottom-color: transparent; transform: translateY(-50%) rotate(45deg); }
-        .voucher-ticket::after  { right: -13px; border-right-color: transparent; border-top-color: transparent; border-bottom-color: transparent; transform: translateY(-50%) rotate(-45deg); }
-        
+        .voucher-ticket:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .voucher-ticket.active {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .voucher-ticket.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f8fafc;
+        }
         .voucher-left {
-            background: #dc3545;
-            color: #fff;
-            width: 35%;
+            width: 30%;
+            padding: 16px 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 15px 10px;
-            border-right: 2px dashed rgba(255,255,255,0.5);
+            border-right: 1px dashed #cbd5e1;
         }
         .voucher-right {
-            width: 65%;
-            padding: 15px;
+            width: 70%;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+        }
+        
+        /* --- NEW MINIMALIST MINI TICKET (TAG) --- */
+        .mini-ticket-tag {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .mini-ticket-tag:hover {
+            background: #f1f5f9;
         }
     </style>
 
@@ -1560,10 +1612,11 @@
                                     <c:set var="duDieuKien" value="${tienHang >= pgg.dieuKienGiam}" />
                                     <c:set var="isDangApDung" value="${currentHd.phieuGiamGia != null && currentHd.phieuGiamGia.id == pgg.id}" />
                                     
-                                    <div class="voucher-ticket ${!duDieuKien ? 'disabled' : ''} ${isDangApDung ? 'active' : ''}" 
-                                         onclick="if(${duDieuKien}) { document.getElementById('selectPgg').value = '${pgg.id}'; apDungVoucherPOS(${currentHd.id}); }">
+                                    <div class="voucher-ticket ${isDangApDung ? 'active' : ''}" 
+                                         data-min-order="${pgg.dieuKienGiam}"
+                                         onclick="document.getElementById('selectPgg').value = '${pgg.id}'; apDungVoucherPOS(${currentHd.id});">
                                         <div class="voucher-left">
-                                            <span class="fs-4 fw-bold">
+                                            <span class="fs-3 fw-bold text-primary">
                                                 <c:choose>
                                                     <c:when test="${pgg.loaiGiam == 1}">
                                                         <fmt:formatNumber value="${pgg.giaTrigiam}" type="number" maxFractionDigits="0"/>%
@@ -1573,24 +1626,24 @@
                                                     </c:otherwise>
                                                 </c:choose>
                                             </span>
-                                            <span class="small opacity-75">Giảm</span>
                                         </div>
-                                        <div class="voucher-right position-relative">
-                                            <div class="fw-bold text-dark mb-1">${pgg.maPhieu}</div>
+                                        <div class="voucher-right">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <div class="fw-bold text-dark">${pgg.tenPhieu != null ? pgg.tenPhieu : pgg.maPhieu}</div>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">${pgg.maPhieu}</span>
+                                            </div>
                                             <div class="small text-muted mb-1">Đơn tối thiểu <fmt:formatNumber value="${pgg.dieuKienGiam}" type="number"/>đ</div>
                                             <c:if test="${pgg.giamToiDa != null && pgg.giamToiDa > 0}">
-                                                <div class="small text-danger fw-semibold mb-2">Giảm tối đa: <fmt:formatNumber value="${pgg.giamToiDa}" type="number"/>đ</div>
+                                                <div class="small text-muted mb-2">Giảm tối đa: <fmt:formatNumber value="${pgg.giamToiDa}" type="number"/>đ</div>
                                             </c:if>
                                             <c:if test="${pgg.giamToiDa == null || pgg.giamToiDa == 0}">
                                                 <div class="mb-2"></div>
                                             </c:if>
                                             <div class="d-flex justify-content-between align-items-center mt-auto">
-                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Còn: ${pgg.soLuong}</span>
-                                                <c:if test="${!duDieuKien}">
-                                                    <span class="small text-danger fw-semibold" style="font-size: 0.7rem;">Chưa đủ ĐK</span>
-                                                </c:if>
+                                                <span class="text-muted" style="font-size: 0.75rem;">Còn: ${pgg.soLuong} lượt</span>
+                                                <span class="small text-danger fw-semibold thieu-dieu-kien-msg" style="font-size: 0.75rem; display: none;">Chưa đủ ĐK</span>
                                                 <c:if test="${isDangApDung}">
-                                                    <span class="small text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Đang áp dụng</span>
+                                                    <span class="small text-primary fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Đang áp dụng</span>
                                                 </c:if>
                                             </div>
                                         </div>
@@ -1603,6 +1656,38 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const voucherModal = document.getElementById('modalVoucherPicker');
+            if (voucherModal) {
+                voucherModal.addEventListener('show.bs.modal', function () {
+                    const currentTienHangInput = document.getElementById('currentTienHang');
+                    let currentTienHang = 0;
+                    if (currentTienHangInput && currentTienHangInput.value) {
+                        currentTienHang = parseFloat(currentTienHangInput.value);
+                    }
+                    
+                    const tickets = voucherModal.querySelectorAll('.voucher-ticket');
+                    tickets.forEach(ticket => {
+                        const minOrder = parseFloat(ticket.getAttribute('data-min-order') || '0');
+                        const thieuDkMsg = ticket.querySelector('.thieu-dieu-kien-msg');
+                        if (currentTienHang < minOrder) {
+                            ticket.style.opacity = '0.5';
+                            ticket.style.pointerEvents = 'none';
+                            ticket.classList.add('disabled');
+                            if (thieuDkMsg) thieuDkMsg.style.display = 'block';
+                        } else {
+                            ticket.style.opacity = '1';
+                            ticket.style.pointerEvents = 'auto';
+                            ticket.classList.remove('disabled');
+                            if (thieuDkMsg) thieuDkMsg.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 
     <!-- MODAL THANH TOÁN VIETQR -->
     <div class="modal fade" id="modalVietQR" tabindex="-1" aria-hidden="true">

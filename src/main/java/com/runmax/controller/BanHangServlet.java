@@ -12,6 +12,9 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 // POS Controller / Servlet (Xử lý bán hàng tại quầy).
 // Keyword search GG: "Jakarta HttpServlet doGet doPost action parameter", "Session Management Servlet"
 // Nhiệm vụ: Xử lý tạo đơn chờ, thêm giày vào giỏ POS, áp mã voucher giảm giá, và thanh toán trừ kho tự động.
@@ -139,6 +142,8 @@ public class BanHangServlet extends HttpServlet {
             case "cap-nhat-sl", "capNhatSoLuong" -> handleCapNhatSL(req, resp);
             case "xoa-sp", "xoaSanPham"       -> handleXoaSP(req, resp);
             case "ap-voucher", "apVoucher"    -> handleApVoucher(req, resp);
+            case "ap-voucher-ajax", "apVoucherAjax" -> handleApVoucherAjax(req, resp);
+            case "xoa-voucher-ajax", "xoaVoucherAjax" -> handleXoaVoucherAjax(req, resp);
             case "thanh-toan", "thanhToan"    -> handleThanhToan(req, resp, nv);
             case "huy-don", "huyDon"          -> handleHuyDon(req, resp, nv);
             case "xoa-don", "xoaHoaDon"       -> handleXoaDon(req, resp);
@@ -259,6 +264,100 @@ public class BanHangServlet extends HttpServlet {
             return;
         }
         resp.sendRedirect(req.getContextPath() + "/ban-hang?hdId=" + hdId);
+    }
+
+    private void handleApVoucherAjax(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        JsonObject responseJson = new JsonObject();
+
+        try {
+            Long hdId = Long.parseLong(req.getParameter("hdId"));
+            String pggIdStr = req.getParameter("phieuGiamGiaId");
+            Long pggId = (pggIdStr != null && !pggIdStr.trim().isEmpty()) ? Long.parseLong(pggIdStr) : null;
+
+            if (pggId == null) {
+                responseJson.addProperty("status", "error");
+                responseJson.addProperty("message", "Mã giảm giá không hợp lệ!");
+                resp.getWriter().write(new Gson().toJson(responseJson));
+                return;
+            }
+
+            List<HoaDonChiTiet> chiTiets = hdService.findChiTiet(hdId);
+            if (chiTiets.isEmpty()) {
+                responseJson.addProperty("status", "error");
+                responseJson.addProperty("message", "Đơn hàng chưa có sản phẩm nào để áp dụng giảm giá!");
+                resp.getWriter().write(new Gson().toJson(responseJson));
+                return;
+            }
+
+            boolean ok = hdService.apDungPhieuGiamGia(hdId, pggId);
+            if (!ok) {
+                responseJson.addProperty("status", "error");
+                responseJson.addProperty("message", "Hóa đơn không đủ điều kiện hoặc voucher đã hết lượt/hết hạn!");
+                resp.getWriter().write(new Gson().toJson(responseJson));
+                return;
+            }
+
+            HoaDon hd = hdService.findById(hdId);
+            responseJson.addProperty("status", "success");
+            responseJson.addProperty("message", "Áp dụng voucher thành công!");
+            
+            JsonObject data = new JsonObject();
+            data.addProperty("tienHang", hd.getTienHang());
+            data.addProperty("soTienGiam", hd.getSoTienGiam());
+            data.addProperty("tongTien", hd.getTongTien());
+            
+            if (hd.getPhieuGiamGia() != null) {
+                data.addProperty("pggId", hd.getPhieuGiamGia().getId());
+                data.addProperty("pggMa", hd.getPhieuGiamGia().getMaPhieu());
+                data.addProperty("pggLoaiGiam", hd.getPhieuGiamGia().getLoaiGiam());
+                data.addProperty("pggGiaTri", hd.getPhieuGiamGia().getGiaTrigiam());
+                data.addProperty("pggDieuKien", hd.getPhieuGiamGia().getDieuKienGiam());
+                if (hd.getPhieuGiamGia().getGiamToiDa() != null) {
+                    data.addProperty("pggGiamToiDa", hd.getPhieuGiamGia().getGiamToiDa());
+                }
+            }
+            
+            responseJson.add("data", data);
+            resp.getWriter().write(new Gson().toJson(responseJson));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            responseJson.addProperty("status", "error");
+            responseJson.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
+            resp.getWriter().write(new Gson().toJson(responseJson));
+        }
+    }
+
+    private void handleXoaVoucherAjax(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        JsonObject responseJson = new JsonObject();
+        
+        try {
+            Long hdId = Long.parseLong(req.getParameter("hdId"));
+            
+            hdService.apDungPhieuGiamGia(hdId, -1L); 
+            
+            HoaDon hd = hdService.findById(hdId);
+            responseJson.addProperty("status", "success");
+            responseJson.addProperty("message", "Đã gỡ mã giảm giá!");
+            
+            JsonObject data = new JsonObject();
+            data.addProperty("tienHang", hd.getTienHang());
+            data.addProperty("soTienGiam", hd.getSoTienGiam());
+            data.addProperty("tongTien", hd.getTongTien());
+            
+            responseJson.add("data", data);
+            resp.getWriter().write(new Gson().toJson(responseJson));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            responseJson.addProperty("status", "error");
+            responseJson.addProperty("message", "Lỗi khi gỡ mã: " + e.getMessage());
+            resp.getWriter().write(new Gson().toJson(responseJson));
+        }
     }
 
     private void showThanhToan(HttpServletRequest req, HttpServletResponse resp, NhanVien nv)

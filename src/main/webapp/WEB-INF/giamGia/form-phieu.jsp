@@ -180,6 +180,98 @@
             bottom: 0;
             z-index: 10;
         }
+        /* --- TICKET PREVIEW DESIGN --- */
+        .ticket-preview-wrapper {
+            display: flex;
+            width: 100%;
+            height: 120px;
+            background: #fff;
+            border-radius: 12px;
+            mask-image: radial-gradient(circle at 35% 0px, transparent 8px, black 9px),
+                        radial-gradient(circle at 35% 120px, transparent 8px, black 9px);
+            -webkit-mask-image: radial-gradient(circle at 35% 0px, transparent 8px, black 9px),
+                                radial-gradient(circle at 35% 120px, transparent 8px, black 9px);
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #e2e8f0;
+        }
+
+        .ticket-left {
+            width: 35%;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .ticket-value-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ticket-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .ticket-label-small {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .ticket-divider {
+            position: absolute;
+            left: 35%;
+            top: 12px;
+            bottom: 12px;
+            width: 0;
+            border-left: 2px dashed rgba(0, 0, 0, 0.1);
+            transform: translateX(-50%);
+        }
+
+        .ticket-right {
+            width: 65%;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .ticket-code {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #ff416c;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        .ticket-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            white-space: normal;
+        }
+
+        .ticket-condition {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .ticket-date {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -400,38 +492,38 @@
                             <!-- Gom toàn bộ vào 1 khung ghim (Sticky Wrapper) để trượt xuống cùng nhau không bị đè lên -->
                             <div class="sticky-right-sidebar">
                                 <!-- Preview Card -->
-                                <div class="preview-card mb-4">
-                                    <div class="preview-meta mb-2">Xem trước phiếu giảm giá</div>
-                                    <div class="preview-code mb-1" id="previewCode">
-                                        <c:choose>
-                                            <c:when test="${isEdit}">${phieu.maPhieu}</c:when>
-                                            <c:otherwise>RUNMAX - - -</c:otherwise>
-                                        </c:choose>
-                                    </div>
-                                    <div class="preview-value mb-2" id="previewValue">
-                                        <c:choose>
-                                            <c:when test="${phieu != null && phieu.giaTrigiam != null}">
-                                                <fmt:formatNumber value="${phieu.giaTrigiam}" maxFractionDigits="0"/>
-                                                ${phieu.loaiGiam == 2 ? '₫' : '%'}
-                                            </c:when>
-                                            <c:otherwise>0%</c:otherwise>
-                                        </c:choose>
-                                    </div>
-                                    <div class="preview-meta" id="previewName">
-                                        ${phieu != null ? phieu.tenPhieu : 'Tên chương trình sẽ hiển thị ở đây'}
-                                    </div>
-                                    <hr style="border-color: rgba(255,255,255,.25); margin: 1rem 0;">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="preview-meta">Từ ngày</div>
-                                            <div style="font-size:.9rem;font-weight:600;" id="previewFrom">
-                                                ${phieu != null && phieu.ngayBatDau != null ? phieu.ngayBatDau.toLocalDate() : '---'}
+                                <div class="mb-4">
+                                    <div class="fw-bold text-dark small mb-3"><i class="bi bi-eye-fill text-primary me-2"></i>Xem trước thẻ Voucher</div>
+                                    
+                                    <!-- CSS Ticket Design -->
+                                    <div class="ticket-preview-wrapper shadow-sm">
+                                        <!-- Nửa trái: Giá trị giảm -->
+                                        <div class="ticket-left">
+                                            <div class="ticket-value-box">
+                                                <span id="previewValue" class="ticket-value">0%</span>
+                                                <span class="ticket-label-small">GIẢM</span>
                                             </div>
                                         </div>
-                                        <div class="text-end">
-                                            <div class="preview-meta">Đến ngày</div>
-                                            <div style="font-size:.9rem;font-weight:600;" id="previewTo">
-                                                ${phieu != null && phieu.ngayKetThuc != null ? phieu.ngayKetThuc.toLocalDate() : '---'}
+                                        
+                                        <!-- Đường đứt đoạn chia vé -->
+                                        <div class="ticket-divider"></div>
+                                        
+                                        <!-- Nửa phải: Thông tin -->
+                                        <div class="ticket-right">
+                                            <div class="ticket-code" id="previewCode">
+                                                <c:choose>
+                                                    <c:when test="${isEdit}">${phieu.maPhieu}</c:when>
+                                                    <c:otherwise>RUNMAX - AUTO</c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                            <div class="ticket-name text-truncate" id="previewName">
+                                                ${phieu != null ? phieu.tenPhieu : 'Tên chương trình hiển thị ở đây'}
+                                            </div>
+                                            <div class="ticket-condition" id="previewCondition">
+                                                Đơn tối thiểu: <fmt:formatNumber value="${phieu != null && phieu.dieuKienGiam != null ? phieu.dieuKienGiam : 0}" type="number"/> đ
+                                            </div>
+                                            <div class="ticket-date mt-auto d-flex justify-content-between">
+                                                <span>HSD: <span id="previewTo">${phieu != null && phieu.ngayKetThuc != null ? phieu.ngayKetThuc.toLocalDate() : '---'}</span></span>
                                             </div>
                                         </div>
                                     </div>
@@ -470,18 +562,57 @@
     <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
     <script>
         /* ─── Live Preview ─── */
-        function updatePreview() {
-            const name  = document.getElementById('inputTenPhieu')?.value || 'Tên chương trình...';
-            const val   = document.getElementById('inputGiaTriGiam')?.value || '0';
-            const loai  = document.querySelector('input[name="loaiGiam"]:checked')?.value || '1';
-            const from  = document.getElementById('inputBatDau')?.value || '---';
-            const to    = document.getElementById('inputKetThuc')?.value || '---';
+        const moneyFormatter = new Intl.NumberFormat('vi-VN');
 
-            document.getElementById('previewName').textContent = name;
-            document.getElementById('previewValue').textContent = val + (loai === '1' ? '%' : '₫');
-            document.getElementById('previewFrom').textContent = from || '---';
-            document.getElementById('previewTo').textContent   = to   || '---';
+        function updatePreview() {
+            const tenPhieu = document.getElementById('inputTenPhieu')?.value.trim() || '';
+            const giaTri = document.getElementById('inputGiaTriGiam')?.value || '';
+            const dieuKien = document.getElementById('inputDieuKienGiam')?.value || '';
+            const ngayKetThuc = document.getElementById('inputKetThuc')?.value || '';
+            
+            const loaiGiam1 = document.getElementById('loaiGiam1'); 
+            const isPhanTram = loaiGiam1 && loaiGiam1.checked;
+
+            document.getElementById('previewName').innerText = tenPhieu !== '' ? tenPhieu : 'Tên chương trình hiển thị ở đây';
+            
+            const previewValueEl = document.getElementById('previewValue');
+            if (giaTri === '' || isNaN(giaTri)) {
+                previewValueEl.innerText = isPhanTram ? '0%' : '0đ';
+            } else {
+                if (isPhanTram) {
+                    previewValueEl.innerText = giaTri + '%';
+                } else {
+                    const numGiaTri = parseInt(giaTri);
+                    if (numGiaTri >= 1000 && numGiaTri % 1000 === 0) {
+                        previewValueEl.innerText = moneyFormatter.format(numGiaTri / 1000) + 'K';
+                    } else {
+                        previewValueEl.innerText = moneyFormatter.format(numGiaTri) + 'đ';
+                    }
+                }
+            }
+
+            const previewConditionEl = document.getElementById('previewCondition');
+            if (dieuKien === '' || isNaN(dieuKien) || parseInt(dieuKien) === 0) {
+                previewConditionEl.innerText = 'Áp dụng cho mọi đơn hàng';
+            } else {
+                previewConditionEl.innerText = 'Đơn tối thiểu: ' + moneyFormatter.format(parseInt(dieuKien)) + 'đ';
+            }
+
+            document.getElementById('previewTo').innerText = ngayKetThuc ? formatDateToVn(ngayKetThuc) : '---';
         }
+
+        function formatDateToVn(dateString) {
+            if(!dateString) return '---';
+            const parts = dateString.split('-');
+            if(parts.length === 3) {
+                return parts[2] + '/' + parts[1] + '/' + parts[0];
+            }
+            return dateString;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePreview();
+        });
 
         /* ─── Loại giảm giá change ─── */
         function handleLoaiGiamChange() {
