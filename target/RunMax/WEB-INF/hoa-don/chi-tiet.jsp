@@ -14,28 +14,36 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/style.css">
     <style>
         @media print {
-            body * {
-                visibility: hidden !important;
+            /* Ẩn hoàn toàn mọi thứ cấp cao nhất để giải phóng không gian (sửa lỗi sinh page trắng) */
+            body > * {
+                display: none !important;
             }
-            #modalThermalReceipt, #modalThermalReceipt * {
-                visibility: visible !important;
-            }
-            #modalThermalReceipt {
+            
+            /* Chỉ hiển thị duy nhất modal chứa hóa đơn */
+            body > #modalThermalReceipt {
+                display: block !important;
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
                 width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                opacity: 1 !important;
             }
+
+            /* Ẩn phần đầu và đuôi của modal */
             #modalThermalReceipt .modal-header,
             #modalThermalReceipt .modal-footer,
             #modalThermalReceipt .btn-close {
                 display: none !important;
             }
+
+            /* Loại bỏ mọi lề, viền của modal để nó chiếm trọn trang in */
             #modalThermalReceipt .modal-dialog,
             #modalThermalReceipt .modal-content,
             #modalThermalReceipt .modal-body {
+                display: block !important;
+                position: static !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 border: none !important;
@@ -45,7 +53,10 @@
                 max-width: 100% !important;
                 transform: none !important;
             }
+
+            /* Định dạng lại chính cái khung hóa đơn */
             #thermalReceiptContainer {
+                display: block !important;
                 margin: 0 auto !important;
                 padding: 0 !important;
                 border: none !important;
@@ -53,7 +64,10 @@
                 width: 100% !important;
                 max-width: 380px !important;
             }
+
+            /* Reset html và body để không bị thừa height sinh trang trắng */
             html, body {
+                display: block !important;
                 height: auto !important;
                 min-height: auto !important;
                 overflow: visible !important;
@@ -61,6 +75,7 @@
                 margin: 0 !important;
                 padding: 0 !important;
             }
+
             @page {
                 margin: 0; /* Loại bỏ margin mặc định của trình duyệt để máy in nhiệt in full */
             }
@@ -744,7 +759,7 @@
         <c:if test="${param.print == 'true'}">
         window.addEventListener('load', function() {
             openThermalReceiptModal();
-            setTimeout(function() { window.print(); }, 600);
+            // Lệnh window.print() tự động đã bị loại bỏ theo yêu cầu
         });
         </c:if>
 
@@ -1034,13 +1049,11 @@
                 });
             }
             
-            // Auto print if requested from POS
+            // Tự động mở modal (nhưng không gọi window.print() ngầm nữa)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('print') === 'true') {
-                // Wait slightly for QR code and fonts to render
-                setTimeout(() => {
-                    window.print();
-                }, 500);
+                // Chỉ mở modal nếu cần, việc in dành cho nút bấm
+                openThermalReceiptModal();
             }
         });
     </script>
