@@ -19,6 +19,27 @@
     <title>${pageTitle}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .quick-action-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+            background: #ffffff;
+        }
+        .quick-action-card:hover {
+            transform: translateY(-5px);
+            border-color: #fecaca;
+            box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.1), 0 4px 6px -2px rgba(220, 38, 38, 0.05) !important;
+        }
+        .quick-action-card:hover .icon-wrapper {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            transform: scale(1.1);
+        }
+        .icon-wrapper {
+            transition: all 0.3s ease;
+        }
+    </style>
 </head>
 <body>
     <div class="runmax-wrapper">
@@ -28,20 +49,102 @@
             <jsp:include page="/includes/header.jsp" />
 
             <div class="runmax-content">
-                <!-- Welcome Banner -->
-                <div class="runmax-card p-4 mb-4" style="background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); border-left: 5px solid #dc2626;">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <div>
-                            <h4 class="fw-bold text-dark mb-1">Hệ Thống Quản Lý & POS Giày Chạy Bộ Nam RunMax 🏃‍♂️</h4>
-                            <p class="text-muted mb-0">Chào mừng <b>${sessionScope.nhanVien != null ? sessionScope.nhanVien.hoTen : 'Quản trị viên'}</b>. Chuyên các dòng Marathon Pro, Ultra Boost & AeroGlide.</p>
+                <!-- Welcome Banner & Quick Actions -->
+                <div class="mb-4">
+                    <div class="runmax-card p-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); border-left: 5px solid #dc2626 !important;">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <h4 class="fw-bold text-dark mb-1">Hệ Thống Quản Lý & POS Giày Chạy Bộ Nam RunMax 🏃‍♂️</h4>
+                                <p class="text-muted mb-0">Chào mừng <b>${sessionScope.nhanVien != null ? sessionScope.nhanVien.hoTen : 'Quản trị viên'}</b>. Chuyên các dòng Marathon Pro, Ultra Boost & AeroGlide.</p>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <a href="${pageContext.request.contextPath}/ban-hang" class="btn btn-runmax">
-                                <i class="bi bi-cart-plus-fill me-1"></i> MỞ QUẦY POS BÁN HÀNG
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-lightning-charge-fill text-danger me-2"></i>Thao Tác Nhanh</h5>
+                    <div class="row g-3">
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="${pageContext.request.contextPath}/ban-hang" class="text-decoration-none">
+                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                        <i class="bi bi-cart-check-fill fs-4"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-0">Bán Hàng</h6>
+                                </div>
                             </a>
-                            <a href="${pageContext.request.contextPath}/san-pham-chi-tiet" class="btn btn-outline-danger fw-semibold">
-                                <i class="bi bi-boxes me-1"></i> Xem Kho Giày Chi Tiết
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="${pageContext.request.contextPath}/san-pham" class="text-decoration-none">
+                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                        <i class="bi bi-box-seam-fill fs-4"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-0">Sản Phẩm</h6>
+                                </div>
                             </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="${pageContext.request.contextPath}/hoa-don" class="text-decoration-none">
+                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                        <i class="bi bi-receipt-cutoff fs-4"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-0">Hóa Đơn</h6>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="${pageContext.request.contextPath}/khach-hang" class="text-decoration-none">
+                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                        <i class="bi bi-people-fill fs-4"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-0">Khách Hàng</h6>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <c:if test="${sessionScope.vaiTro == 'ROLE_ADMIN' || sessionScope.vaiTro == 'ADMIN'}">
+                                <a href="${pageContext.request.contextPath}/phieu-giam-gia" class="text-decoration-none">
+                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                            <i class="bi bi-ticket-perforated-fill fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-0">Khuyến Mãi</h6>
+                                    </div>
+                                </a>
+                            </c:if>
+                            <c:if test="${sessionScope.vaiTro != 'ROLE_ADMIN' && sessionScope.vaiTro != 'ADMIN'}">
+                                <a href="${pageContext.request.contextPath}/san-pham-chi-tiet" class="text-decoration-none">
+                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                            <i class="bi bi-upc-scan fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-0">Mã Vạch</h6>
+                                    </div>
+                                </a>
+                            </c:if>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <c:if test="${sessionScope.vaiTro == 'ROLE_ADMIN' || sessionScope.vaiTro == 'ADMIN'}">
+                                <a href="${pageContext.request.contextPath}/nhan-vien" class="text-decoration-none">
+                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                            <i class="bi bi-person-badge-fill fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-0">Nhân Viên</h6>
+                                    </div>
+                                </a>
+                            </c:if>
+                            <c:if test="${sessionScope.vaiTro != 'ROLE_ADMIN' && sessionScope.vaiTro != 'ADMIN'}">
+                                <a href="${pageContext.request.contextPath}/dashboard" class="text-decoration-none">
+                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
+                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                            <i class="bi bi-bar-chart-line-fill fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-0">Thống Kê</h6>
+                                    </div>
+                                </a>
+                            </c:if>
                         </div>
                     </div>
                 </div>

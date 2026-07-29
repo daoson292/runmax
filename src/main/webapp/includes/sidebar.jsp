@@ -184,16 +184,20 @@
             </a>
         </li>
 
-        <!-- 2. Thống kê -->
-        <li class="runmax-menu-item">
-            <a href="${pageContext.request.contextPath}/dashboard"
-               class="runmax-menu-link <%= "/dashboard".equals(currentPath) || "/thong-ke".equals(currentPath) ? "active" : "" %>">
-                <div class="runmax-menu-link-left">
-                    <i class="bi bi-bar-chart-line-fill main-icon"></i>
-                    <span>Thống kê</span>
-                </div>
-            </a>
-        </li>
+        <!-- 2. Thống kê (chỉ Admin) -->
+        <%-- Dùng JSTL để ẩn hoàn toàn menu Thống Kê với Nhân Viên --%>
+        <c:if test="${sessionScope.vaiTro == 'ROLE_ADMIN' || sessionScope.vaiTro == 'ADMIN'}">
+            <li class="runmax-menu-item">
+                <a href="${pageContext.request.contextPath}/dashboard"
+                   class="runmax-menu-link <%= "/dashboard".equals(currentPath) || "/thong-ke".equals(currentPath) ? "active" : "" %>">
+                    <div class="runmax-menu-link-left">
+                        <i class="bi bi-bar-chart-line-fill main-icon"></i>
+                        <span>Thống kê</span>
+                    </div>
+                </a>
+            </li>
+        </c:if>
+
 
         <!-- 3. Bán Hàng tại quầy -->
         <li class="runmax-menu-item">
@@ -208,7 +212,20 @@
 
         <li class="rm-divider"></li>
 
-        <!-- 4. SẢN PHẨM (Sổ ra: Sản phẩm & Biến thể) -->
+        <!-- 4. Hóa đơn -->
+        <li class="runmax-menu-item">
+            <a href="${pageContext.request.contextPath}/hoa-don"
+               class="runmax-menu-link <%= "/hoa-don".equals(currentPath) ? "active" : "" %>">
+                <div class="runmax-menu-link-left">
+                    <i class="bi bi-receipt-cutoff main-icon"></i>
+                    <span>Hóa đơn</span>
+                </div>
+            </a>
+        </li>
+
+        <li class="rm-divider"></li>
+
+        <!-- 5. SẢN PHẨM (Sổ ra: Sản phẩm & Biến thể) -->
         <li class="runmax-menu-item">
             <a class="runmax-menu-link <%= isProductActive ? "active" : "" %>"
                data-bs-toggle="collapse" href="#submenuSanPham"
@@ -289,17 +306,6 @@
         </c:if>
 
         <li class="rm-divider"></li>
-
-        <!-- 6. Hóa đơn -->
-        <li class="runmax-menu-item">
-            <a href="${pageContext.request.contextPath}/hoa-don"
-               class="runmax-menu-link <%= "/hoa-don".equals(currentPath) ? "active" : "" %>">
-                <div class="runmax-menu-link-left">
-                    <i class="bi bi-receipt-cutoff main-icon"></i>
-                    <span>Hóa đơn</span>
-                </div>
-            </a>
-        </li>
 
         <!-- 6. Phiếu giảm giá -->
         <c:if test="${sessionScope.vaiTro == 'ROLE_ADMIN' || sessionScope.vaiTro == 'ADMIN'}">

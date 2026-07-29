@@ -19,10 +19,10 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        // Nếu đã login, redirect về dashboard
+        // Nếu đã login, redirect về trang chủ
         HttpSession session = req.getSession(false);
         if (session != null && session.getAttribute("nhanVien") != null) {
-            resp.sendRedirect(req.getContextPath() + "/dashboard");
+            resp.sendRedirect(req.getContextPath() + "/trang-chu");
             return;
         }
         req.getRequestDispatcher("/login.jsp").forward(req, resp);
@@ -42,7 +42,16 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("vaiTro", nv.getVaiTro().getMaVaiTro());
             session.setAttribute("toastSuccess", "Đăng nhập thành công! Chào mừng " + nv.getHoTen() + " quay trở lại hệ thống RunMax POS.");
             session.setMaxInactiveInterval(60 * 60); // 1 giờ
-            resp.sendRedirect(req.getContextPath() + "/dashboard");
+
+            // Phân quyền redirect:
+            // - Admin: vào Trang Chủ (Quick Actions hub)
+            // - Nhân Viên: vào thẳng Bán Hàng tại Quầy
+            String vaiTro = nv.getVaiTro().getMaVaiTro();
+            if ("ROLE_ADMIN".equals(vaiTro) || "ADMIN".equals(vaiTro)) {
+                resp.sendRedirect(req.getContextPath() + "/trang-chu");
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/ban-hang");
+            }
         } else {
             req.setAttribute("error", "Tên đăng nhập hoặc mật khẩu không chính xác! Vui lòng kiểm tra lại tài khoản thành viên.");
             req.setAttribute("tenDangNhapCu", tenDangNhap);

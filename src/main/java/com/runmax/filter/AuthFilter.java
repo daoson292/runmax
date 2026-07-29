@@ -57,12 +57,14 @@ public class AuthFilter implements Filter {
         boolean isAdminOnlyUrl = path.startsWith("/nhan-vien")
                 || path.startsWith("/thuoc-tinh")
                 || path.equals("/san-pham")
-                || path.startsWith("/phieu-giam-gia");
+                || path.startsWith("/phieu-giam-gia")
+                || path.equals("/dashboard")       // Thống kê Dashboard
+                || path.startsWith("/thong-ke");   // Trang thống kê chi tiết
 
         if (isAdminOnlyUrl && !isAdmin) {
-            // Nhân viên cố tình truy cập trang của Admin -> Chặn và chuyển về Dashboard kèm thông báo
+            // Nhân viên cố tình truy cập trang của Admin -> Chặn và chuyển về Trang Chủ kèm thông báo
             session.setAttribute("error", "Bạn đang đăng nhập với quyền Nhân viên, không có quyền truy cập chức năng Quản trị!");
-            resp.sendRedirect(req.getContextPath() + "/dashboard");
+            resp.sendRedirect(req.getContextPath() + "/trang-chu");
             return;
         }
 
