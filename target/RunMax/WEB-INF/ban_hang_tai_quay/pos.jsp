@@ -237,9 +237,20 @@
                                         <input type="hidden" name="hdId" value="${currentHd.id}">
 
                                         <div class="mb-3 position-relative">
-                                            <label class="form-label small fw-semibold text-muted">Số điện thoại tích điểm</label>
-                                            <input type="text" name="sdt" id="posInputSdt" class="form-control"
-                                                   value="${currentHd.khachHang != null ? currentHd.khachHang.sdt : ''}" placeholder="Nhập SĐT khách hàng (10 số)..." maxlength="11" pattern="[0-9]{10,11}" autocomplete="off">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <label class="form-label small fw-semibold text-muted mb-0">Số điện thoại tích điểm</label>
+                                                <button type="button" id="btnResetKhachLe" class="btn btn-sm btn-outline-danger p-0 px-2 border-0" title="Hủy chọn, quay về Khách lẻ" onclick="resetToKhachLe()" ${empty currentHd.khachHang ? 'disabled' : ''}>
+                                                    <i class="bi bi-person-dash"></i> <span class="small fw-semibold">Khách lẻ</span>
+                                                </button>
+                                            </div>
+                                            <div class="position-relative">
+                                                <input type="text" name="sdt" id="posInputSdt" class="form-control"
+                                                       value="${currentHd.khachHang != null ? currentHd.khachHang.sdt : ''}" 
+                                                       data-original-sdt="${currentHd.khachHang != null ? currentHd.khachHang.sdt : ''}"
+                                                       placeholder="Nhập SĐT khách hàng (10 số)..." pattern="[0-9]*" autocomplete="off">
+                                                <span id="badgeKhachQuen" class="badge bg-success position-absolute" style="display: ${currentHd.khachHang != null ? 'block' : 'none'}; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;">Khách quen</span>
+                                            </div>
+                                            <div id="sdtFeedback" class="invalid-feedback">SĐT phải đúng 10 số</div>
                                             <ul class="dropdown-menu w-100 shadow-sm" id="sdtSuggestions" style="display: none; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1000;"></ul>
                                         </div>
 
@@ -313,11 +324,37 @@
                                         </div>
 
                                         <div class="mb-3">
-                                            <label class="form-label small fw-semibold text-muted">Phương thức thanh toán</label>
-                                            <select name="ptttId" class="form-select" onchange="handlePtttChange(this)">
-                                                <option value="1">Tiền mặt tại quầy</option>
-                                                <option value="2">Chuyển khoản QR Code</option>
-                                            </select>
+                                            <label class="form-label small fw-semibold text-muted mb-2">Phương thức thanh toán</label>
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <input type="radio" class="btn-check payment-method-radio" name="ptttId" id="ptttCash" value="1" onchange="handlePtttChange(this)" checked>
+                                                    <label class="btn btn-outline-secondary border-0 w-100 h-100 text-start p-2 payment-method-card" for="ptttCash">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="icon-circle bg-light text-secondary me-2 flex-shrink-0">
+                                                                <i class="bi bi-cash-stack fs-5"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="fw-bold" style="font-size: 0.85rem; line-height: 1.2;">Tiền mặt</div>
+                                                                <div class="text-muted" style="font-size: 0.7rem;">Tại quầy</div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="radio" class="btn-check payment-method-radio" name="ptttId" id="ptttQr" value="2" onchange="handlePtttChange(this)">
+                                                    <label class="btn btn-outline-secondary border-0 w-100 h-100 text-start p-2 payment-method-card" for="ptttQr">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="icon-circle bg-light text-secondary me-2 flex-shrink-0">
+                                                                <i class="bi bi-qr-code fs-5"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="fw-bold" style="font-size: 0.85rem; line-height: 1.2;">Chuyển khoản</div>
+                                                                <div class="text-muted" style="font-size: 0.7rem;">QR Code</div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <button type="submit" class="btn btn-runmax w-100 py-3 fw-bold fs-6 mb-2">
@@ -391,8 +428,79 @@
             const sdt = sdtInput.value.trim();
             const tenKh = tenKhInput.value.trim();
             fetch('${pageContext.request.contextPath}/ban-hang?action=save-kh-ajax&hdId=' + hdId + '&sdt=' + encodeURIComponent(sdt) + '&tenKhachHang=' + encodeURIComponent(tenKh))
+                .then(res => {
+                    if (res.ok) {
+                        // Cập nhật DOM Tên khách trên tab hóa đơn đang active
+                        const activeTabBadge = document.querySelector('.nav-link.active span.badge.bg-secondary');
+                        if (activeTabBadge) {
+                            let displayName = 'Khách lẻ';
+                            if (tenKh && sdt) {
+                                displayName = tenKh + ' - ' + sdt;
+                            } else if (tenKh) {
+                                displayName = tenKh;
+                            } else if (sdt) {
+                                displayName = sdt;
+                            }
+                            activeTabBadge.textContent = displayName;
+                        }
+                    }
+                })
                 .catch(err => console.error('Lỗi tự động lưu thông tin khách:', err));
         }
+
+        function resetToKhachLe() {
+            const sdtInput = document.getElementById('posInputSdt');
+            const tenKhInput = document.getElementById('posInputTenKh');
+            const badgeKhachQuen = document.getElementById('badgeKhachQuen');
+            const nameBlock = document.getElementById('khNameBlock');
+            const btnQuickAdd = document.getElementById('btnQuickAddKh');
+            const btnResetKhachLe = document.getElementById('btnResetKhachLe');
+            const hdId = ${currentHd != null ? currentHd.id : 'null'};
+            
+            if (hdId) {
+                sessionStorage.removeItem('tempSdt_' + hdId);
+                sessionStorage.removeItem('tempTenKh_' + hdId);
+            }
+            
+            if (sdtInput) {
+                sdtInput.value = '';
+                sdtInput.dataset.originalSdt = '';
+                sdtInput.classList.remove('is-invalid');
+            }
+            if (tenKhInput) tenKhInput.value = '';
+            if (badgeKhachQuen) badgeKhachQuen.style.display = 'none';
+            if (nameBlock) nameBlock.style.display = 'none';
+            if (btnQuickAdd) btnQuickAdd.style.display = 'none';
+            if (btnResetKhachLe) btnResetKhachLe.disabled = true;
+            
+            const form = sdtInput ? sdtInput.closest('form') : null;
+            if (form) form.classList.remove('was-validated');
+            
+            autoSaveKhachHangPOS();
+        }
+
+        function restorePosCustomerInfo(hdId) {
+            if (!hdId) return;
+            const sdtInput = document.getElementById('posInputSdt');
+            const tenKhInput = document.getElementById('posInputTenKh');
+            
+            if (sdtInput && sdtInput.dataset.originalSdt === '') {
+                const savedSdt = sessionStorage.getItem('tempSdt_' + hdId);
+                if (savedSdt) {
+                    sdtInput.value = savedSdt;
+                    sdtInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                const savedTen = sessionStorage.getItem('tempTenKh_' + hdId);
+                if (savedTen && tenKhInput) {
+                    tenKhInput.value = savedTen;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const hdId = ${currentHd != null ? currentHd.id : 'null'};
+            restorePosCustomerInfo(hdId);
+        });
 
         document.addEventListener('submit', function(event) {
             attachPosCustomerInfoToForm(event.target);
@@ -406,6 +514,17 @@
             if (chiTietCount <= 0) {
                 showBootstrapAlert('Hóa đơn hiện tại chưa có sản phẩm nào. Vui lòng chọn ít nhất 1 sản phẩm vào đơn!', 'warning');
                 return false;
+            }
+            
+            const sdtInput = document.getElementById('posInputSdt');
+            if (sdtInput) {
+                const kw = sdtInput.value.trim();
+                if (kw.length > 0 && kw.length !== 10) {
+                    sdtInput.classList.add('is-invalid');
+                    sdtInput.focus();
+                    showBootstrapAlert('Số điện thoại không hợp lệ! Vui lòng nhập đủ 10 số hoặc để trống (Khách lẻ).', 'warning');
+                    return false;
+                }
             }
             
             const form = event.target;
@@ -548,70 +667,103 @@
                 const sdtInput = e.target;
                 const tenKhInput = document.getElementById('posInputTenKh');
                 const sdtSuggestions = document.getElementById('sdtSuggestions');
+                const badgeKhachQuen = document.getElementById('badgeKhachQuen');
+                const btnResetKhachLe = document.getElementById('btnResetKhachLe');
+                const hdId = ${currentHd != null ? currentHd.id : 'null'};
                 const kw = sdtInput.value.trim();
+                
+                if (hdId) {
+                    sessionStorage.setItem('tempSdt_' + hdId, kw);
+                }
+                
+                // Trạng thái Khách lẻ: Nếu người dùng xóa trắng
+                if (kw.length === 0) {
+                    resetToKhachLe();
+                    if (sdtSuggestions) {
+                        sdtSuggestions.style.display = 'none';
+                        sdtSuggestions.innerHTML = '';
+                    }
+                    return; // Đã reset và autosave, ngừng xử lý tiếp
+                }
+                
+                if (btnResetKhachLe) btnResetKhachLe.disabled = false;
+                
+                // 1. Validation đúng 10 ký tự mới được coi là chuẩn
+                if (kw.length !== 10) {
+                    sdtInput.classList.add('is-invalid');
+                } else {
+                    sdtInput.classList.remove('is-invalid');
+                }
+                
+                // 2. Rào lỗi data: Sửa khác original -> reset về Khách mới
+                const originalSdt = sdtInput.dataset.originalSdt || '';
+                if (originalSdt && kw !== originalSdt) {
+                    if (tenKhInput) tenKhInput.value = '';
+                    if (badgeKhachQuen) badgeKhachQuen.style.display = 'none';
+                    sdtInput.dataset.originalSdt = ''; // Clear original
+                    
+                    // Mở nút lưu nhanh nếu đang gõ đủ 10 số
+                    const btnQuickAdd = document.getElementById('btnQuickAddKh');
+                    if (btnQuickAdd && kw.length === 10 && /^[0-9]+$/.test(kw)) {
+                        btnQuickAdd.style.display = 'block';
+                        btnQuickAdd.setAttribute('onclick', `quickAddKhachHang("\${kw}")`);
+                    }
+                }
                 
                 if (sdtSuggestions) {
                     sdtSuggestions.style.display = 'none';
                     sdtSuggestions.innerHTML = '';
                 }
                 
-                // Update current input and trigger save
+                // Lưu trạng thái hiện tại
                 autoSaveKhachHangPOS();
                 
-                if (kw.length >= 3) {
-                    clearTimeout(searchTimeout);
+                clearTimeout(searchTimeout);
+                if (kw.length >= 3 && kw === sdtInput.value.trim()) { // Doubt-Driven: Đề phòng async
                     searchTimeout = setTimeout(() => {
                         fetch('${pageContext.request.contextPath}/api/customers/search?kw=' + encodeURIComponent(kw))
                             .then(res => res.json())
                             .then(data => {
-                                if (sdtSuggestions) {
-                                    sdtSuggestions.innerHTML = '';
-                                    if (data && data.results && data.results.length > 0) {
-                                        // Ẩn khối nhập tên nếu đang mở
-                                        const nameBlock = document.getElementById('khNameBlock');
-                                        if(nameBlock && tenKhInput && !tenKhInput.value) nameBlock.style.display = 'none';
-                                        const btnQuickAdd = document.getElementById('btnQuickAddKh');
-                                        if(btnQuickAdd) btnQuickAdd.style.display = 'none';
+                                if (!sdtSuggestions) return; // Rào lỗi khi DOM chưa render kịp
+                                
+                                sdtSuggestions.innerHTML = '';
+                                const nameBlock = document.getElementById('khNameBlock');
+                                const btnQuickAdd = document.getElementById('btnQuickAddKh');
+                                
+                                if (data && data.results && data.results.length > 0) {
+                                    if(nameBlock && tenKhInput && !tenKhInput.value) nameBlock.style.display = 'none';
+                                    if(btnQuickAdd) btnQuickAdd.style.display = 'none';
 
-                                        data.results.forEach(kh => {
-                                            const li = document.createElement('li');
-                                            const a = document.createElement('a');
-                                            a.className = 'dropdown-item d-flex justify-content-between align-items-center py-2';
-                                            a.href = 'javascript:void(0)';
-                                            a.innerHTML = '<span><strong>' + kh.sdt + '</strong> - ' + kh.hoTen + '</span><i class="bi bi-person-check text-success"></i>';
-                                            a.onclick = function() {
-                                                sdtInput.value = kh.sdt;
-                                                if (tenKhInput) tenKhInput.value = kh.hoTen;
-                                                sdtSuggestions.style.display = 'none';
-                                                autoSaveKhachHangPOS();
-                                                // Sau khi chọn thì hiện lại khối tên (chỉ đọc hoặc có giá trị)
-                                                if(nameBlock) nameBlock.style.display = 'block';
-                                            };
-                                            li.appendChild(a);
-                                            sdtSuggestions.appendChild(li);
-                                        });
-                                    } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
-                                        // Không tìm thấy SĐT -> Mở khối Tên Khách Hàng bên dưới
-                                        const nameBlock = document.getElementById('khNameBlock');
-                                        if(nameBlock) nameBlock.style.display = 'block';
-                                        const btnQuickAdd = document.getElementById('btnQuickAddKh');
-                                        if(btnQuickAdd) {
-                                            btnQuickAdd.style.display = 'block';
-                                            // Cập nhật lại onclick để truyền kw hiện tại
-                                            btnQuickAdd.setAttribute('onclick', 'quickAddKhachHang("' + kw + '")');
-                                        }
-                                        
-                                        // Focus vào ô tên để tiện gõ luôn
-                                        if (tenKhInput) {
-                                            tenKhInput.value = '';
-                                            tenKhInput.focus();
-                                        }
+                                    data.results.forEach(kh => {
+                                        const li = document.createElement('li');
+                                        const a = document.createElement('a');
+                                        a.className = 'dropdown-item d-flex justify-content-between align-items-center py-2';
+                                        a.href = 'javascript:void(0)';
+                                        a.innerHTML = `<span><strong>\${kh.sdt}</strong> - \${kh.hoTen}</span><i class="bi bi-person-check text-success"></i>`;
+                                        a.onclick = function() {
+                                            sdtInput.value = kh.sdt;
+                                            sdtInput.dataset.originalSdt = kh.sdt; // Lưu trạng thái gốc
+                                            sdtInput.classList.remove('is-invalid');
+                                            
+                                            if (tenKhInput) tenKhInput.value = kh.hoTen;
+                                            if (badgeKhachQuen) badgeKhachQuen.style.display = 'block';
+                                            
+                                            sdtSuggestions.style.display = 'none';
+                                            autoSaveKhachHangPOS();
+                                            if(nameBlock) nameBlock.style.display = 'block';
+                                        };
+                                        li.appendChild(a);
+                                        sdtSuggestions.appendChild(li);
+                                    });
+                                    sdtSuggestions.style.display = 'block';
+                                } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
+                                    if(nameBlock) nameBlock.style.display = 'block';
+                                    if(btnQuickAdd) {
+                                        btnQuickAdd.style.display = 'block';
+                                        btnQuickAdd.setAttribute('onclick', `quickAddKhachHang("\${kw}")`);
                                     }
-                                    
-                                    if (sdtSuggestions.innerHTML !== '') {
-                                        sdtSuggestions.style.display = 'block';
-                                    } else {
-                                        sdtSuggestions.style.display = 'none';
+                                    if (tenKhInput && tenKhInput.value === '') {
+                                        tenKhInput.focus();
                                     }
                                 }
                             })
@@ -619,7 +771,21 @@
                     }, 300);
                 }
             } else if (e.target && e.target.id === 'posInputTenKh') {
+                const hdId = ${currentHd != null ? currentHd.id : 'null'};
+                if (hdId) {
+                    sessionStorage.setItem('tempTenKh_' + hdId, e.target.value.trim());
+                }
                 autoSaveKhachHangPOS();
+            }
+        });
+
+        let isDropdownClicked = false;
+        document.addEventListener('mousedown', function(e) {
+            const sdtSuggestions = document.getElementById('sdtSuggestions');
+            if (sdtSuggestions && sdtSuggestions.contains(e.target)) {
+                isDropdownClicked = true;
+            } else {
+                isDropdownClicked = false;
             }
         });
 
@@ -632,10 +798,65 @@
             }
         });
 
-        // Bắt sự kiện blur cho posInputTenKh
+        // Bắt sự kiện blur cho SĐT và Tên KH
         document.addEventListener('focusout', function(e) {
-            if (e.target && e.target.id === 'posInputTenKh') {
+            if (e.target && e.target.id === 'posInputSdt') {
+                if (isDropdownClicked) {
+                    isDropdownClicked = false;
+                    return; // Doubt-Driven: Tránh xung đột auto-select khi user thực sự đang click chuột
+                }
+                const sdtInput = e.target;
+                const kw = sdtInput.value.trim();
+                
+                setTimeout(() => {
+                    const sdtSuggestions = document.getElementById('sdtSuggestions');
+                    if (sdtSuggestions && sdtSuggestions.style.display === 'block') {
+                        const firstItem = sdtSuggestions.querySelector('a');
+                        if (firstItem) {
+                            firstItem.click(); // Có gợi ý -> Auto select
+                        } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
+                            const nameBlock = document.getElementById('khNameBlock');
+                            if(nameBlock) nameBlock.style.display = 'block';
+                        }
+                    } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
+                        // Không có dropdown -> Khách mới
+                        const nameBlock = document.getElementById('khNameBlock');
+                        if(nameBlock) nameBlock.style.display = 'block';
+                    }
+                }, 200);
+            } else if (e.target && e.target.id === 'posInputTenKh') {
                 autoSaveKhachHangPOS();
+            }
+        });
+
+        // Hỗ trợ phím Enter thông minh
+        document.addEventListener('keydown', function(e) {
+            if (e.target && e.target.id === 'posInputSdt' && e.key === 'Enter') {
+                e.preventDefault(); // Ngăn submit form
+                const sdtInput = e.target;
+                const sdtSuggestions = document.getElementById('sdtSuggestions');
+                const kw = sdtInput.value.trim();
+                
+                if (sdtSuggestions && sdtSuggestions.style.display === 'block') {
+                    const firstItem = sdtSuggestions.querySelector('a');
+                    if (firstItem) {
+                        firstItem.click();
+                    } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
+                        const tenKhInput = document.getElementById('posInputTenKh');
+                        if (tenKhInput) {
+                            const nameBlock = document.getElementById('khNameBlock');
+                            if(nameBlock) nameBlock.style.display = 'block';
+                            tenKhInput.focus();
+                        }
+                    }
+                } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
+                    const tenKhInput = document.getElementById('posInputTenKh');
+                    if (tenKhInput) {
+                        const nameBlock = document.getElementById('khNameBlock');
+                        if(nameBlock) nameBlock.style.display = 'block';
+                        tenKhInput.focus();
+                    }
+                }
             }
         });
 
@@ -1068,6 +1289,8 @@
                 const newPaymentBlock = doc.getElementById('pos-payment-block');
                 if (oldPaymentBlock && newPaymentBlock) {
                     oldPaymentBlock.innerHTML = newPaymentBlock.innerHTML;
+                    const hdId = ${currentHd != null ? currentHd.id : 'null'};
+                    restorePosCustomerInfo(hdId);
                 }
                 
                 setTimeout(() => {
@@ -1229,6 +1452,8 @@
                 const newPaymentBlock = doc.getElementById('pos-payment-block');
                 if (oldPaymentBlock && newPaymentBlock) {
                     oldPaymentBlock.innerHTML = newPaymentBlock.innerHTML;
+                    const hdId = ${currentHd != null ? currentHd.id : 'null'};
+                    restorePosCustomerInfo(hdId);
                 }
 
                 showBootstrapAlert('Đã đẩy thành công ' + stagingCartItems.length + ' sản phẩm vào hóa đơn!', 'success');
@@ -1506,6 +1731,42 @@
 
     <!-- MODAL VOUCHER PICKER -->
     <style>
+        /* Payment Method Cards */
+        .payment-method-card {
+            border-radius: 12px !important;
+            border: 1px solid #dee2e6 !important;
+            background-color: #ffffff;
+            transition: all 0.2s ease-in-out;
+            color: #4b5563;
+        }
+        .payment-method-card .icon-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-in-out;
+        }
+        .payment-method-radio:checked + .payment-method-card {
+            border-color: #dc3545 !important;
+            background-color: #fff5f5;
+            color: #dc3545;
+        }
+        .payment-method-radio:checked + .payment-method-card .icon-circle {
+            background-color: #dc3545 !important;
+            color: #ffffff !important;
+        }
+        .payment-method-radio:checked + .payment-method-card .fw-bold {
+            color: #dc3545;
+        }
+        .payment-method-radio:checked + .payment-method-card .text-muted {
+            color: #e4939b !important;
+        }
+        .payment-method-card:hover {
+            border-color: #dc3545 !important;
+            background-color: #fff9f9;
+        }
         .voucher-ticket {
             position: relative;
             border-radius: 12px;
