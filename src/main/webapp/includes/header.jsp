@@ -158,22 +158,7 @@
     </div>
 </header>
 
-<!-- RUNMAX GLOBAL BOOTSTRAP ALERT CONTAINER (Kept clean & minimal) -->
-<div class="px-4 pt-2" id="runmaxAlertContainer" style="z-index: 1050; position: relative;"></div>
-
-<style>
-@keyframes slideInRightRunmax {
-    from {
-        transform: translate3d(120%, 0, 0);
-        opacity: 0;
-    }
-    to {
-        transform: translate3d(0, 0, 0);
-        opacity: 1;
-    }
-}
-</style>
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 window.decodeHtmlEntities = function(str) {
     if (!str) return '';
@@ -182,60 +167,34 @@ window.decodeHtmlEntities = function(str) {
     return txt.value;
 };
 
-// Global function to display beautiful floating Bootstrap Toast at top-right
+// Global function to display beautiful SweetAlert2 Toast at top-right
 window.showToast = function(message, type = 'info', title = null) {
     if (!message) return;
     message = window.decodeHtmlEntities(message);
-    var toastContainer = document.getElementById('runmaxFloatingToastContainer');
-    if (!toastContainer) {
-        var toastWrapper = '<div id="runmaxFloatingToastContainer" class="toast-container position-fixed top-0 end-0 p-4" style="z-index: 109000; pointer-events: none;"></div>';
-        document.body.insertAdjacentHTML('beforeend', toastWrapper);
-        toastContainer = document.getElementById('runmaxFloatingToastContainer');
-    }
-
-    var toastIcon = type === 'success' ? 'bi-check-circle-fill text-success' :
-                    type === 'danger' ? 'bi-exclamation-triangle-fill text-danger' :
-                    type === 'warning' ? 'bi-exclamation-circle-fill text-warning' : 'bi-info-circle-fill text-info';
     
-    if (!title) {
-        title = type === 'success' ? 'Thành công' :
-                type === 'danger' ? 'Thông báo lỗi' :
-                type === 'warning' ? 'Cảnh báo' : 'Thông báo';
+    // Type mapping for SweetAlert2
+    var swalType = type === 'danger' ? 'error' : type;
+    if (!['success', 'error', 'warning', 'info', 'question'].includes(swalType)) {
+        swalType = 'info';
     }
 
-    var toastId = 'toast_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-    var borderColor = type === 'success' ? 'border-success' :
-                      type === 'danger' ? 'border-danger' :
-                      type === 'warning' ? 'border-warning' : 'border-info';
-    var barColor = type === 'success' ? '#198754' :
-                   type === 'danger' ? '#dc3545' :
-                   type === 'warning' ? '#ffc107' : '#0dcaf0';
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4500,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
 
-    var toastHtml = '<div id="' + toastId + '" class="toast align-items-center bg-white border-0 shadow-lg rounded-4 mb-3 overflow-hidden border-start border-4 ' + borderColor + '" role="alert" aria-live="assertive" aria-atomic="true" style="pointer-events: auto; min-width: 330px; max-width: 420px; animation: slideInRightRunmax 0.35s cubic-bezier(0.16, 1, 0.3, 1); backdrop-filter: blur(8px);">' +
-                    '<div class="toast-header bg-light py-2 px-3 d-flex align-items-center justify-content-between border-bottom">' +
-                    '<strong class="d-flex align-items-center gap-2 text-dark fs-6">' +
-                    '<i class="bi ' + toastIcon + ' fs-5"></i> ' + title +
-                    '</strong>' +
-                    '<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>' +
-                    '</div>' +
-                    '<div class="toast-body p-3 fw-medium text-dark" style="font-size: 0.95rem; line-height: 1.45;">' + message + '</div>' +
-                    '<div style="height: 3px; background: ' + barColor + '; width: 100%; transition: width 4.5s linear;" id="' + toastId + '_bar"></div>' +
-                    '</div>';
-
-    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-    var toastEl = document.getElementById(toastId);
-    var barEl = document.getElementById(toastId + '_bar');
-    
-    if (toastEl && typeof bootstrap !== 'undefined' && bootstrap.Toast) {
-        var bsToast = new bootstrap.Toast(toastEl, { delay: 4500 });
-        bsToast.show();
-        setTimeout(function() {
-            if (barEl) barEl.style.width = '0%';
-        }, 50);
-        toastEl.addEventListener('hidden.bs.toast', function() {
-            toastEl.remove();
-        });
-    }
+    Toast.fire({
+        icon: swalType,
+        title: title ? title : '',
+        text: message
+    });
 };
 
 // Global utility showBootstrapAlert calls showToast directly
@@ -243,107 +202,49 @@ window.showBootstrapAlert = function(message, type = 'danger') {
     showToast(message, type);
 };
 
-// Global utility for centered Bootstrap Modal alert / popup
+// Global utility for centered popup -> SweetAlert2
 window.showBootstrapPopup = function(message, type = 'danger', title = null) {
     if (!message) return;
     message = window.decodeHtmlEntities(message);
-    var modalEl = document.getElementById('globalRunmaxAlertModal');
-    if (!modalEl) {
-        var modalHtml = '<div class="modal fade" id="globalRunmaxAlertModal" tabindex="-1" aria-hidden="true" style="z-index: 109060;">' +
-                        '<div class="modal-dialog modal-dialog-centered">' +
-                        '<div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">' +
-                        '<div class="modal-header p-3" id="globalRunmaxAlertHeader">' +
-                        '<h5 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2" id="globalRunmaxAlertTitle"></h5>' +
-                        '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' +
-                        '</div>' +
-                        '<div class="modal-body p-4 bg-white fs-6 fw-medium text-dark" id="globalRunmaxAlertMessage"></div>' +
-                        '<div class="modal-footer bg-light p-3 border-top justify-content-end">' +
-                        '<button type="button" class="btn px-4 fw-semibold shadow-sm text-white" id="globalRunmaxAlertBtnClose" data-bs-dismiss="modal">Đóng</button>' +
-                        '</div>' +
-                        '</div>' +
-                        '</div>' +
-                        '</div>';
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        modalEl = document.getElementById('globalRunmaxAlertModal');
+    
+    var swalType = type === 'danger' ? 'error' : type;
+    if (!['success', 'error', 'warning', 'info', 'question'].includes(swalType)) {
+        swalType = 'info';
     }
-    
-    var headerEl = modalEl.querySelector('.modal-header');
-    var titleEl = document.getElementById('globalRunmaxAlertTitle');
-    var btnClose = document.getElementById('globalRunmaxAlertBtnClose');
-    
-    if (!title) {
-        title = type === 'success' ? 'Thành công' :
-                type === 'danger' ? 'Thông báo lỗi' :
-                type === 'warning' ? 'Cảnh báo' : 'Thông báo';
-    }
-    
-    var icon = type === 'success' ? 'bi-check-circle-fill' :
-               type === 'danger' ? 'bi-exclamation-triangle-fill' :
-               type === 'warning' ? 'bi-exclamation-circle-fill' : 'bi-info-circle-fill';
-               
-    headerEl.className = 'modal-header text-white p-3 ' + (type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning text-dark' : 'bg-info');
-    btnClose.className = 'btn px-4 fw-semibold shadow-sm text-white ' + (type === 'success' ? 'btn-success' : type === 'danger' ? 'btn-danger' : type === 'warning' ? 'btn-warning text-dark' : 'btn-info');
-    titleEl.innerHTML = '<i class="bi ' + icon + ' fs-4"></i> ' + title;
-    document.getElementById('globalRunmaxAlertMessage').innerHTML = message;
-    
-    var bsModal = new bootstrap.Modal(modalEl);
-    bsModal.show();
+
+    Swal.fire({
+        icon: swalType,
+        title: title ? title : (type === 'success' ? 'Thành công' : type === 'danger' ? 'Thông báo lỗi' : 'Thông báo'),
+        html: message,
+        confirmButtonColor: '#dc2626', // RunMax Primary Red
+        confirmButtonText: 'Đóng'
+    });
 };
 
-// Global utility to show Bootstrap Modal Confirm dynamically instead of default confirm()
+// Global utility to show Confirm dynamically -> SweetAlert2
 window.showBootstrapConfirm = function(message, onConfirmCallback, onCancelCallback) {
-    var modalEl = document.getElementById('globalRunmaxConfirmModal');
-    if (!modalEl) {
-        var modalHtml = '<div class="modal fade" id="globalRunmaxConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 109050;">' +
-                        '<div class="modal-dialog modal-dialog-centered">' +
-                        '<div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">' +
-                        '<div class="modal-header bg-dark text-white p-4">' +
-                        '<h5 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2">' +
-                        '<i class="bi bi-question-circle-fill text-warning fs-4"></i> Xác nhận thao tác' +
-                        '</h5>' +
-                        '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' +
-                        '</div>' +
-                        '<div class="modal-body p-4 bg-white fs-6 fw-medium text-dark" id="globalRunmaxConfirmMessage"></div>' +
-                        '<div class="modal-footer bg-light p-3 border-top justify-content-end gap-2">' +
-                        '<button type="button" class="btn btn-secondary px-4 fw-semibold shadow-sm" data-bs-dismiss="modal" id="globalRunmaxConfirmBtnCancel">' +
-                        '<i class="bi bi-x-circle me-1"></i> Hủy bỏ' +
-                        '</button>' +
-                        '<button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" id="globalRunmaxConfirmBtnOk">' +
-                        '<i class="bi bi-check-circle me-1"></i> Đồng ý' +
-                        '</button>' +
-                        '</div>' +
-                        '</div>' +
-                        '</div>' +
-                        '</div>';
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        modalEl = document.getElementById('globalRunmaxConfirmModal');
-    }
-    document.getElementById('globalRunmaxConfirmMessage').innerHTML = message;
-    var btnOk = document.getElementById('globalRunmaxConfirmBtnOk');
-    var btnCancel = document.getElementById('globalRunmaxConfirmBtnCancel');
+    message = window.decodeHtmlEntities(message);
     
-    var newBtnOk = btnOk.cloneNode(true);
-    btnOk.parentNode.replaceChild(newBtnOk, btnOk);
-    
-    var newBtnCancel = btnCancel.cloneNode(true);
-    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
-    
-    var bsModal = new bootstrap.Modal(modalEl);
-    
-    newBtnOk.addEventListener('click', function() {
-        bsModal.hide();
-        if (typeof onConfirmCallback === 'function') {
-            onConfirmCallback();
+    Swal.fire({
+        title: 'Xác nhận thao tác',
+        html: message,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626', // RunMax Primary Red
+        cancelButtonColor: '#64748b',  // Slate-500
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i> Đồng ý',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Hủy bỏ'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (typeof onConfirmCallback === 'function') {
+                onConfirmCallback();
+            }
+        } else {
+            if (typeof onCancelCallback === 'function') {
+                onCancelCallback();
+            }
         }
     });
-    
-    newBtnCancel.addEventListener('click', function() {
-        if (typeof onCancelCallback === 'function') {
-            onCancelCallback();
-        }
-    });
-    
-    bsModal.show();
 };
 
 // Override native window.alert across the entire application

@@ -232,7 +232,7 @@
 
                             <c:choose>
                                 <c:when test="${currentHd != null}">
-                                    <form action="${pageContext.request.contextPath}/ban-hang" method="POST" class="needs-validation" novalidate onsubmit="return validateThanhToanPOS(event, ${empty chiTiets ? 0 : chiTiets.size()})">
+                                    <form action="${pageContext.request.contextPath}/ban-hang" method="POST" class="needs-validation" novalidate onsubmit="return validateThanhToanPOS(event)">
                                         <input type="hidden" name="action" value="thanh-toan">
                                         <input type="hidden" name="hdId" value="${currentHd.id}">
 
@@ -506,12 +506,15 @@
             attachPosCustomerInfoToForm(event.target);
         });
 
-        function validateThanhToanPOS(event, chiTietCount) {
+        function validateThanhToanPOS(event) {
             // Ngăn chặn form submit mặc định để dùng hộp thoại bất đồng bộ
             event.preventDefault();
             event.stopPropagation();
 
-            if (chiTietCount <= 0) {
+            const cartContainer = document.getElementById('pos-cart-container');
+            const cartRows = cartContainer ? cartContainer.querySelectorAll('tbody tr').length : 0;
+
+            if (cartRows <= 0) {
                 showBootstrapAlert('Hóa đơn hiện tại chưa có sản phẩm nào. Vui lòng chọn ít nhất 1 sản phẩm vào đơn!', 'warning');
                 return false;
             }
@@ -546,7 +549,10 @@
             return new Intl.NumberFormat('vi-VN').format(number) + ' đ';
         }
 
+        let isApplyingVoucher = false;
         function apDungVoucherPOS(hdId, isRemove = false) {
+            if (isApplyingVoucher) return;
+            
             if (!hdId) {
                 showBootstrapAlert('Vui lòng chọn hoặc tạo hóa đơn đang chờ trước khi áp dụng voucher!', 'warning');
                 return;
@@ -556,12 +562,15 @@
             if (isRemove) {
                 if (selectPgg) selectPgg.value = '';
             } else {
-                const chiTietCount = ${empty chiTiets ? 0 : chiTiets.size()};
-                if (chiTietCount <= 0 && selectPgg && selectPgg.value !== '') {
+                const cartContainer = document.getElementById('pos-cart-container');
+                const cartRows = cartContainer ? cartContainer.querySelectorAll('table tbody tr').length : 0;
+                if (cartRows <= 0 && selectPgg && selectPgg.value !== '') {
                     showBootstrapAlert('Đơn hàng chưa có sản phẩm nào để áp dụng giảm giá!', 'warning');
                     return;
                 }
             }
+
+            isApplyingVoucher = true;
 
             const formData = new URLSearchParams();
             formData.append('hdId', hdId);
@@ -647,6 +656,9 @@
             .catch(err => {
                 console.error('Lỗi khi áp mã giảm giá:', err);
                 showBootstrapAlert('Có lỗi xảy ra, vui lòng thử lại sau!', 'danger');
+            })
+            .finally(() => {
+                isApplyingVoucher = false;
             });
         }
 
@@ -862,34 +874,22 @@
 
         <c:if test="${not empty param.printHdId}">
         window.addEventListener('DOMContentLoaded', function() {
-            // Load SweetAlert2 dynamically if not present
-            if (typeof Swal === 'undefined') {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
-                script.onload = showPrintConfirm;
-                document.head.appendChild(script);
-            } else {
-                showPrintConfirm();
-            }
-            
-            function showPrintConfirm() {
-                Swal.fire({
-                    title: 'Thanh toán thành công!',
-                    text: 'Bạn có muốn in hóa đơn cho khách không?',
-                    icon: 'success',
-                    showCancelButton: true,
-                    confirmButtonColor: '#0d6efd',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-printer me-1"></i> Có, in ngay',
-                    cancelButtonText: 'Không, bỏ qua'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '${pageContext.request.contextPath}/hoa-don?action=detail&id=${param.printHdId}&print=true';
-                    } else {
-                        window.location.href = '${pageContext.request.contextPath}/ban-hang';
-                    }
-                });
-            }
+            Swal.fire({
+                title: 'Thanh toán thành công!',
+                text: 'Bạn có muốn in hóa đơn cho khách không?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626', // RunMax Primary Red
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="bi bi-printer me-1"></i> Có, in ngay',
+                cancelButtonText: 'Không, bỏ qua'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '${pageContext.request.contextPath}/hoa-don?action=detail&id=${param.printHdId}&print=true';
+                } else {
+                    window.location.href = '${pageContext.request.contextPath}/ban-hang';
+                }
+            });
         });
         </c:if>
     </script>
@@ -1950,10 +1950,14 @@
             const voucherModal = document.getElementById('modalVoucherPicker');
             if (voucherModal) {
                 voucherModal.addEventListener('show.bs.modal', function () {
-                    const currentTienHangInput = document.getElementById('currentTienHang');
                     let currentTienHang = 0;
-                    if (currentTienHangInput && currentTienHangInput.value) {
-                        currentTienHang = parseFloat(currentTienHangInput.value);
+                    const posTienHangEl = document.getElementById('posTienHang');
+                    if (posTienHangEl) {
+                        // Lấy giá trị tổng tiền hàng hiển thị trên UI (loại bỏ ký tự không phải số)
+                        const textVal = posTienHangEl.innerText.replace(/[^\d]/g, '');
+                        if (textVal) {
+                            currentTienHang = parseFloat(textVal);
+                        }
                     }
                     
                     const tickets = voucherModal.querySelectorAll('.voucher-ticket');

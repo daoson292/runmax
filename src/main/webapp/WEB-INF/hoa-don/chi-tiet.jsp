@@ -17,30 +17,52 @@
             body * {
                 visibility: hidden !important;
             }
-            #thermalReceiptContainer, #thermalReceiptContainer * {
+            #modalThermalReceipt, #modalThermalReceipt * {
                 visibility: visible !important;
             }
-            #thermalReceiptContainer {
+            #modalThermalReceipt {
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
                 width: 100% !important;
-                max-width: 380px !important;
-                margin: 0 auto !important;
-                padding: 10px !important;
-                background: white !important;
-                color: black !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            #modalThermalReceipt .modal-header,
+            #modalThermalReceipt .modal-footer,
+            #modalThermalReceipt .btn-close {
+                display: none !important;
+            }
+            #modalThermalReceipt .modal-dialog,
+            #modalThermalReceipt .modal-content,
+            #modalThermalReceipt .modal-body {
+                margin: 0 !important;
+                padding: 0 !important;
                 border: none !important;
                 box-shadow: none !important;
+                background: transparent !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                transform: none !important;
+            }
+            #thermalReceiptContainer {
+                margin: 0 auto !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 380px !important;
             }
             html, body {
                 height: auto !important;
+                min-height: auto !important;
                 overflow: visible !important;
                 background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
             @page {
-                size: auto;
-                margin: 5mm;
+                margin: 0; /* Loại bỏ margin mặc định của trình duyệt để máy in nhiệt in full */
             }
         }
 
