@@ -61,8 +61,9 @@ public class SanPhamChiTiet {
     private Integer trangThai = 1;
 
     @Transient
-    @Builder.Default
-    private Integer soLuongKhaDung = 0;
+    public Integer getSoLuongKhaDung() {
+        return this.soLuongTon;
+    }
 
     @Transient
     public String getMaSpct() {

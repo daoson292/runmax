@@ -104,11 +104,7 @@ public class HoaDonRepository {
                 .list();
                 
             if (chiTiets != null && !chiTiets.isEmpty()) {
-                List<com.runmax.entity.SanPhamChiTiet> spcts = chiTiets.stream()
-                        .map(HoaDonChiTiet::getSanPhamChiTiet)
-                        .filter(java.util.Objects::nonNull)
-                        .toList();
-                new SanPhamChiTietRepository().populateSoLuongKhaDung(session, spcts);
+                // No longer needed
             }
             
             return chiTiets;

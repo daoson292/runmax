@@ -111,6 +111,7 @@ public class HoaDonService {
                 ct.setSoLuong(moi);
                 ct.setThanhTien(spct.getGiaBan().multiply(BigDecimal.valueOf(moi)));
                 hdRepo.saveChiTiet(ct);
+                spctRepo.updateSoLuong(spctId, -soLuong); // Update real stock
                 recalculateTotal(hd, chiTiets);
                 return true;
             }
@@ -124,6 +125,7 @@ public class HoaDonService {
             .thanhTien(spct.getGiaBan().multiply(BigDecimal.valueOf(soLuong)))
             .build();
         hdRepo.saveChiTiet(ct);
+        spctRepo.updateSoLuong(spctId, -soLuong); // Update real stock
         chiTiets.add(ct);
         recalculateTotal(hd, chiTiets);
         return true;
@@ -136,6 +138,7 @@ public class HoaDonService {
         Long hoaDonId = ct.getHoaDon().getId();
         boolean ok = hdRepo.deleteChiTiet(chiTietId);
         if (ok) {
+            spctRepo.updateSoLuong(ct.getSanPhamChiTiet().getId(), ct.getSoLuong()); // Restore stock
             HoaDon hd = hdRepo.findById(hoaDonId);
             if (hd != null) {
                 List<HoaDonChiTiet> chiTiets = hdRepo.findChiTietByHoaDonId(hoaDonId);
@@ -162,6 +165,8 @@ public class HoaDonService {
         if (soLuongMoi > maxAllowed) {
             return false;
         }
+        int diff = soLuongMoi - oldSoLuong;
+        spctRepo.updateSoLuong(spct.getId(), -diff); // Update real stock
         ct.setSoLuong(soLuongMoi);
         ct.setThanhTien(ct.getDonGia().multiply(BigDecimal.valueOf(soLuongMoi)));
         hdRepo.saveChiTiet(ct);
@@ -177,8 +182,8 @@ public class HoaDonService {
     public boolean deleteHoaDon(Long hoaDonId) {
         HoaDon hd = hdRepo.findById(hoaDonId);
         if (hd == null) return false;
-        // Nếu hóa đơn đã hoàn tất (1), hoàn lại kho cho các sản phẩm đã mua
-        if (hd.getTrangThai() == 1) {
+        // Hoàn lại kho nếu chưa bị hủy (0 hoặc 1)
+        if (hd.getTrangThai() == 0 || hd.getTrangThai() == 1) {
             List<HoaDonChiTiet> chiTiets = hdRepo.findChiTietByHoaDonId(hoaDonId);
             for (HoaDonChiTiet ct : chiTiets) {
                 if (ct.getSanPhamChiTiet() != null) {
@@ -280,10 +285,7 @@ public class HoaDonService {
 
         hdRepo.update(hd);
 
-        // Trừ kho
-        for (HoaDonChiTiet ct : chiTiets) {
-            spctRepo.updateSoLuong(ct.getSanPhamChiTiet().getId(), -ct.getSoLuong());
-        }
+        // Trừ kho đã thực hiện khi thêm sản phẩm vào giỏ hàng
 
         // Ghi lịch sử thanh toán
         LichSuThanhToan lstt = LichSuThanhToan.builder()
@@ -311,6 +313,14 @@ public class HoaDonService {
         hd.setTrangThai(2);
         hd.setGhiChu(lyDo);
         hdRepo.update(hd);
+
+        // Hoàn lại kho cho các sản phẩm
+        List<HoaDonChiTiet> chiTiets = hdRepo.findChiTietByHoaDonId(hoaDonId);
+        for (HoaDonChiTiet ct : chiTiets) {
+            if (ct.getSanPhamChiTiet() != null) {
+                spctRepo.updateSoLuong(ct.getSanPhamChiTiet().getId(), ct.getSoLuong());
+            }
+        }
 
         LichSuHoaDon lshd = LichSuHoaDon.builder()
             .hoaDon(hd)

@@ -81,38 +81,10 @@ public class SanPhamChiTietRepository {
             if (giaMax != null) query.setParameter("gMax", giaMax);
 
             List<SanPhamChiTiet> list = query.list();
-            populateSoLuongKhaDung(session, list);
             return list;
         }
     }
 
-    public void populateSoLuongKhaDung(Session session, List<SanPhamChiTiet> list) {
-        if (list == null || list.isEmpty()) return;
-        
-        List<Long> spctIds = list.stream().map(SanPhamChiTiet::getId).toList();
-        
-        // Find all pending quantities for these SPCT IDs
-        String hql = "SELECT hdc.sanPhamChiTiet.id, SUM(hdc.soLuong) " +
-                     "FROM HoaDonChiTiet hdc " +
-                     "WHERE hdc.hoaDon.trangThai = 0 AND hdc.sanPhamChiTiet.id IN :ids " +
-                     "GROUP BY hdc.sanPhamChiTiet.id";
-                     
-        List<Object[]> results = session.createQuery(hql, Object[].class)
-                                        .setParameterList("ids", spctIds)
-                                        .list();
-                                        
-        Map<Long, Integer> pendingMap = new HashMap<>();
-        for (Object[] row : results) {
-            Long spctId = (Long) row[0];
-            Integer qty = ((Number) row[1]).intValue();
-            pendingMap.put(spctId, qty);
-        }
-        
-        for (SanPhamChiTiet spct : list) {
-            int pending = pendingMap.getOrDefault(spct.getId(), 0);
-            spct.setSoLuongKhaDung(Math.max(0, spct.getSoLuongTon() - pending));
-        }
-    }
 
     public List<SanPhamChiTiet> findBySanPhamId(Long sanPhamId) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
@@ -121,7 +93,6 @@ public class SanPhamChiTietRepository {
                 SanPhamChiTiet.class)
                 .setParameter("spId", sanPhamId)
                 .list();
-            populateSoLuongKhaDung(session, list);
             return list;
         }
     }
@@ -150,9 +121,6 @@ public class SanPhamChiTietRepository {
     public SanPhamChiTiet findById(Long id) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             SanPhamChiTiet spct = session.get(SanPhamChiTiet.class, id);
-            if (spct != null) {
-                populateSoLuongKhaDung(session, List.of(spct));
-            }
             return spct;
         }
     }
