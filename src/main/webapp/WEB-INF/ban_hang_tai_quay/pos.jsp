@@ -175,7 +175,7 @@
                                                                 <td>
                                                                     <div class="mb-1">Size <b>${ct.sanPhamChiTiet.kichCo.ten}</b> | ${ct.sanPhamChiTiet.mauSac.ten}</div>
                                                                     <span class="badge bg-info text-dark bg-opacity-10 border border-info" style="font-size: 0.7rem;">Đế: ${ct.sanPhamChiTiet.deGiay.ten}</span>
-                                                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: ${ct.sanPhamChiTiet.chatLieu.ten}</span>
+                                                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: ${ct.sanPhamChiTiet.sanPham.chatLieu.ten}</span>
                                                                 </td>
                                                                 <td class="text-danger fw-semibold"><fmt:formatNumber value="${ct.donGia}" type="number"/> đ</td>
                                                                 <td style="width: 140px;">
@@ -818,7 +818,7 @@
                                         <td>
                                             <div class="mb-1">Size <b>${spct.kichCo.ten}</b> | ${spct.mauSac.ten}</div>
                                             <span class="badge bg-info text-dark bg-opacity-10 border border-info" style="font-size: 0.7rem;">Đế: ${spct.deGiay.ten}</span>
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: ${spct.chatLieu.ten}</span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: ${spct.sanPham.chatLieu.ten}</span>
                                         </td>
                                         <td class="text-danger fw-semibold">
                                             <fmt:formatNumber value="${spct.giaBan}" type="number" /> đ
@@ -875,7 +875,7 @@
         function openSearchModal() {
             const modalEl = document.getElementById('modalSearchProduct');
             if (modalEl) {
-                const modal = new bootstrap.Modal(modalEl);
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 modal.show();
                 setTimeout(() => {
                     const kwInput = modalEl.querySelector('input[name="kw"]');

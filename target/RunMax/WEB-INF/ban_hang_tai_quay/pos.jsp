@@ -109,180 +109,114 @@
                                 </c:if>
                             </ul>
                         </div>
-
-                        <!-- 2. Tìm kiếm Giày Chạy Bộ & Thêm vào đơn -->
-                        <div class="runmax-card p-4 mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold text-dark mb-0">
-                                    <i class="bi bi-search text-danger me-1"></i> TRA CỨU GIÀY CHẠY BỘ NAM & THÊM VÀO GIỎ
-                                </h6>
-                                <c:if test="${currentHd != null}">
-                                    <button type="button" class="btn btn-sm btn-danger fw-semibold d-flex align-items-center gap-1 shadow-sm" onclick="openInvoiceScanQRModal('${currentHd.id}')" title="Quét mã QR sản phẩm bằng Camera">
-                                        <i class="bi bi-qr-code-scan"></i> Quét QR Camera
-                                    </button>
-                                </c:if>
-                            </div>
-                            <form action="${pageContext.request.contextPath}/ban-hang" method="GET" class="row g-2 mb-3" onsubmit="attachPosCustomerInfoToForm(this)">
-                                <c:if test="${currentHd != null}">
-                                    <input type="hidden" name="hdId" value="${currentHd.id}">
-                                </c:if>
-                                <div class="col-md-9">
-                                    <input type="text" name="kw" class="form-control" placeholder="Nhập tên giày chạy bộ nam, size 39-44, hoặc mã ID..." value="${param.kw}">
-                                </div>
-                                <div class="col-md-3">
-                                    <button type="submit" class="btn btn-outline-danger w-100 fw-semibold">
-                                        <i class="bi bi-search"></i> Tìm kiếm
-                                    </button>
-                                </div>
-                            </form>
-
-                            <!-- Danh sách SKU giày tìm thấy -->
-                            <div class="table-responsive" style="max-height: 250px;">
-                                <table class="table table-hover table-sm align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Sản phẩm Giày Nam</th>
-                                            <th>Size</th>
-                                            <th>Màu sắc</th>
-                                            <th>Đơn giá</th>
-                                            <th>Tồn</th>
-                                            <th class="text-end">Thao tác</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <c:forEach var="spct" items="${allSpct}">
-                                            <tr class="${spct.soLuongKhaDung <= 0 ? 'table-secondary opacity-75' : ''}">
-                                                <td class="fw-bold text-dark">
-                                                    <span class="badge bg-secondary me-1">${spct.sanPham.thuongHieu != null ? spct.sanPham.thuongHieu.ten : ''}</span>
-                                                    ${spct.sanPham.tenSp}
-                                                    <small class="text-muted d-block fw-normal">[Mã: ${spct.sanPham.maSp}]</small>
-                                                </td>
-                                                <td><span class="badge bg-dark">${spct.kichCo.ten}</span></td>
-                                                <td>${spct.mauSac.ten}</td>
-                                                <td class="text-danger fw-semibold">
-                                                    <fmt:formatNumber value="${spct.giaBan}" type="number" /> đ
-                                                </td>
-                                                <td>
-                                                    <c:choose>
-                                                        <c:when test="${spct.soLuongKhaDung <= 0}">
-                                                            <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-x-circle me-1"></i>Hết hàng (0)</span>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <span class="fw-bold text-dark">${spct.soLuongKhaDung}</span>
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </td>
-                                                <td class="text-end">
-                                                    <c:choose>
-                                                        <c:when test="${currentHd != null && spct.soLuongKhaDung > 0}">
-                                                            <form action="${pageContext.request.contextPath}/ban-hang" method="POST" class="d-inline" onsubmit="attachPosCustomerInfoToForm(this)">
-                                                                <input type="hidden" name="action" value="them-sp">
-                                                                <input type="hidden" name="hdId" value="${currentHd.id}">
-                                                                <input type="hidden" name="spctId" value="${spct.id}">
-                                                                <button type="submit" class="btn btn-sm btn-danger shadow-sm">
-                                                                    <i class="bi bi-cart-plus"></i> Chọn
-                                                                </button>
-                                                            </form>
-                                                        </c:when>
-                                                        <c:when test="${spct.soLuongKhaDung <= 0}">
-                                                            <button type="button" class="btn btn-sm btn-secondary text-white-50 border-0 opacity-50" disabled style="cursor: not-allowed;" title="Sản phẩm đã hết số lượng tồn kho">
-                                                                <i class="bi bi-cart-x"></i> Hết hàng
-                                                            </button>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <button type="button" class="btn btn-sm btn-light border text-muted opacity-50" disabled title="Vui lòng tạo hoặc chọn một hóa đơn đang chờ">
-                                                                <i class="bi bi-cart-plus"></i> Chọn
-                                                            </button>
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </td>
-                                            </tr>
-                                        </c:forEach>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
                         <!-- 3. Chi tiết giỏ hàng trong Hóa đơn hiện tại -->
-                        <div class="runmax-card p-4">
+                        <div class="runmax-card p-4" id="pos-cart-container">
                             <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
                                 <h6 class="fw-bold text-dark mb-0">
                                     <i class="bi bi-bag-check-fill text-danger me-1"></i> CHI TIẾT SẢN PHẨM TRONG ĐƠN:
                                     <span class="text-danger">${currentHd != null ? currentHd.maHd : 'Chưa chọn'}</span>
                                 </h6>
-                                <c:if test="${currentHd != null}">
-                                    <button type="button" class="btn btn-danger fw-bold d-flex align-items-center gap-2 px-3 py-2 shadow-sm" onclick="openInvoiceScanQRModal('${currentHd.id}')" style="border-radius: 8px; font-size: 0.95rem;">
-                                        <i class="bi bi-qr-code-scan fs-5"></i> Quét QR Thêm Ngay Vào Giỏ
-                                    </button>
+                                <c:if test="${currentHd != null && not empty chiTiets}">
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-danger fw-bold d-flex align-items-center gap-2 px-3 py-2 shadow-sm" onclick="openSearchModal()" style="border-radius: 8px; font-size: 0.95rem;">
+                                            <i class="bi bi-search fs-5"></i> Thêm Sản Phẩm
+                                        </button>
+                                        <button type="button" class="btn btn-danger fw-bold d-flex align-items-center gap-2 px-3 py-2 shadow-sm" onclick="openInvoiceScanQRModal('${currentHd.id}')" style="border-radius: 8px; font-size: 0.95rem;">
+                                            <i class="bi bi-qr-code-scan fs-5"></i> Quét QR
+                                        </button>
+                                    </div>
                                 </c:if>
                             </div>
 
                             <c:choose>
                                 <c:when test="${currentHd != null}">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Tên Giày Nam Chạy Bộ</th>
-                                                    <th>Size / Màu</th>
-                                                    <th>Đơn giá</th>
-                                                    <th>Số lượng</th>
-                                                    <th>Thành tiền</th>
-                                                    <th>Xóa</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <c:forEach var="ct" items="${chiTiets}" varStatus="stt">
-                                                    <tr>
-                                                        <td>${stt.index + 1}</td>
-                                                        <td class="fw-bold">
-                                                            <span class="badge bg-secondary me-1">${ct.sanPhamChiTiet.sanPham.thuongHieu != null ? ct.sanPhamChiTiet.sanPham.thuongHieu.ten : ''}</span>
-                                                            ${ct.sanPhamChiTiet.sanPham.tenSp}
-                                                            <small class="text-muted d-block fw-normal">[Mã: ${ct.sanPhamChiTiet.sanPham.maSp}]</small>
-                                                        </td>
-                                                        <td>
-                                                            Size <b>${ct.sanPhamChiTiet.kichCo.ten}</b> | ${ct.sanPhamChiTiet.mauSac.ten}
-                                                        <td><fmt:formatNumber value="${ct.donGia}" type="number"/> đ</td>
-                                                        <td style="width: 140px;">
-                                                            <form action="${pageContext.request.contextPath}/ban-hang" method="POST" class="d-flex align-items-center justify-content-center m-0" onsubmit="attachPosCustomerInfoToForm(this)">
-                                                                <input type="hidden" name="action" value="cap-nhat-sl">
-                                                                <input type="hidden" name="hdId" value="${currentHd.id}">
-                                                                <input type="hidden" name="chiTietId" value="${ct.id}">
-                                                                <div class="input-group input-group-sm" style="width: 125px;">
-                                                                    <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="var inp = this.parentNode.querySelector('input'); var val = parseInt(inp.value||1); if(val > 1) { inp.value = val - 1; submitPosFormWithCustomer(inp.form); } else { showBootstrapConfirm('Bạn có chắc muốn xóa sản phẩm này khỏi đơn?', function() { inp.value = 0; submitPosFormWithCustomer(inp.form); }); }" title="Giảm số lượng">-</button>
-                                                                    <input type="number" name="soLuong" class="form-control text-center fw-bold px-1" value="${ct.soLuong}" min="1" max="${ct.sanPhamChiTiet.soLuongKhaDung + ct.soLuong}" onchange="if(parseInt(this.value) <= 0) { var inp=this; showBootstrapConfirm('Bạn có chắc muốn xóa sản phẩm này?', function() { submitPosFormWithCustomer(inp.form); }); } else { submitPosFormWithCustomer(this.form); }">
-                                                                    <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="var inp = this.parentNode.querySelector('input'); var max = parseInt(inp.getAttribute('max') || 9999); var val = parseInt(inp.value||1); if(val < max) { inp.value = val + 1; submitPosFormWithCustomer(inp.form); } else { showBootstrapAlert('Số lượng vượt quá tồn kho khả dụng hiện tại (' + max + ')!', 'warning'); }" title="Tăng số lượng">+</button>
-                                                                </div>
-                                                            </form>
-                                                        </td>
-                                                        <td class="fw-bold text-danger">
-                                                            <fmt:formatNumber value="${ct.thanhTien}" type="number"/> đ
-                                                        </td>
-                                                        <td>
-                                                            <form action="${pageContext.request.contextPath}/ban-hang" method="POST" onsubmit="attachPosCustomerInfoToForm(this)">
-                                                                <input type="hidden" name="action" value="xoa-sp">
-                                                                <input type="hidden" name="hdId" value="${currentHd.id}">
-                                                                <input type="hidden" name="chiTietId" value="${ct.id}">
-                                                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button>
-                                                            </form>
-                                                        </td>
-                                                    </tr>
-                                                </c:forEach>
-                                                <c:if test="${empty chiTiets}">
-                                                    <tr>
-                                                        <td colspan="7" class="text-center text-muted py-4">
-                                                            Đơn hàng chưa có giày chạy bộ nào. Vui lòng chọn sản phẩm ở bảng trên!
-                                                        </td>
-                                                    </tr>
-                                                </c:if>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <c:choose>
+                                        <c:when test="${empty chiTiets}">
+                                            <!-- TRẠNG THÁI TRỐNG (EMPTY STATE) -->
+                                            <div class="text-center py-5">
+                                                <div class="mb-3">
+                                                    <i class="bi bi-cart-x text-muted opacity-25" style="font-size: 5rem;"></i>
+                                                </div>
+                                                <h5 class="fw-bold text-dark mb-2">Giỏ hàng đang trống</h5>
+                                                <p class="text-muted mb-4">Hóa đơn <b class="text-danger">${currentHd.maHd}</b> chưa có sản phẩm nào.<br>Hãy tìm kiếm hoặc quét QR để thêm sản phẩm vào giỏ.</p>
+                                                <div class="d-flex justify-content-center gap-3">
+                                                    <button type="button" class="btn btn-lg btn-outline-danger fw-bold px-4 shadow-sm" style="border-radius: 12px;" onclick="openSearchModal()">
+                                                        <i class="bi bi-search me-2"></i>Tìm & Thêm Sản Phẩm
+                                                    </button>
+                                                    <button type="button" class="btn btn-lg btn-danger fw-bold px-4 shadow-sm" style="border-radius: 12px;" onclick="openInvoiceScanQRModal('${currentHd.id}')">
+                                                        <i class="bi bi-qr-code-scan me-2"></i>Quét QR Camera
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <div class="table-responsive" style="min-height: 250px;">
+                                                <table class="table table-hover align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Tên Giày Nam Chạy Bộ</th>
+                                                            <th>Size / Màu / Đế / Chất liệu</th>
+                                                            <th>Đơn giá</th>
+                                                            <th>Số lượng</th>
+                                                            <th>Thành tiền</th>
+                                                            <th>Xóa</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <c:forEach var="ct" items="${chiTiets}" varStatus="stt">
+                                                            <tr>
+                                                                <td>${stt.index + 1}</td>
+                                                                <td class="fw-bold">
+                                                                    <span class="badge bg-secondary me-1">${ct.sanPhamChiTiet.sanPham.thuongHieu != null ? ct.sanPhamChiTiet.sanPham.thuongHieu.ten : ''}</span>
+                                                                    ${ct.sanPhamChiTiet.sanPham.tenSp}
+                                                                    <small class="text-muted d-block fw-normal">[Mã: ${ct.sanPhamChiTiet.sanPham.maSp}]</small>
+                                                                </td>
+                                                                <td>
+                                                                    <div class="mb-1">Size <b>${ct.sanPhamChiTiet.kichCo.ten}</b> | ${ct.sanPhamChiTiet.mauSac.ten}</div>
+                                                                    <span class="badge bg-info text-dark bg-opacity-10 border border-info" style="font-size: 0.7rem;">Đế: ${ct.sanPhamChiTiet.deGiay.ten}</span>
+                                                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: ${ct.sanPhamChiTiet.sanPham.chatLieu.ten}</span>
+                                                                </td>
+                                                                <td class="text-danger fw-semibold"><fmt:formatNumber value="${ct.donGia}" type="number"/> đ</td>
+                                                                <td style="width: 140px;">
+                                                                    <form action="${pageContext.request.contextPath}/ban-hang" method="POST" class="d-flex align-items-center justify-content-center m-0" onsubmit="attachPosCustomerInfoToForm(this)">
+                                                                        <input type="hidden" name="action" value="cap-nhat-sl">
+                                                                        <input type="hidden" name="hdId" value="${currentHd.id}">
+                                                                        <input type="hidden" name="chiTietId" value="${ct.id}">
+                                                                        <div class="input-group input-group-sm" style="width: 125px;">
+                                                                            <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="var inp = this.parentNode.querySelector('input'); var val = parseInt(inp.value||1); if(val > 1) { inp.value = val - 1; submitPosFormWithCustomer(inp.form); } else { showBootstrapConfirm('Bạn có chắc muốn xóa sản phẩm này khỏi đơn?', function() { inp.value = 0; submitPosFormWithCustomer(inp.form); }); }" title="Giảm số lượng">-</button>
+                                                                            <input type="number" name="soLuong" class="form-control text-center fw-bold px-1" value="${ct.soLuong}" min="1" max="${ct.sanPhamChiTiet.soLuongKhaDung + ct.soLuong}" onchange="if(parseInt(this.value) <= 0) { var inp=this; showBootstrapConfirm('Bạn có chắc muốn xóa sản phẩm này?', function() { submitPosFormWithCustomer(inp.form); }); } else { submitPosFormWithCustomer(this.form); }">
+                                                                            <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="var inp = this.parentNode.querySelector('input'); var max = parseInt(inp.getAttribute('max') || 9999); var val = parseInt(inp.value||1); if(val < max) { inp.value = val + 1; submitPosFormWithCustomer(inp.form); } else { showBootstrapAlert('Số lượng vượt quá tồn kho khả dụng hiện tại (' + max + ')!', 'warning'); }" title="Tăng số lượng">+</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </td>
+                                                                <td class="fw-bold text-danger">
+                                                                    <fmt:formatNumber value="${ct.thanhTien}" type="number"/> đ
+                                                                </td>
+                                                                <td>
+                                                                    <form action="${pageContext.request.contextPath}/ban-hang" method="POST" onsubmit="attachPosCustomerInfoToForm(this)">
+                                                                        <input type="hidden" name="action" value="xoa-sp">
+                                                                        <input type="hidden" name="hdId" value="${currentHd.id}">
+                                                                        <input type="hidden" name="chiTietId" value="${ct.id}">
+                                                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button>
+                                                                    </form>
+                                                                </td>
+                                                            </tr>
+                                                        </c:forEach>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </c:when>
                                 <c:otherwise>
-                                    <div class="text-center text-muted py-5">
-                                        Vui lòng chọn hoặc tạo hóa đơn ở trên để tiến hành bán hàng tại quầy POS!
+                                    <!-- CHƯA CHỌN HÓA ĐƠN -->
+                                    <div class="text-center py-5">
+                                        <div class="mb-3">
+                                            <i class="bi bi-receipt text-muted opacity-25" style="font-size: 5rem;"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-dark mb-2">Chưa chọn Hóa Đơn</h5>
+                                        <p class="text-muted mb-0">Vui lòng chọn 1 hóa đơn đang chờ bên cột trái, hoặc nhấn <b class="text-danger">Tạo hóa đơn mới</b> để bắt đầu bán hàng.</p>
                                     </div>
                                 </c:otherwise>
                             </c:choose>
@@ -291,7 +225,7 @@
 
                     <!-- CỘT PHẢI: THÔNG TIN THANH TOÁN POS -->
                     <div class="col-lg-4">
-                        <div class="runmax-card p-4">
+                        <div class="runmax-card p-4" id="pos-payment-block">
                             <h6 class="fw-bold text-dark border-bottom pb-3 mb-3">
                                 <i class="bi bi-wallet2 text-danger me-1"></i> THANH TOÁN ĐƠN HÀNG
                             </h6>
@@ -832,6 +766,184 @@
 
             stopHdCameraScanQR();
             window.location.href = '${pageContext.request.contextPath}/hoa-don?action=find-by-qr&code=' + encodeURIComponent(code);
+        }
+    </script>
+
+    <!-- MODAL TÌM KIẾM SẢN PHẨM (POS) -->
+    <div class="modal fade" id="modalSearchProduct" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-danger text-white p-3">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-search"></i> Tra Cứu Giày Chạy Bộ Nam
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <!-- Form Tìm kiếm -->
+                    <form id="posSearchForm" action="${pageContext.request.contextPath}/ban-hang" method="GET" class="row g-2 mb-3" onsubmit="attachPosCustomerInfoToForm(this)">
+                        <c:if test="${currentHd != null}">
+                            <input type="hidden" name="hdId" value="${currentHd.id}">
+                        </c:if>
+                        <div class="col-md-9">
+                            <input type="text" name="kw" class="form-control form-control-lg shadow-sm" placeholder="Nhập tên giày, size 39-44, hoặc mã ID..." value="${param.kw}">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-outline-danger btn-lg w-100 fw-bold shadow-sm">
+                                <i class="bi bi-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Danh sách kết quả -->
+                    <div class="table-responsive bg-white rounded-3 shadow-sm border" style="max-height: 400px;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Size / Màu / Đế / Chất liệu</th>
+                                    <th>Đơn giá</th>
+                                    <th>Tồn</th>
+                                    <th class="text-end pe-3">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="spct" items="${allSpct}">
+                                    <tr class="${spct.soLuongKhaDung <= 0 ? 'table-secondary opacity-75' : ''}">
+                                        <td class="fw-bold text-dark">
+                                            <span class="badge bg-secondary me-1">${spct.sanPham.thuongHieu != null ? spct.sanPham.thuongHieu.ten : ''}</span>
+                                            ${spct.sanPham.tenSp}
+                                            <small class="text-muted d-block fw-normal">[Mã: ${spct.sanPham.maSp}]</small>
+                                        </td>
+                                        <td>
+                                            <div class="mb-1">Size <b>${spct.kichCo.ten}</b> | ${spct.mauSac.ten}</div>
+                                            <span class="badge bg-info text-dark bg-opacity-10 border border-info" style="font-size: 0.7rem;">Đế: ${spct.deGiay.ten}</span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">Chất liệu: ${spct.sanPham.chatLieu.ten}</span>
+                                        </td>
+                                        <td class="text-danger fw-semibold">
+                                            <fmt:formatNumber value="${spct.giaBan}" type="number" /> đ
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${spct.soLuongKhaDung <= 0}">
+                                                    <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-x-circle me-1"></i>Hết hàng (0)</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="fw-bold text-dark">${spct.soLuongKhaDung}</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <c:choose>
+                                                <c:when test="${currentHd != null && spct.soLuongKhaDung > 0}">
+                                                    <form class="ajax-add-to-cart-form d-inline" onsubmit="return handleAjaxAddToCart(event, this)">
+                                                        <input type="hidden" name="action" value="them-sp">
+                                                        <input type="hidden" name="hdId" value="${currentHd.id}">
+                                                        <input type="hidden" name="spctId" value="${spct.id}">
+                                                        <input type="hidden" name="soLuong" value="1">
+                                                        <button type="submit" class="btn btn-danger fw-bold shadow-sm px-3" style="border-radius: 8px;">
+                                                            <i class="bi bi-cart-plus me-1"></i> Chọn
+                                                        </button>
+                                                    </form>
+                                                </c:when>
+                                                <c:when test="${spct.soLuongKhaDung <= 0}">
+                                                    <button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
+                                                        <i class="bi bi-cart-x me-1"></i> Hết
+                                                    </button>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <button type="button" class="btn btn-light border text-muted opacity-50 px-3" disabled title="Tạo/chọn Hóa Đơn trước" style="border-radius: 8px;">
+                                                        <i class="bi bi-cart-plus me-1"></i> Chọn
+                                                    </button>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                                <c:if test="${empty allSpct}">
+                                    <tr><td colspan="5" class="text-center text-muted py-4">Chưa có sản phẩm nào để hiển thị!</td></tr>
+                                </c:if>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openSearchModal() {
+            const modalEl = document.getElementById('modalSearchProduct');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+                setTimeout(() => {
+                    const kwInput = modalEl.querySelector('input[name="kw"]');
+                    if(kwInput) kwInput.focus();
+                }, 500);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('kw')) {
+                openSearchModal();
+            }
+        });
+
+        async function handleAjaxAddToCart(event, form) {
+            event.preventDefault();
+            const btn = form.querySelector('button[type="submit"]');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            btn.disabled = true;
+
+            const formData = new FormData(form);
+            const data = new URLSearchParams(formData);
+
+            try {
+                const response = await fetch('${pageContext.request.contextPath}/ban-hang', {
+                    method: 'POST',
+                    body: data,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    redirect: 'follow'
+                });
+
+                const htmlText = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+
+                const newCart = doc.getElementById('pos-cart-container');
+                if (newCart) {
+                    document.getElementById('pos-cart-container').innerHTML = newCart.innerHTML;
+                }
+                
+                showBootstrapAlert('Đã thêm sản phẩm vào giỏ!', 'success');
+                
+                const oldPaymentBlock = document.getElementById('pos-payment-block');
+                const newPaymentBlock = doc.getElementById('pos-payment-block');
+                if (oldPaymentBlock && newPaymentBlock) {
+                    oldPaymentBlock.innerHTML = newPaymentBlock.innerHTML;
+                }
+                
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="bi bi-check-lg"></i> Xong';
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-success');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.disabled = false;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-danger');
+                    }, 1500);
+                }, 300);
+
+            } catch (err) {
+                showBootstrapAlert('Lỗi kết nối khi thêm vào giỏ!', 'danger');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+            return false;
         }
     </script>
 
