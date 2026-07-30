@@ -282,18 +282,17 @@ public class HoaDonService {
         hd.setTongTien(tongTien);
         hd.setTrangThai(1);
 
-        // Gắn Khách Hàng vào hóa đơn nếu có ID
+        // Gắn Khách Hàng vào hóa đơn nếu có ID (từ API hoặc form truyền lên)
         if (khachHangId != null) {
             KhachHang kh = khRepo.findById(khachHangId);
             if (kh != null) {
                 hd.setKhachHang(kh);
             }
         }
-        // Khách lẻ -> đảm bảo khachHang = null
-        if (khachHangId == null) {
-            hd.setKhachHang(null);
-        }
-
+        // FIX BUG: KHÔNG force setKhachHang(null) nếu khachHangId == null ở bước này.
+        // Vì bên BanHangServlet đã xử lý logic Khách Lẻ (khi sdt rỗng) và Khách Quen (map qua sdt) 
+        // rồi gọi repository.update() trước khi vào hàm thanhToan() này.
+        
         hdRepo.update(hd);
 
         // Trừ kho đã thực hiện khi thêm sản phẩm vào giỏ hàng

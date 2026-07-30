@@ -331,9 +331,9 @@ INSERT INTO phuong_thuc_thanh_toan (ma_pt, ten_pt, trang_thai) VALUES
 -- Phiếu giảm giá
 INSERT INTO phieu_giam_gia (ma_phieu, ten_phieu, loai_phieu, loai_giam, gia_tri_giam, giam_toi_da, dieu_kien_giam, so_luong, mo_ta, ngay_bat_dau, ngay_ket_thuc, trang_thai)
 VALUES
-    ('PGG00001', N'Sale chào mùa hè 2026',       1, 1, 10,     200000, 500000,  9999, N'Giảm 10% tối đa 200k cho đơn từ 500k', '2026-04-28', '2026-05-29', 0),
-    ('PGG00002', N'Giảm 100k cho runner mới', 1, 2, 100000, NULL,   300000,  9999, N'Giảm thẳng 100k cho đơn từ 300k',          '2026-04-28', '2026-05-29', 0),
-    ('PGG00003', N'Flash Sale cuối tuần',          1, 1, 15,     300000, 800000,  3,    N'Giảm 15% tối đa 300k, chỉ 3 suất',     '2026-04-28', '2026-05-14', 0);
+    ('PGG00001', N'Sale chào mùa hè 2026',       1, 1, 10,     200000, 500000,  9999, N'Giảm 10% tối đa 200k cho đơn từ 500k', '2026-04-28', '2026-09-29', 0),
+    ('PGG00002', N'Giảm 100k cho runner mới', 1, 2, 100000, NULL,   300000,  9999, N'Giảm thẳng 100k cho đơn từ 300k',          '2026-04-28', '2026-09-29', 0),
+    ('PGG00003', N'Flash Sale cuối tuần',          1, 1, 15,     300000, 800000,  3,    N'Giảm 15% tối đa 300k, chỉ 3 suất',     '2026-04-28', '2026-09-14', 0);
 
 -- Khách hàng
 INSERT INTO khach_hang (ma_kh, ho_ten, sdt, email, trang_thai) VALUES
