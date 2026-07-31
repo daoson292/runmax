@@ -2,3 +2,4 @@
 target/
 *.class
 src/main/java/com/runmax/config/HibernateConfig.java
+docs/
