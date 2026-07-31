@@ -59,6 +59,7 @@ public class HoaDon {
      * 0: Đang chờ
      * 1: Đã hoàn thành
      * 2: Đã hủy
+     * 3: Thanh toán thiếu (Thanh toán 1 phần)
      */
     @Column(name = "trang_thai", nullable = false)
     @Builder.Default
@@ -80,7 +81,8 @@ public class HoaDon {
         if (trangThai == null) return "Không xác định";
         return switch (trangThai) {
             case 0 -> "Đang chờ";
-            case 1, 3 -> "Đã hoàn thành";
+            case 1 -> "Đã hoàn thành";
+            case 3 -> "Thanh toán thiếu";
             case 2, 4, 5, 6 -> "Đã hủy";
             default -> "Khác (" + trangThai + ")";
         };
@@ -94,7 +96,8 @@ public class HoaDon {
         if (trangThai == null) return "status-badge badge-cancel";
         return switch (trangThai) {
             case 0 -> "status-badge badge-wait";
-            case 1, 3 -> "status-badge badge-done";
+            case 1 -> "status-badge badge-done";
+            case 3 -> "status-badge badge-partial"; // Thêm CSS class này bên Frontend
             case 2, 4, 5, 6 -> "status-badge badge-cancel";
             default -> "status-badge badge-cancel";
         };

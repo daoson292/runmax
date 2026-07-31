@@ -80,9 +80,15 @@ public class BanHangServlet extends HttpServlet {
         HoaDon currentHd = null;
         if (hdIdStr != null && !hdIdStr.isEmpty()) {
             currentHd = hdService.findById(Long.parseLong(hdIdStr));
-            if (currentHd != null && !isQuanLy && (currentHd.getNhanVien() == null || !currentHd.getNhanVien().getId().equals(nv.getId()))) {
-                resp.sendError(403, "Không có quyền");
-                return;
+            if (currentHd != null) {
+                if (!isQuanLy && (currentHd.getNhanVien() == null || !currentHd.getNhanVien().getId().equals(nv.getId()))) {
+                    resp.sendError(403, "Không có quyền");
+                    return;
+                }
+                if (currentHd.getTrangThai() != 0 && currentHd.getTrangThai() != 3) {
+                    resp.sendRedirect(req.getContextPath() + "/ban-hang?success=thanh-toan-thanh-cong&printHdId=" + currentHd.getId());
+                    return;
+                }
             }
         } else if (!pendingOrders.isEmpty()) {
             currentHd = pendingOrders.get(0);

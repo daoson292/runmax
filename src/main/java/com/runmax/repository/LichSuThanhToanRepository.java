@@ -32,4 +32,15 @@ public class LichSuThanhToanRepository {
             return false;
         }
     }
+
+    public java.math.BigDecimal tinhTongTienDaTra(Long hoaDonId) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            java.math.BigDecimal sum = session.createQuery(
+                "SELECT SUM(ls.soTien) FROM LichSuThanhToan ls WHERE ls.hoaDon.id = :hdId AND ls.trangThai = 1",
+                java.math.BigDecimal.class)
+                .setParameter("hdId", hoaDonId)
+                .uniqueResult();
+            return sum != null ? sum : java.math.BigDecimal.ZERO;
+        }
+    }
 }

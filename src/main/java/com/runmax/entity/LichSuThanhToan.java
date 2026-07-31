@@ -42,4 +42,7 @@ public class LichSuThanhToan {
     @Column(name = "trang_thai", nullable = false)
     @Builder.Default
     private Integer trangThai = 1;
+
+    @Column(name = "noi_dung_ck", length = 255)
+    private String noiDungCk;
 }

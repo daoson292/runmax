@@ -32,7 +32,8 @@ public class AuthFilter implements Filter {
         boolean isPublicResource = path.startsWith("/assets/")
                 || path.equals("/login")
                 || path.equals("/login.jsp")
-                || path.startsWith("/api/public");
+                || path.startsWith("/api/public")
+                || path.startsWith("/api/webhook/sepay");
 
         if (isPublicResource) {
             chain.doFilter(request, response);

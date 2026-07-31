@@ -348,6 +348,12 @@ public class HoaDonService {
         int count = 0;
         for (HoaDon hd : pendingList) {
             if (hd.getNgayTao() != null && hd.getNgayTao().isBefore(twentyFourHoursAgo)) {
+                // Kiểm tra lịch sử thanh toán, nếu đã có tiền trả thì KHÔNG hủy
+                BigDecimal tongDaTra = lsttRepo.tinhTongTienDaTra(hd.getId());
+                if (tongDaTra != null && tongDaTra.compareTo(BigDecimal.ZERO) > 0) {
+                    continue; // Bỏ qua, không hủy
+                }
+                
                 huyHoaDon(hd.getId(), "Hệ Thống", "Tự động hủy hóa đơn chờ quá 24h");
                 count++;
             }

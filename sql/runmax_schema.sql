@@ -205,7 +205,7 @@ CREATE TABLE hoa_don (
     ghi_chu            NVARCHAR(500)  NULL,
     ngay_tao           DATETIME NOT NULL DEFAULT GETDATE(),
     trang_thai         INT NOT NULL DEFAULT 0,
-    -- 0: Chờ thanh toán, 1: Đã thanh toán, 2: Đã hủy
+    -- 0: Chờ thanh toán, 1: Đã thanh toán, 2: Đã hủy, 3: Thanh toán thiếu
     CONSTRAINT FK_hoa_don_khach_hang      FOREIGN KEY (khach_hang_id)     REFERENCES khach_hang(id),
     CONSTRAINT FK_hoa_don_nhan_vien       FOREIGN KEY (nhan_vien_id)      REFERENCES nhan_vien(id),
     CONSTRAINT FK_hoa_don_phieu_giam_gia  FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(id)
@@ -233,6 +233,7 @@ CREATE TABLE lich_su_thanh_toan (
     pttt_id         BIGINT NOT NULL,
     so_tien         DECIMAL(18, 2) NOT NULL,
     ma_giao_dich    VARCHAR(100)   NULL,
+    noi_dung_ck     NVARCHAR(255)  NULL,
     ngay_thanh_toan DATETIME NOT NULL DEFAULT GETDATE(),
     trang_thai      INT NOT NULL DEFAULT 1,
     CONSTRAINT FK_lstt_hoa_don FOREIGN KEY (hoa_don_id) REFERENCES hoa_don(id),

@@ -73,7 +73,7 @@ public class HoaDonRepository {
     public List<HoaDon> findPendingByNhanVien(Long nhanVienId) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             return session.createQuery(
-                "FROM HoaDon h WHERE h.trangThai = 0 AND h.nhanVien.id = :nvId ORDER BY h.ngayTao DESC",
+                "FROM HoaDon h WHERE h.trangThai IN (0, 3) AND h.nhanVien.id = :nvId ORDER BY h.ngayTao DESC",
                 HoaDon.class)
                 .setParameter("nvId", nhanVienId)
                 .list();
@@ -84,7 +84,7 @@ public class HoaDonRepository {
     public List<HoaDon> findAllPending() {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             return session.createQuery(
-                "FROM HoaDon h WHERE h.trangThai = 0 ORDER BY h.ngayTao DESC",
+                "FROM HoaDon h WHERE h.trangThai IN (0, 3) ORDER BY h.ngayTao DESC",
                 HoaDon.class)
                 .list();
         }

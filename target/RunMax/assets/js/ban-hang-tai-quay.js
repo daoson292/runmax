@@ -219,13 +219,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const total = Math.max(0, subtotal - discount);
 
         // Update summary elements
-        const subtotalEl = document.getElementById('summarySubtotal');
-        const discountEl = document.getElementById('summaryDiscount');
-        const totalEl = document.getElementById('summaryTotal');
+        const debtEl = document.getElementById('summaryDebt');
+        const paidEl = document.getElementById('summaryPaid');
 
         if (subtotalEl) subtotalEl.textContent = formatMoney(subtotal);
         if (discountEl) discountEl.textContent = discount > 0 ? `-${formatMoney(discount)}` : '0đ';
         if (totalEl) totalEl.textContent = formatMoney(total);
+        
+        if (debtEl && paidEl) {
+            const paid = parseInt(paidEl.textContent.replace(/[^\d]/g, '')) || 0;
+            debtEl.textContent = formatMoney(Math.max(0, total - paid));
+        }
     }
 
     // 3. TAB SWITCH & DELETE LOGIC
@@ -474,8 +478,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Payment Method Change
+    // Payment Method Change & Logic
     const radioMethods = document.querySelectorAll('input[name="paymentMethod"]');
+    const imgQrCode = document.getElementById('modal-qr-img');
+    const qrLoadingText = document.getElementById('modal-qr-status');
+    const qrModalDebtText = document.getElementById('qr-modal-debt-text');
+    const modalQRCodeSePay = document.getElementById('modalQRCodeSePay');
+    let qrPollingInterval = null;
+
     radioMethods.forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.checked) {
@@ -484,58 +494,143 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    function generateSePayQR(amount, orderCode) {
+        if (amount > 0 && imgQrCode) {
+            imgQrCode.src = `https://vietqr.app/img?bank=MBBank&acc=0347160331&template=compact&showinfo=true&holder=DAO%20VAN%20SON&store=RunMax&amount=${amount}&addInfo=${orderCode}`;
+            imgQrCode.style.display = 'block';
+            if (qrLoadingText) {
+                qrLoadingText.style.display = 'block';
+                qrLoadingText.innerHTML = 'Đang chờ thanh toán <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+            }
+            startQRPolling(orderCode);
+        }
+    }
+
+    function startQRPolling(orderCode) {
+        stopQRPolling();
+        qrPollingInterval = setInterval(() => {
+            fetch(`/api/order/check-status?orderCode=${orderCode}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'PAID') {
+                        stopQRPolling();
+                        if (qrLoadingText) qrLoadingText.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Đã nhận đủ tiền!</span>';
+                        if (typeof showToast === 'function') showToast('Thanh toán thành công qua QR!', 'success');
+                        else alert('Thanh toán thành công qua QR!');
+                        document.getElementById('summaryPaid').textContent = formatMoney(data.da_tra);
+                        document.getElementById('summaryDebt').textContent = '0đ';
+                        
+                        setTimeout(() => {
+                            if (modalQRCodeSePay) modalQRCodeSePay.classList.remove('show');
+                            openReceiptModal();
+                        }, 1000);
+                    } else if (data.status === 'THIEU') {
+                        if (qrLoadingText) qrLoadingText.innerHTML = `<span class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> Khách chuyển thiếu (Đã trả: ${formatMoney(data.da_tra)}). Vui lòng quét mã mới để thanh toán nốt ${formatMoney(data.con_no)}</span>`;
+                        if (qrModalDebtText) qrModalDebtText.textContent = `Còn nợ: ${formatMoney(data.con_no)}`;
+                        imgQrCode.src = `https://vietqr.app/img?bank=MBBank&acc=0347160331&template=compact&showinfo=true&holder=DAO%20VAN%20SON&store=RunMax&amount=${data.con_no}&addInfo=${orderCode}`;
+                        document.getElementById('summaryPaid').textContent = formatMoney(data.da_tra);
+                        document.getElementById('summaryDebt').textContent = formatMoney(data.con_no);
+                    }
+                }).catch(err => console.error(err));
+        }, 3000);
+    }
+
+    function stopQRPolling() {
+        if (qrPollingInterval) {
+            clearInterval(qrPollingInterval);
+            qrPollingInterval = null;
+        }
+    }
+
     // 5. PAYMENT & RECEIPT WORKFLOW
     const btnPay = document.getElementById('btnPay');
-    const modalConfirmPayment = document.getElementById('modalConfirmPayment');
-    const btnCancelConfirm = document.getElementById('btnCancelConfirm');
-    const btnAgreePayment = document.getElementById('btnAgreePayment');
-    const modalReceipt = document.getElementById('modalReceipt');
-    const btnFinishReceipt = document.getElementById('btnFinishReceipt');
+    const btnCloseQrModal = document.getElementById('btnCloseQrModal');
 
     if (btnPay) {
         btnPay.addEventListener('click', () => {
             const invoice = invoices[activeInvoiceId];
             if (invoice.items.length === 0) {
-                showBootstrapAlert('Vui lòng thêm ít nhất 1 sản phẩm trước khi thanh toán!', 'danger');
+                if (typeof showBootstrapAlert === 'function') showBootstrapAlert('Vui lòng thêm ít nhất 1 sản phẩm trước khi thanh toán!', 'danger');
+                else alert('Vui lòng thêm ít nhất 1 sản phẩm trước khi thanh toán!');
                 return;
             }
 
-            const totalTxt = document.getElementById('summaryTotal').textContent;
-            document.getElementById('confirmInvoiceCode').textContent = activeInvoiceId;
-            document.getElementById('confirmTotalAmount').textContent = totalTxt;
+            const debtTxt = document.getElementById('summaryDebt').textContent.replace(/[^\d]/g, '');
+            const currentDebt = parseInt(debtTxt) || 0;
 
-            modalConfirmPayment.classList.add('show');
+            if (currentDebt <= 0) {
+                if (typeof showToast === 'function') showToast('Hóa đơn đã thanh toán đủ!', 'warning');
+                else alert('Hóa đơn đã thanh toán đủ!');
+                openReceiptModal();
+                return;
+            }
+
+            if (invoice.paymentMethod === 'tien-mat') {
+                const amountStr = prompt(`Nhập số tiền khách đưa (Còn nợ: ${formatMoney(currentDebt)}):`, currentDebt);
+                if (amountStr !== null) {
+                    const amount = parseInt(amountStr.replace(/[^\d]/g, ''));
+                    if (!isNaN(amount) && amount > 0) {
+                        fetch('/api/order/pay-partial', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                hdId: activeInvoiceId,
+                                soTien: amount,
+                                phuongThuc: 1
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('summaryPaid').textContent = formatMoney(data.da_tra);
+                                document.getElementById('summaryDebt').textContent = formatMoney(data.con_no);
+                                if (data.con_no <= 0) {
+                                    if (typeof showToast === 'function') showToast('Thanh toán hoàn tất!', 'success');
+                                    else alert('Thanh toán hoàn tất!');
+                                    openReceiptModal();
+                                } else {
+                                    if (typeof showToast === 'function') showToast(`Khách còn nợ ${formatMoney(data.con_no)}`, 'info');
+                                    else alert(`Khách còn nợ ${formatMoney(data.con_no)}`);
+                                }
+                            } else {
+                                alert('Lỗi xử lý thanh toán: ' + data.message);
+                            }
+                        })
+                        .catch(err => console.error(err));
+                    }
+                }
+            } else if (invoice.paymentMethod === 'chuyen-khoan') {
+                if (qrModalDebtText) qrModalDebtText.textContent = `Còn nợ: ${formatMoney(currentDebt)}`;
+                if (modalQRCodeSePay) modalQRCodeSePay.classList.add('show');
+                generateSePayQR(currentDebt, activeInvoiceId);
+            }
         });
     }
 
-    if (btnCancelConfirm) {
-        btnCancelConfirm.addEventListener('click', () => {
-            modalConfirmPayment.classList.remove('show');
+    if (btnCloseQrModal) {
+        btnCloseQrModal.addEventListener('click', () => {
+            if (modalQRCodeSePay) modalQRCodeSePay.classList.remove('show');
+            stopQRPolling();
         });
     }
 
-    if (btnAgreePayment) {
-        btnAgreePayment.addEventListener('click', () => {
-            modalConfirmPayment.classList.remove('show');
+    function openReceiptModal() {
+        const invoice = invoices[activeInvoiceId];
+        document.getElementById('receiptCode').textContent = activeInvoiceId;
+        document.getElementById('receiptDate').textContent = getCurrentDateTime();
+        
+        const custSelect = document.getElementById('selectCustomer');
+        const custText = custSelect ? custSelect.options[custSelect.selectedIndex].text : 'Khách lẻ';
+        document.getElementById('receiptCustomer').textContent = custText;
 
-            // Populate receipt data
-            const invoice = invoices[activeInvoiceId];
-            document.getElementById('receiptCode').textContent = activeInvoiceId;
-            document.getElementById('receiptDate').textContent = getCurrentDateTime();
-            
-            const custSelect = document.getElementById('selectCustomer');
-            const custText = custSelect ? custSelect.options[custSelect.selectedIndex].text : 'Khách lẻ';
-            document.getElementById('receiptCustomer').textContent = custText;
+        const methodMap = {
+            'tien-mat': 'Tiền mặt',
+            'chuyen-khoan': 'Chuyển khoản QR'
+        };
+        document.getElementById('receiptPaymentMethod').textContent = methodMap[invoice.paymentMethod] || 'Tiền mặt';
 
-            const methodMap = {
-                'tien-mat': 'Tiền mặt',
-                'chuyen-khoan': 'Chuyển khoản',
-                'ca-hai': 'Tiền mặt & Chuyển khoản'
-            };
-            document.getElementById('receiptPaymentMethod').textContent = methodMap[invoice.paymentMethod] || 'Tiền mặt';
-
-            // Populate items table
-            const receiptTbody = document.getElementById('receiptTableBody');
+        const receiptTbody = document.getElementById('receiptTableBody');
+        if(receiptTbody) {
             receiptTbody.innerHTML = '';
             let subtotal = 0;
 
@@ -558,16 +653,20 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('receiptSubtotal').textContent = formatMoney(subtotal);
             document.getElementById('receiptDiscount').textContent = discountTxt;
             document.getElementById('receiptGrandTotal').textContent = totalTxt;
+        }
 
-            modalReceipt.classList.add('show');
-        });
+        const modalReceipt = document.getElementById('modalReceipt');
+        if(modalReceipt) modalReceipt.classList.add('show');
     }
 
+    const btnFinishReceipt = document.getElementById('btnFinishReceipt');
     if (btnFinishReceipt) {
         btnFinishReceipt.addEventListener('click', () => {
-            modalReceipt.classList.remove('show');
-            // Remove paid invoice and switch
+            const modalReceipt = document.getElementById('modalReceipt');
+            if(modalReceipt) modalReceipt.classList.remove('show');
             deleteInvoice(activeInvoiceId);
+            document.getElementById('summaryPaid').textContent = '0đ';
+            calculateTotals();
         });
     }
 

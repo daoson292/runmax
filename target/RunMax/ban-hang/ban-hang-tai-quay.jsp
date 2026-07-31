@@ -185,18 +185,18 @@
                                     </div>
                                 </div>
 
-                                <!-- Payment Methods -->
-                                <div class="pos-radio-group">
-                                    <label class="group-title">Hình thức thanh toán</label>
-                                    <div class="pos-radio-options">
-                                        <label class="radio-option">
-                                            <input type="radio" name="paymentMethod" value="tien-mat" checked> Tiền mặt
-                                        </label>
-                                        <label class="radio-option">
-                                            <input type="radio" name="paymentMethod" value="chuyen-khoan"> Chuyển khoản
-                                        </label>
+                                    <!-- Payment Methods -->
+                                    <div class="pos-radio-group">
+                                        <label class="group-title">Hình thức thanh toán</label>
+                                        <div class="pos-radio-options">
+                                            <label class="radio-option">
+                                                <input type="radio" name="paymentMethod" value="tien-mat" checked> Tiền mặt
+                                            </label>
+                                            <label class="radio-option">
+                                                <input type="radio" name="paymentMethod" value="chuyen-khoan"> Chuyển khoản QR
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
                             </div>
 
                             <!-- Payment Summary Card -->
@@ -209,12 +209,20 @@
                                     <span class="label">Số tiền giảm</span>
                                     <span class="value discount" id="summaryDiscount">-500.000đ</span>
                                 </div>
-                                <div class="summary-row total">
+                                <div class="summary-row total mb-2">
                                     <span class="label">Tổng tiền sau giảm</span>
                                     <span class="value" id="summaryTotal">5.200.000đ</span>
                                 </div>
-                                <button type="button" class="btn-success-custom" id="btnPay">
-                                    Thanh Toán
+                                <div class="summary-row text-success mb-2">
+                                    <span class="label">Đã thanh toán</span>
+                                    <span class="value" id="summaryPaid">0đ</span>
+                                </div>
+                                <div class="summary-row text-danger fw-bold">
+                                    <span class="label">Còn nợ</span>
+                                    <span class="value" id="summaryDebt">5.200.000đ</span>
+                                </div>
+                                <button type="button" class="btn-success-custom mt-3" id="btnPay">
+                                    Xử lý Thanh Toán
                                 </button>
                             </div>
                         </div>
@@ -304,14 +312,19 @@
             </div>
         </div>
 
-        <!-- MODAL 2: Xác nhận thanh toán -->
-        <div class="modal-overlay" id="modalConfirmPayment">
-            <div class="modal-box text-center">
-                <h2>Vui lòng xác nhận</h2>
-                <p style="font-size: 16px; margin: 16px 0 24px; color: var(--dark-text); font-weight: 500;">Xác nhận thanh toán ?</p>
-                <div class="modal-actions justify-content-center">
-                    <button type="button" class="btn-modal-cancel" id="btnCancelConfirm">Hủy</button>
-                    <button type="button" class="btn-modal-confirm" id="btnAgreePayment">Đồng ý</button>
+        <!-- MODAL QR Chuyển khoản (SePay) -->
+        <div class="modal-overlay" id="modalQRCodeSePay">
+            <div class="modal-box text-center" style="max-width: 400px;">
+                <h3 class="mb-3">Quét mã QR để thanh toán</h3>
+                <p id="qr-modal-debt-text" class="text-danger fw-bold fs-5 mb-3">Còn nợ: 0đ</p>
+                <div class="qr-container mb-3 text-center">
+                    <img id="modal-qr-img" src="" alt="Mã QR Chuyển Khoản" style="max-width: 250px; display: none; margin: 0 auto; border: 2px solid var(--primary-blue); border-radius: 8px; padding: 4px;">
+                    <div id="modal-qr-status" style="font-size: 14px; color: #888; margin-top: 15px; display: none;">
+                        Đang chờ thanh toán <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    </div>
+                </div>
+                <div class="modal-actions justify-content-center mt-4">
+                    <button type="button" class="btn-modal-cancel w-100" id="btnCloseQrModal">Đóng</button>
                 </div>
             </div>
         </div>
