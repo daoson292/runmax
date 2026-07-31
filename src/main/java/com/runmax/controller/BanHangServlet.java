@@ -175,8 +175,19 @@ public class BanHangServlet extends HttpServlet {
     private void handleThemSP(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String hdIdStr   = req.getParameter("hdId");
         if (hdIdStr == null || hdIdStr.isEmpty()) hdIdStr = req.getParameter("hoaDonId");
+        
+        String spctIdStr = req.getParameter("spctId");
+        if (spctIdStr == null || spctIdStr.trim().isEmpty()) {
+            spctIdStr = req.getParameter("chiTietId");
+        }
+        
+        if (hdIdStr == null || hdIdStr.trim().isEmpty() || spctIdStr == null || spctIdStr.trim().isEmpty()) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing parameters");
+            return;
+        }
+
         Long hdId        = Long.parseLong(hdIdStr);
-        Long spctId      = Long.parseLong(req.getParameter("spctId"));
+        Long spctId      = Long.parseLong(spctIdStr);
         int soLuong      = Integer.parseInt(req.getParameter("soLuong") != null ? req.getParameter("soLuong") : "1");
 
         boolean ok = hdService.themSanPham(hdId, spctId, soLuong);

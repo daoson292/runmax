@@ -1186,8 +1186,8 @@
                 </div>
                 <div class="modal-body p-4 bg-light">
                     <div class="row h-100">
-                        <!-- Cột Trái: Tìm kiếm & Kết quả (70%) -->
-                        <div class="col-lg-8 d-flex flex-column h-100 pe-4">
+                        <!-- Cột: Tìm kiếm & Kết quả (100%) -->
+                        <div class="col-lg-12 d-flex flex-column h-100">
                             <!-- Khối Lọc -->
                             <div class="row g-2 mb-3">
                                 <div class="col-md-12">
@@ -1209,6 +1209,9 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light sticky-top">
                                         <tr>
+                                            <th style="width: 40px;" class="text-center">
+                                                <input class="form-check-input border-secondary" type="checkbox" id="selectAllSpct" onchange="toggleAllSpct(this)">
+                                            </th>
                                             <th>Sản phẩm</th>
                                             <th>Phân loại</th>
                                             <th>Đơn giá</th>
@@ -1218,7 +1221,7 @@
                                     </thead>
                                     <tbody id="posProductTableBody">
                                         <!-- JS Render here -->
-                                        <tr><td colspan="5" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang tải...</td></tr>
+                                        <tr><td colspan="6" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang tải...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1229,36 +1232,30 @@
                                 </ul>
                             </nav>
                         </div>
-
-                        <!-- Cột Phải: Giỏ Hàng Nháp (30%) -->
-                        <div class="col-lg-4 d-flex flex-column h-100 border-start border-2 border-danger border-opacity-25 ps-4">
-                            <h5 class="fw-bold text-dark mb-3">
-                                <i class="bi bi-cart4 text-danger me-2"></i>Giỏ Hàng Nháp
-                            </h5>
-                            
-                            <div id="stagingCartContainer" class="flex-grow-1 overflow-auto bg-white rounded-3 shadow-sm border mb-3 p-2" style="min-height: 400px; max-height: 400px;">
-                                <div class="text-center py-5 text-muted">
-                                    <i class="bi bi-box-seam opacity-25" style="font-size: 3rem;"></i>
-                                    <p class="mt-2 mb-0">Chưa chọn sản phẩm nào</p>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-3 shadow-sm border p-3 mt-auto">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted fw-semibold">Tổng số lượng:</span>
-                                    <span class="fw-bold" id="stagingTotalQty">0</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-3">
-                                    <span class="text-muted fw-semibold">Tạm tính:</span>
-                                    <span class="text-danger fw-bold fs-5" id="stagingTotalPrice">0 đ</span>
-                                </div>
-                                <button type="button" class="btn btn-runmax btn-lg w-100 fw-bold shadow-sm py-2" onclick="submitStagingCart(${currentHd != null ? currentHd.id : 'null'})">
-                                    <i class="bi bi-check2-all me-2"></i> XÁC NHẬN ĐẨY ĐƠN
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
+                <!-- Footer Batch Add -->
+                <div class="modal-footer justify-content-between bg-light border-top">
+                    <div class="d-flex align-items-center">
+                        <button type="button" class="btn btn-outline-secondary px-4 fw-semibold" onclick="uncheckAllSpct()">Bỏ chọn tất cả</button>
+                        <span class="text-primary fw-bold ms-4">Tổng SP trong đơn hiện tại: <span id="tongSpDon">0</span></span>
+                    </div>
+                    <button type="button" class="btn btn-runmax px-5 fw-bold d-none" id="btnConfirmBatchAdd" onclick="confirmBatchAdd(${currentHd != null ? currentHd.id : 'null'}, this)">
+                        <i class="bi bi-check2-all me-2"></i> XÁC NHẬN THÊM (0)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Container cho Toast Notification góc trên (Quick Add) -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1065;">
+        <div id="quickAddToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-bold">
+                    <i class="bi bi-check-circle-fill me-2"></i> Đã thêm sản phẩm thành công!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>
@@ -1343,110 +1340,86 @@
         // --- STAGING CART LOGIC ---
         let stagingCartItems = [];
 
-        function addToStagingCart(id, name, size, color, price, maxQty) {
-            let existing = stagingCartItems.find(item => item.id === id);
-            if (existing) {
-                if (existing.qty < maxQty) {
-                    existing.qty++;
-                } else {
-                    showBootstrapAlert('Đã đạt số lượng tồn kho tối đa!', 'warning');
-                }
+        // --- NEW BATCH ADD & QUICK ADD LOGIC ---
+        let existingCartIds = [
+            <c:if test="${not empty chiTiets}">
+                <c:forEach var="ct" items="${chiTiets}" varStatus="status">
+                    ${ct.sanPhamChiTiet.id}${not status.last ? ',' : ''}
+                </c:forEach>
+            </c:if>
+        ];
+        let selectedSpctIds = new Set();
+
+        function toggleSpctSelection(id, isChecked) {
+            if (isChecked) {
+                selectedSpctIds.add(id);
             } else {
-                stagingCartItems.push({
-                    id: id,
-                    name: name,
-                    size: size,
-                    color: color,
-                    price: price,
-                    maxQty: maxQty,
-                    qty: 1
-                });
+                selectedSpctIds.delete(id);
             }
-            renderStagingCart();
+            updateBatchAddButton();
+            updateSelectAllCheckbox();
         }
 
-        function updateStagingCartQty(id, newQty) {
-            let item = stagingCartItems.find(i => i.id === id);
-            if (item) {
-                newQty = parseInt(newQty);
-                if (isNaN(newQty) || newQty < 1) newQty = 1;
-                if (newQty > item.maxQty) {
-                    newQty = item.maxQty;
-                    showBootstrapAlert('Số lượng vượt quá tồn kho khả dụng (' + item.maxQty + ')!', 'warning');
+        function toggleAllSpct(el) {
+            const isChecked = el.checked;
+            const checkboxes = document.querySelectorAll('.spct-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => {
+                cb.checked = isChecked;
+                if (isChecked) {
+                    selectedSpctIds.add(parseInt(cb.value));
+                } else {
+                    selectedSpctIds.delete(parseInt(cb.value));
                 }
-                item.qty = newQty;
-                renderStagingCart();
-            }
+            });
+            updateBatchAddButton();
         }
 
-        function removeStagingCartItem(id) {
-            stagingCartItems = stagingCartItems.filter(item => item.id !== id);
-            renderStagingCart();
+        function uncheckAllSpct() {
+            selectedSpctIds.clear();
+            const checkboxes = document.querySelectorAll('.spct-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            const selectAll = document.getElementById('selectAllSpct');
+            if (selectAll) selectAll.checked = false;
+            updateBatchAddButton();
         }
 
-        function renderStagingCart() {
-            const container = document.getElementById('stagingCartContainer');
-            if (stagingCartItems.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-box-seam opacity-25" style="font-size: 3rem;"></i>
-                        <p class="mt-2 mb-0">Chưa chọn sản phẩm nào</p>
-                    </div>
-                `;
-                document.getElementById('stagingTotalQty').innerText = '0';
-                document.getElementById('stagingTotalPrice').innerText = '0 đ';
+        function updateSelectAllCheckbox() {
+            const checkboxes = document.querySelectorAll('.spct-checkbox:not(:disabled)');
+            const selectAll = document.getElementById('selectAllSpct');
+            if (!selectAll) return;
+            if (checkboxes.length === 0) {
+                selectAll.checked = false;
                 return;
             }
-
-            let html = '<ul class="list-group list-group-flush">';
-            let totalQty = 0;
-            let totalPrice = 0;
-
-            stagingCartItems.forEach(item => {
-                totalQty += item.qty;
-                totalPrice += (item.qty * item.price);
-                html += `
-                    <li class="list-group-item px-0 py-3 border-bottom">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="pe-2">
-                                <h6 class="fw-bold text-dark mb-1">\${item.name}</h6>
-                                <div class="small text-muted">Size: <b>\${item.size}</b> | Màu: <b>\${item.color}</b></div>
-                                <div class="text-danger fw-semibold mt-1">\${new Intl.NumberFormat('vi-VN').format(item.price)} đ</div>
-                            </div>
-                            <button class="btn btn-sm btn-link text-danger p-0 ms-auto" onclick="removeStagingCartItem(\${item.id})">
-                                <i class="bi bi-trash3 fs-5"></i>
-                            </button>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mt-2">
-                            <span class="small text-muted">Tồn: \${item.maxQty}</span>
-                            <div class="input-group input-group-sm" style="width: 110px;">
-                                <button class="btn btn-outline-secondary px-2" type="button" onclick="updateStagingCartQty(\${item.id}, \${item.qty - 1})">-</button>
-                                <input type="number" class="form-control text-center px-1" value="\${item.qty}" min="1" max="\${item.maxQty}" onchange="updateStagingCartQty(\${item.id}, this.value)">
-                                <button class="btn btn-outline-secondary px-2" type="button" onclick="updateStagingCartQty(\${item.id}, \${item.qty + 1})">+</button>
-                            </div>
-                        </div>
-                    </li>
-                `;
+            let allChecked = true;
+            checkboxes.forEach(cb => {
+                if (!cb.checked) allChecked = false;
             });
-            html += '</ul>';
-            
-            container.innerHTML = html;
-            document.getElementById('stagingTotalQty').innerText = totalQty;
-            document.getElementById('stagingTotalPrice').innerText = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' đ';
+            selectAll.checked = allChecked;
         }
 
-        async function submitStagingCart(hdId) {
+        function updateBatchAddButton() {
+            const btn = document.getElementById('btnConfirmBatchAdd');
+            if (btn) {
+                btn.innerHTML = '<i class="bi bi-check2-all me-2"></i> XÁC NHẬN THÊM (' + selectedSpctIds.size + ')';
+                if (selectedSpctIds.size > 0) {
+                    btn.classList.remove('d-none');
+                } else {
+                    btn.classList.add('d-none');
+                }
+            }
+        }
+
+        async function confirmBatchAdd(hdId, btn) {
             if (!hdId) {
                 showBootstrapAlert('Vui lòng chọn hoặc tạo hóa đơn trước khi thêm sản phẩm!', 'warning');
                 return;
             }
-            if (stagingCartItems.length === 0) {
-                showBootstrapAlert('Giỏ hàng nháp đang trống!', 'warning');
+            if (selectedSpctIds.size === 0) {
+                showBootstrapAlert('Chưa chọn sản phẩm nào!', 'warning');
                 return;
             }
 
-            // Lấy id nút bấm để disable tạm thời
-            const btn = event.currentTarget || event.target;
             const originalHtml = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
             btn.disabled = true;
@@ -1454,9 +1427,9 @@
             const formData = new URLSearchParams();
             formData.append('action', 'them-nhieu-sp');
             formData.append('hdId', hdId);
-            stagingCartItems.forEach(item => {
-                formData.append('spctIds[]', item.id);
-                formData.append('soLuongs[]', item.qty);
+            selectedSpctIds.forEach(id => {
+                formData.append('spctIds[]', id);
+                formData.append('soLuongs[]', 1); // Quick batch add default 1
             });
 
             try {
@@ -1479,15 +1452,25 @@
                 const newPaymentBlock = doc.getElementById('pos-payment-block');
                 if (oldPaymentBlock && newPaymentBlock) {
                     oldPaymentBlock.innerHTML = newPaymentBlock.innerHTML;
-                    const hdId = ${currentHd != null ? currentHd.id : 'null'};
-                    restorePosCustomerInfo(hdId);
+                    const hId = ${currentHd != null ? currentHd.id : 'null'};
+                    restorePosCustomerInfo(hId);
                 }
 
-                showBootstrapAlert('Đã đẩy thành công ' + stagingCartItems.length + ' sản phẩm vào hóa đơn!', 'success');
+                showBootstrapAlert('Đã đẩy thành công ' + selectedSpctIds.size + ' sản phẩm vào hóa đơn!', 'success');
 
-                // Clear and close
-                stagingCartItems = [];
-                renderStagingCart();
+                // Clear selection and existing Cart logic
+                selectedSpctIds.forEach(id => {
+                    if (!existingCartIds.includes(id)) {
+                        existingCartIds.push(id);
+                    }
+                });
+                
+                const tongSpDonEl = document.getElementById('tongSpDon');
+                if (tongSpDonEl) tongSpDonEl.innerText = existingCartIds.length;
+
+                uncheckAllSpct();
+                renderPosProductTable(); // Re-render to lock the newly added ones
+                
                 const modalEl = document.getElementById('modalSearchProduct');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
@@ -1495,6 +1478,104 @@
             } catch (err) {
                 showBootstrapAlert('Lỗi kết nối khi đẩy vào hóa đơn!', 'danger');
             } finally {
+                btn.innerHTML = originalHtml;
+                // btn.disabled handled by uncheckAllSpct -> updateBatchAddButton
+            }
+        }
+
+        async function quickAddProduct(id, maxQty, btn) {
+            const hdId = ${currentHd != null ? currentHd.id : 'null'};
+            if (!hdId) {
+                showBootstrapAlert('Vui lòng chọn hoặc tạo hóa đơn trước!', 'warning');
+                return;
+            }
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            btn.disabled = true;
+
+            const formData = new URLSearchParams();
+            formData.append('action', 'them-sp');
+            formData.append('hdId', hdId);
+            formData.append('chiTietId', id);
+
+            try {
+                const response = await fetch('${pageContext.request.contextPath}/ban-hang', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                
+                const htmlText = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+
+                const newCart = doc.getElementById('pos-cart-container');
+                if (newCart) {
+                    document.getElementById('pos-cart-container').innerHTML = newCart.innerHTML;
+                }
+                
+                const oldPaymentBlock = document.getElementById('pos-payment-block');
+                const newPaymentBlock = doc.getElementById('pos-payment-block');
+                if (oldPaymentBlock && newPaymentBlock) {
+                    oldPaymentBlock.innerHTML = newPaymentBlock.innerHTML;
+                    restorePosCustomerInfo(hdId);
+                }
+
+                // Show toast
+                const toastEl = document.getElementById('quickAddToast');
+                if (toastEl) {
+                    const toast = new bootstrap.Toast(toastEl, { delay: 2000 });
+                    toast.show();
+                }
+
+                // Update UI state
+                if (!existingCartIds.includes(id)) {
+                    existingCartIds.push(id);
+                }
+                const tongSpDonEl = document.getElementById('tongSpDon');
+                if (tongSpDonEl) tongSpDonEl.innerText = existingCartIds.length;
+
+                btn.innerHTML = '<i class="bi bi-check-lg"></i> Đã thêm';
+                btn.className = 'btn btn-secondary opacity-50 px-3';
+                
+                // Also disable its checkbox and update stock
+                const row = btn.closest('tr');
+                if(row) {
+                    row.classList.add('table-secondary', 'opacity-75');
+                    const cb = row.querySelector('.spct-checkbox');
+                    if (cb) {
+                        cb.disabled = true;
+                        cb.checked = false;
+                    }
+                    
+                    // Update realtime stock
+                    const stockCell = row.querySelectorAll('td')[4];
+                    if (stockCell) {
+                        const stockSpan = stockCell.querySelector('span.fw-bold');
+                        if (stockSpan) {
+                            let currentStock = parseInt(stockSpan.innerText);
+                            if (!isNaN(currentStock) && currentStock > 0) {
+                                currentStock -= 1;
+                                if (currentStock === 0) {
+                                    stockCell.innerHTML = '<span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-x-circle me-1"></i>Hết hàng (0)</span>';
+                                } else {
+                                    stockSpan.innerText = currentStock;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // If it was selected, remove it from selection
+                if (selectedSpctIds.has(id)) {
+                    selectedSpctIds.delete(id);
+                    updateBatchAddButton();
+                    updateSelectAllCheckbox();
+                }
+
+            } catch (err) {
+                showBootstrapAlert('Lỗi kết nối!', 'danger');
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
@@ -1575,23 +1656,37 @@
             let html = '';
             currentItems.forEach(spct => {
                 const isOutOfStock = spct.soLuongKhaDung <= 0;
-                const rowClass = isOutOfStock ? 'table-secondary opacity-75' : '';
+                const isInCart = existingCartIds.includes(spct.id);
+                const disabled = isOutOfStock || isInCart;
+                
+                const rowClass = disabled ? 'table-secondary opacity-75' : '';
                 const brandBadge = spct.thuongHieu ? `<span class="badge bg-secondary me-1">\${spct.thuongHieu}</span>` : '';
                 const stockHtml = isOutOfStock 
                     ? `<span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-x-circle me-1"></i>Hết hàng (0)</span>`
                     : `<span class="fw-bold text-dark">\${spct.soLuongKhaDung}</span>`;
                 
-                const actionHtml = (!isOutOfStock)
-                    ? `<button type="button" class="btn btn-danger fw-bold shadow-sm px-3" style="border-radius: 8px;"
-                                onclick="addToStagingCart(\${spct.id}, '\${spct.tenSp.replace(/'/g, "\\'")}', '\${spct.kichCo}', '\${spct.mauSac}', \${spct.giaBan}, \${spct.soLuongKhaDung})">
-                            <i class="bi bi-cart-plus me-1"></i> Chọn
-                        </button>`
-                    : `<button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
-                            <i class="bi bi-cart-x me-1"></i> Hết
-                        </button>`;
+                let actionHtml = '';
+                if (isInCart) {
+                    actionHtml = `<button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
+                                    Đã có trong giỏ
+                                  </button>`;
+                } else if (isOutOfStock) {
+                    actionHtml = `<button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
+                                    <i class="bi bi-cart-x me-1"></i> Hết
+                                  </button>`;
+                } else {
+                    actionHtml = `<button type="button" class="btn btn-danger fw-bold shadow-sm px-3" style="border-radius: 8px;"
+                                onclick="quickAddProduct(\${spct.id}, \${spct.soLuongKhaDung}, this)">
+                                <i class="bi bi-cart-plus me-1"></i> Chọn
+                            </button>`;
+                }
+
+                const checkedAttr = selectedSpctIds.has(spct.id) ? 'checked' : '';
+                const checkboxHtml = `<input class="form-check-input spct-checkbox border-secondary" type="checkbox" value="\${spct.id}" \${checkedAttr} \${disabled ? 'disabled' : ''} onchange="toggleSpctSelection(\${spct.id}, this.checked)">`;
 
                 html += `
                     <tr class="\${rowClass}">
+                        <td class="text-center">\${checkboxHtml}</td>
                         <td class="fw-bold text-dark">
                             \${brandBadge}
                             \${spct.tenSp}
@@ -1612,6 +1707,11 @@
             });
 
             tbody.innerHTML = html;
+            updateBatchAddButton();
+            updateSelectAllCheckbox();
+            
+            const tongSpDonEl = document.getElementById('tongSpDon');
+            if (tongSpDonEl) tongSpDonEl.innerText = existingCartIds.length;
 
             // Render pagination
             let pageHtml = '';
