@@ -80,6 +80,10 @@ public class BanHangServlet extends HttpServlet {
         HoaDon currentHd = null;
         if (hdIdStr != null && !hdIdStr.isEmpty()) {
             currentHd = hdService.findById(Long.parseLong(hdIdStr));
+            if (currentHd != null && !isQuanLy && (currentHd.getNhanVien() == null || !currentHd.getNhanVien().getId().equals(nv.getId()))) {
+                resp.sendError(403, "Không có quyền");
+                return;
+            }
         } else if (!pendingOrders.isEmpty()) {
             currentHd = pendingOrders.get(0);
         }
@@ -131,7 +135,14 @@ public class BanHangServlet extends HttpServlet {
         if (hdIdStr == null || hdIdStr.isEmpty()) hdIdStr = req.getParameter("hoaDonId");
         if (hdIdStr != null && !hdIdStr.isEmpty()) {
             try {
-                saveCustomerInfoIfPresent(Long.parseLong(hdIdStr), req);
+                Long hdId = Long.parseLong(hdIdStr);
+                HoaDon hdCheck = hdService.findById(hdId);
+                boolean isQuanLy = nv.getVaiTro() != null && "ADMIN".equalsIgnoreCase(nv.getVaiTro().getMaVaiTro());
+                if (hdCheck != null && !isQuanLy && (hdCheck.getNhanVien() == null || !hdCheck.getNhanVien().getId().equals(nv.getId()))) {
+                    resp.sendError(403, "Không có quyền");
+                    return;
+                }
+                saveCustomerInfoIfPresent(hdId, req);
             } catch (Exception ignored) {}
         }
 
