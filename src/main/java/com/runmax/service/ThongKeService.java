@@ -51,11 +51,26 @@ public class ThongKeService {
         return tongDoanhThu(start, end);
     }
 
+    /** Doanh thu hôm qua */
+    public BigDecimal doanhThuHomQua() {
+        LocalDateTime start = LocalDate.now().minusDays(1).atStartOfDay();
+        LocalDateTime end   = start.plusDays(1).minusNanos(1);
+        return tongDoanhThu(start, end);
+    }
+
     /** Doanh thu tuần này */
     public BigDecimal doanhThuTuanNay() {
         LocalDate today = LocalDate.now();
         LocalDateTime start = today.with(java.time.DayOfWeek.MONDAY).atStartOfDay();
         LocalDateTime end   = today.with(java.time.DayOfWeek.SUNDAY).atTime(23, 59, 59);
+        return tongDoanhThu(start, end);
+    }
+
+    /** Doanh thu tuần trước */
+    public BigDecimal doanhThuTuanTruoc() {
+        LocalDate lastWeek = LocalDate.now().minusWeeks(1);
+        LocalDateTime start = lastWeek.with(java.time.DayOfWeek.MONDAY).atStartOfDay();
+        LocalDateTime end   = lastWeek.with(java.time.DayOfWeek.SUNDAY).atTime(23, 59, 59);
         return tongDoanhThu(start, end);
     }
 
@@ -67,11 +82,27 @@ public class ThongKeService {
         return tongDoanhThu(start, end);
     }
 
+    /** Doanh thu tháng trước */
+    public BigDecimal doanhThuThangTruoc() {
+        LocalDate lastMonth = LocalDate.now().minusMonths(1);
+        LocalDateTime start = lastMonth.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime end   = lastMonth.withDayOfMonth(lastMonth.lengthOfMonth()).atTime(23, 59, 59);
+        return tongDoanhThu(start, end);
+    }
+
     /** Doanh thu năm nay */
     public BigDecimal doanhThuNamNay() {
         LocalDate today = LocalDate.now();
         LocalDateTime start = today.withDayOfYear(1).atStartOfDay();
         LocalDateTime end   = today.withDayOfYear(today.lengthOfYear()).atTime(23, 59, 59);
+        return tongDoanhThu(start, end);
+    }
+
+    /** Doanh thu năm trước */
+    public BigDecimal doanhThuNamTruoc() {
+        LocalDate lastYear = LocalDate.now().minusYears(1);
+        LocalDateTime start = lastYear.withDayOfYear(1).atStartOfDay();
+        LocalDateTime end   = lastYear.withDayOfYear(lastYear.lengthOfYear()).atTime(23, 59, 59);
         return tongDoanhThu(start, end);
     }
 
@@ -130,6 +161,30 @@ public class ThongKeService {
         }
     }
 
+    /** Sản phẩm đã bán hôm nay */
+    @SuppressWarnings("unchecked")
+    public List<Object[]> sanPhamDaBanHomNay() {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            LocalDateTime start = LocalDate.now().atStartOfDay();
+            LocalDateTime end   = start.plusDays(1).minusNanos(1);
+            
+            String sql =
+                "SELECT sp.ten_sp, SUM(ct.so_luong) AS sl " +
+                "FROM hoa_don_chi_tiet ct " +
+                "JOIN san_pham_chi_tiet spct ON ct.spct_id = spct.id " +
+                "JOIN san_pham sp ON spct.san_pham_id = sp.id " +
+                "JOIN hoa_don hd ON ct.hoa_don_id = hd.id " +
+                "WHERE hd.trang_thai = 1 " +
+                "AND hd.ngay_tao >= :start AND hd.ngay_tao <= :end " +
+                "GROUP BY sp.ten_sp ORDER BY sl DESC";
+                
+            return session.createNativeQuery(sql)
+                .setParameter("start", start)
+                .setParameter("end", end)
+                .list();
+        }
+    }
+
     /** Đếm số lượng đơn hàng theo trạng thái (0: chờ, 1: hoàn tất, 2: đã hủy) */
     public long demDonTheoTrangThai(int trangThai) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
@@ -137,6 +192,37 @@ public class ThongKeService {
                 .setParameter("tt", trangThai)
                 .uniqueResult();
             return count == null ? 0 : count;
+        }
+    }
+
+    /** Tổng số lượng tồn kho */
+    public long tongSoLuongTonKho() {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            Long count = session.createQuery("SELECT SUM(CAST(s.soLuongTon as long)) FROM SanPhamChiTiet s", Long.class)
+                .uniqueResult();
+            return count == null ? 0 : count;
+        }
+    }
+
+    /** Bán chậm và tồn kho -> Kho sản phẩm (Sản phẩm, Kích cỡ, Tồn) */
+    @SuppressWarnings("unchecked")
+    public List<Object[]> thongKeBanChamVaTonKho() {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            String sql = 
+                "SELECT " +
+                "  sp.ten_sp AS san_pham, " +
+                "  kc.ten AS kich_co, " +
+                "  ISNULL(SUM(spct.so_luong_ton), 0) AS ton_kho " +
+                "FROM san_pham_chi_tiet spct " +
+                "JOIN san_pham sp ON spct.san_pham_id = sp.id " +
+                "JOIN kich_co kc ON spct.kich_co_id = kc.id " +
+                "GROUP BY sp.ten_sp, kc.ten " +
+                "ORDER BY ton_kho ASC"; 
+
+            return session.createNativeQuery(sql).list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new java.util.ArrayList<>();
         }
     }
 }

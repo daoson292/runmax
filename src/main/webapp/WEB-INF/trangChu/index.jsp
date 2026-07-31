@@ -49,7 +49,7 @@
             <jsp:include page="/includes/header.jsp" />
 
             <div class="runmax-content">
-                <!-- Welcome Banner & Quick Actions -->
+                <!-- Welcome Banner -->
                 <div class="mb-4">
                     <div class="runmax-card p-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); border-left: 5px solid #dc2626 !important;">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
@@ -59,138 +59,96 @@
                             </div>
                         </div>
                     </div>
-
-                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-lightning-charge-fill text-danger me-2"></i>Thao Tác Nhanh</h5>
-                    <div class="row g-3">
-                        <div class="col-md-2 col-sm-4 col-6">
-                            <a href="${pageContext.request.contextPath}/ban-hang" class="text-decoration-none">
-                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                        <i class="bi bi-cart-check-fill fs-4"></i>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-0">Bán Hàng</h6>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-2 col-sm-4 col-6">
-                            <a href="${pageContext.request.contextPath}/san-pham" class="text-decoration-none">
-                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                        <i class="bi bi-box-seam-fill fs-4"></i>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-0">Sản Phẩm</h6>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-2 col-sm-4 col-6">
-                            <a href="${pageContext.request.contextPath}/hoa-don" class="text-decoration-none">
-                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                        <i class="bi bi-receipt-cutoff fs-4"></i>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-0">Hóa Đơn</h6>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-2 col-sm-4 col-6">
-                            <a href="${pageContext.request.contextPath}/khach-hang" class="text-decoration-none">
-                                <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                    <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                        <i class="bi bi-people-fill fs-4"></i>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-0">Khách Hàng</h6>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-2 col-sm-4 col-6">
-                            <c:if test="${sessionScope.vaiTro == 'ROLE_ADMIN' || sessionScope.vaiTro == 'ADMIN'}">
-                                <a href="${pageContext.request.contextPath}/phieu-giam-gia" class="text-decoration-none">
-                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                            <i class="bi bi-ticket-perforated-fill fs-4"></i>
-                                        </div>
-                                        <h6 class="fw-bold text-dark mb-0">Khuyến Mãi</h6>
-                                    </div>
-                                </a>
-                            </c:if>
-                            <c:if test="${sessionScope.vaiTro != 'ROLE_ADMIN' && sessionScope.vaiTro != 'ADMIN'}">
-                                <a href="${pageContext.request.contextPath}/san-pham-chi-tiet" class="text-decoration-none">
-                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                            <i class="bi bi-upc-scan fs-4"></i>
-                                        </div>
-                                        <h6 class="fw-bold text-dark mb-0">Mã Vạch</h6>
-                                    </div>
-                                </a>
-                            </c:if>
-                        </div>
-                        <div class="col-md-2 col-sm-4 col-6">
-                            <c:if test="${sessionScope.vaiTro == 'ROLE_ADMIN' || sessionScope.vaiTro == 'ADMIN'}">
-                                <a href="${pageContext.request.contextPath}/nhan-vien" class="text-decoration-none">
-                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                            <i class="bi bi-person-badge-fill fs-4"></i>
-                                        </div>
-                                        <h6 class="fw-bold text-dark mb-0">Nhân Viên</h6>
-                                    </div>
-                                </a>
-                            </c:if>
-                            <c:if test="${sessionScope.vaiTro != 'ROLE_ADMIN' && sessionScope.vaiTro != 'ADMIN'}">
-                                <a href="${pageContext.request.contextPath}/dashboard" class="text-decoration-none">
-                                    <div class="runmax-card p-3 text-center h-100 quick-action-card shadow-sm">
-                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger mb-2 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
-                                            <i class="bi bi-bar-chart-line-fill fs-4"></i>
-                                        </div>
-                                        <h6 class="fw-bold text-dark mb-0">Thống Kê</h6>
-                                    </div>
-                                </a>
-                            </c:if>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- 4 Thẻ thống kê KPI -->
+                <!-- Thẻ thống kê KPI -->
                 <div class="row g-4 mb-4">
                     <div class="col-md-3">
                         <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <span class="text-muted small fw-bold text-uppercase">Doanh Thu Hôm Nay</span>
-                                <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2"><i class="bi bi-currency-dollar fs-5"></i></div>
+                                <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2"><i class="bi bi-calendar-day fs-5"></i></div>
                             </div>
-                            <h3 class="fw-bold text-dark mb-1">
-                                <fmt:formatNumber value="${doanhThuHnay != null ? doanhThuHnay : 0}" type="number" /> đ
-                            </h3>
-                            <span class="badge bg-success bg-opacity-10 text-success small"><i class="bi bi-calendar-check"></i> Cập nhật trực tiếp từ DB</span>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h3 class="fw-bold text-dark mb-0">
+                                    <fmt:formatNumber value="${doanhThuHnay != null ? doanhThuHnay : 0}" type="number" /> đ
+                                </h3>
+                                <c:choose>
+                                    <c:when test="${growthHnay >= 0}">
+                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthHnay}" pattern="#,##0.0"/>%</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthHnay}" pattern="#,##0.0"/>%</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                            <span class="text-muted small">So với hôm qua</span>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-bold text-uppercase">Đơn Giày Đã Bán</span>
-                                <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2"><i class="bi bi-bag-check fs-5"></i></div>
+                                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Tuần Này</span>
+                                <div class="rounded-3 bg-success bg-opacity-10 text-success p-2"><i class="bi bi-calendar-week fs-5"></i></div>
                             </div>
-                            <h3 class="fw-bold text-dark mb-1">${soDonHnay != null ? soDonHnay : 0} đơn</h3>
-                            <span class="text-muted small">Tổng đơn đã hoàn tất</span>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h3 class="fw-bold text-dark mb-0">
+                                    <fmt:formatNumber value="${doanhThuTuanNay != null ? doanhThuTuanNay : 0}" type="number" /> đ
+                                </h3>
+                                <c:choose>
+                                    <c:when test="${growthTuan >= 0}">
+                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthTuan}" pattern="#,##0.0"/>%</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthTuan}" pattern="#,##0.0"/>%</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                            <span class="text-muted small">So với tuần trước</span>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-bold text-uppercase">Khách Hàng Runner</span>
-                                <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2"><i class="bi bi-people fs-5"></i></div>
+                                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Tháng Này</span>
+                                <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2"><i class="bi bi-calendar-month fs-5"></i></div>
                             </div>
-                            <h3 class="fw-bold text-dark mb-1">Khách Thành Viên</h3>
-                            <span class="text-muted small">Thành viên câu lạc bộ chạy</span>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h3 class="fw-bold text-dark mb-0">
+                                    <fmt:formatNumber value="${doanhThuThangNay != null ? doanhThuThangNay : 0}" type="number" /> đ
+                                </h3>
+                                <c:choose>
+                                    <c:when test="${growthThang >= 0}">
+                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthThang}" pattern="#,##0.0"/>%</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthThang}" pattern="#,##0.0"/>%</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                            <span class="text-muted small">So với tháng trước</span>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-bold text-uppercase">Tồn Kho Giày Nam</span>
-                                <div class="rounded-3 bg-info bg-opacity-10 text-info p-2"><i class="bi bi-box-seam fs-5"></i></div>
+                                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Năm Nay</span>
+                                <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2"><i class="bi bi-graph-up-arrow fs-5"></i></div>
                             </div>
-                            <h3 class="fw-bold text-dark mb-1">Size 39 - 44</h3>
-                            <span class="text-muted small">Chuyên chạy bộ nam</span>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h3 class="fw-bold text-dark mb-0">
+                                    <fmt:formatNumber value="${doanhThuNamNay != null ? doanhThuNamNay : 0}" type="number" /> đ
+                                </h3>
+                                <c:choose>
+                                    <c:when test="${growthNam >= 0}">
+                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthNam}" pattern="#,##0.0"/>%</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthNam}" pattern="#,##0.0"/>%</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                            <span class="text-muted small">So với năm trước</span>
                         </div>
                     </div>
                 </div>
@@ -224,34 +182,36 @@
                     </div>
                 </div>
 
-                <!-- Bảng Giày Chạy Bộ Bán Chạy & Đơn hàng gần đây -->
-                <div class="row g-4">
-                    <div class="col-lg-7">
-                        <div class="runmax-card p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-trophy text-danger me-1"></i> TOP GIÀY CHẠY BỘ NAM BÁN CHẠY NHẤT</h6>
-                                <a href="${pageContext.request.contextPath}/san-pham" class="small text-danger text-decoration-none fw-semibold">Xem tất cả</a>
+                <!-- Hai bảng: Top Giày & Đã Bán Tồn Kho -->
+                <div class="row g-4 mb-4">
+                    <!-- Bảng Giày Chạy Bộ Bán Chạy -->
+                    <div class="col-lg-6">
+                        <div class="runmax-card mb-0 border-0 shadow-sm overflow-hidden h-100" style="background: #ffffff;">
+                            <div class="px-4 py-3 d-flex justify-content-between align-items-center bg-danger">
+                                <h6 class="mb-0 fw-bold text-white"><i class="bi bi-trophy me-2"></i> Top Giày Bán Chạy Nhất</h6>
+                                <a href="${pageContext.request.contextPath}/san-pham" class="badge bg-white text-danger text-decoration-none rounded-pill px-3 py-1">Xem tất cả</a>
                             </div>
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 50px;">#</th>
-                                        <th>Dòng Giày Chạy Bộ</th>
-                                        <th class="text-end">Số lượng thực tế đã bán</th>
-                                    </tr>
-                                </thead>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0" style="width: 50px;">#</th>
+                                            <th class="py-3 border-bottom-0">Dòng Giày Chạy Bộ</th>
+                                            <th class="text-end py-3 px-4 border-bottom-0">Số lượng thực tế đã bán</th>
+                                        </tr>
+                                    </thead>
                                 <tbody>
                                     <c:choose>
                                         <c:when test="${not empty topSanPham}">
                                             <c:forEach var="item" items="${topSanPham}" varStatus="stt">
                                                 <tr>
-                                                    <td>
+                                                    <td class="px-4">
                                                         <span class="badge ${stt.index == 0 ? 'bg-danger' : (stt.index == 1 ? 'bg-warning text-dark' : 'bg-secondary')}">
                                                             ${stt.count}
                                                         </span>
                                                     </td>
                                                     <td class="fw-bold text-dark">${item[0]}</td>
-                                                    <td class="text-end">
+                                                    <td class="text-end px-4">
                                                         <span class="badge bg-danger fs-6 px-3 py-2">
                                                             <i class="bi bi-cart-check me-1"></i> ${item[1]} đôi
                                                         </span>
@@ -269,11 +229,104 @@
                                     </c:choose>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-5">
-                        <div class="runmax-card p-4 h-100 d-flex flex-column justify-content-between">
+                    <!-- Kho Sản Phẩm -->
+                    <div class="col-lg-6">
+                        <div class="runmax-card mb-0 border-0 shadow-sm overflow-hidden h-100" style="background: #ffffff;">
+                            <div class="px-4 py-3 d-flex justify-content-between align-items-center bg-danger">
+                                <h6 class="mb-0 fw-bold text-white"><i class="bi bi-box-seam me-2"></i> Kho sản phẩm</h6>
+                                <span class="badge bg-white text-danger rounded-pill px-3 py-1">Số liệu trực tiếp</span>
+                            </div>
+                            <div class="table-responsive" style="max-height: 350px;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0">Sản phẩm</th>
+                                            <th class="text-center py-3 border-bottom-0" style="width: 150px;">Kích cỡ</th>
+                                            <th class="text-center py-3 border-bottom-0" style="width: 150px;">Tồn</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <c:choose>
+                                            <c:when test="${not empty banChamVaTonKho}">
+                                                <c:forEach var="item" items="${banChamVaTonKho}">
+                                                    <tr>
+                                                        <td class="px-4 text-dark fw-medium">${item[0]}</td>
+                                                        <td class="text-center">
+                                                            <span class="badge border text-dark px-3 py-2" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">${item[1]}</span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <c:choose>
+                                                                <c:when test="${item[2] < 10}">
+                                                                    <span class="fw-bold text-danger">${item[2]}</span>
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="text-dark fw-medium">${item[2]}</span>
+                                                                </c:otherwise>
+                                                            </c:choose>
+                                                        </td>
+                                                    </tr>
+                                                </c:forEach>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <tr>
+                                                    <td colspan="3" class="text-center py-4 text-muted">Chưa có dữ liệu thống kê sản phẩm</td>
+                                                </tr>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tỷ Lệ Trạng Thái Đơn Hàng & Sản Phẩm Đã Bán -->
+                <div class="row g-4 mb-4">
+                    <!-- Sản Phẩm Đã Bán -->
+                    <div class="col-lg-6">
+                        <div class="runmax-card mb-0 border-0 shadow-sm overflow-hidden h-100" style="background: #ffffff;">
+                            <div class="px-4 py-3 d-flex justify-content-between align-items-center bg-danger">
+                                <h6 class="mb-0 fw-bold text-white"><i class="bi bi-cart-check me-2"></i> Sản Phẩm Đã Bán (Hôm Nay)</h6>
+                            </div>
+                            <div class="table-responsive" style="max-height: 350px;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0">Sản phẩm</th>
+                                            <th class="text-center py-3 border-bottom-0">Số lượng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <c:choose>
+                                            <c:when test="${not empty sanPhamDaBanHnay}">
+                                                <c:forEach var="item" items="${sanPhamDaBanHnay}">
+                                                    <tr>
+                                                        <td class="px-4 fw-medium text-dark">${item[0]}</td>
+                                                        <td class="text-center">
+                                                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2" style="font-size: 0.9rem;">${item[1]}</span>
+                                                        </td>
+                                                    </tr>
+                                                </c:forEach>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <tr>
+                                                    <td colspan="2" class="text-center py-4 text-muted">Chưa có sản phẩm nào được bán hôm nay</td>
+                                                </tr>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tỷ Lệ Trạng Thái Đơn Hàng -->
+                    <div class="col-lg-6">
+                        <div class="runmax-card p-4 h-100 d-flex flex-column justify-content-between border-0 shadow-sm" style="background: #ffffff;">
                             <div>
                                 <h6 class="fw-bold text-dark mb-1">
                                     <i class="bi bi-pie-chart-fill text-danger me-1"></i> TỶ LỆ PHÂN BỔ TRẠNG THÁI ĐƠN HÀNG
@@ -325,6 +378,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Date Adapter for Chart.js Time Scale -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             if (typeof Chart === 'undefined') {
@@ -405,8 +460,18 @@
                             },
                             scales: {
                                 x: {
+                                    type: 'time',
+                                    time: {
+                                        unit: 'day',
+                                        displayFormats: { day: 'dd/MM/yyyy' },
+                                        tooltipFormat: 'dd/MM/yyyy'
+                                    },
                                     grid: { display: false },
-                                    ticks: { font: { family: 'Inter', size: 12 }, color: '#64748b' }
+                                    ticks: { 
+                                        font: { family: 'Inter', size: 12 }, 
+                                        color: '#64748b',
+                                        maxTicksLimit: 7
+                                    }
                                 },
                                 y: {
                                     beginAtZero: true,

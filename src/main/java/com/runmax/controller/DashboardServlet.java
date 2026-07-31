@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 public class DashboardServlet extends HttpServlet {
 
     private final ThongKeService thongKeService = new ThongKeService();
+    private final com.runmax.service.ThuongHieuService thuongHieuService = new com.runmax.service.ThuongHieuService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -37,9 +38,11 @@ public class DashboardServlet extends HttpServlet {
                 tuNgay = java.time.LocalDate.now().minusDays(29).atStartOfDay();
             }
 
-            // Tổng doanh thu toàn bộ / hôm nay
+            // Tổng doanh thu toàn bộ / hôm nay / tuần / tháng / năm
             BigDecimal dtHnay = thongKeService.doanhThuHomNay();
+            BigDecimal dtTuan = thongKeService.doanhThuTuanNay();
             BigDecimal dtThang = thongKeService.doanhThuThangNay();
+            BigDecimal dtNam = thongKeService.doanhThuNamNay();
             long tongDonHoanTat = thongKeService.tongDonHang(null, null);
 
             // Dữ liệu biểu đồ doanh thu theo ngày
@@ -64,8 +67,29 @@ public class DashboardServlet extends HttpServlet {
 
             // Đặt các attribute khớp 100% với JSP
             req.setAttribute("doanhThuHomNay", dtHnay);
-            req.setAttribute("doanhThuHnay", dtHnay);
-            req.setAttribute("doanhThuThangNay", dtThang);
+            // Lấy doanh thu các kỳ
+            BigDecimal doanhThuHnay = thongKeService.doanhThuHomNay();
+            BigDecimal doanhThuHomQua = thongKeService.doanhThuHomQua();
+            
+            BigDecimal doanhThuTuanNay = thongKeService.doanhThuTuanNay();
+            BigDecimal doanhThuTuanTruoc = thongKeService.doanhThuTuanTruoc();
+            
+            BigDecimal doanhThuThangNay = thongKeService.doanhThuThangNay();
+            BigDecimal doanhThuThangTruoc = thongKeService.doanhThuThangTruoc();
+            
+            BigDecimal doanhThuNamNay = thongKeService.doanhThuNamNay();
+            BigDecimal doanhThuNamTruoc = thongKeService.doanhThuNamTruoc();
+
+            req.setAttribute("doanhThuHnay", doanhThuHnay);
+            req.setAttribute("doanhThuTuanNay", doanhThuTuanNay);
+            req.setAttribute("doanhThuThangNay", doanhThuThangNay);
+            req.setAttribute("doanhThuNamNay", doanhThuNamNay);
+            
+            // Tính toán % tăng trưởng
+            req.setAttribute("growthHnay", calculateGrowth(doanhThuHnay, doanhThuHomQua));
+            req.setAttribute("growthTuan", calculateGrowth(doanhThuTuanNay, doanhThuTuanTruoc));
+            req.setAttribute("growthThang", calculateGrowth(doanhThuThangNay, doanhThuThangTruoc));
+            req.setAttribute("growthNam", calculateGrowth(doanhThuNamNay, doanhThuNamTruoc));
             req.setAttribute("tongDonHomNay", tongDonHoanTat);
             req.setAttribute("soDonHnay", tongDonHoanTat);
             req.setAttribute("chartLabels", labelsJson.toString());
@@ -80,14 +104,29 @@ public class DashboardServlet extends HttpServlet {
             req.setAttribute("pieCho", pieCho);
             req.setAttribute("pieHuy", pieHuy);
 
+            // Tổng tồn kho
+            long tongTonKho = thongKeService.tongSoLuongTonKho();
+            req.setAttribute("tongTonKho", tongTonKho);
+
             // Lấy Top 5 giày chạy bộ bán chạy thật từ DB
             req.setAttribute("topSanPham", thongKeService.topSanPham(5));
+
+            // Lấy danh sách hãng giày
+            req.setAttribute("danhSachThuongHieu", thuongHieuService.findAll(null));
+
+            // Sản phẩm đã bán hôm nay
+            req.setAttribute("sanPhamDaBanHnay", thongKeService.sanPhamDaBanHomNay());
+
+            // Thống kê Bán chậm & Tồn kho -> Kho sản phẩm
+            req.setAttribute("banChamVaTonKho", thongKeService.thongKeBanChamVaTonKho());
         } catch (Exception e) {
             e.printStackTrace();
             String todayStr = java.time.LocalDate.now().toString();
             req.setAttribute("doanhThuHomNay", BigDecimal.ZERO);
             req.setAttribute("doanhThuHnay", BigDecimal.ZERO);
+            req.setAttribute("doanhThuTuanNay", BigDecimal.ZERO);
             req.setAttribute("doanhThuThangNay", BigDecimal.ZERO);
+            req.setAttribute("doanhThuNamNay", BigDecimal.ZERO);
             req.setAttribute("tongDonHomNay", 0L);
             req.setAttribute("soDonHnay", 0L);
             req.setAttribute("chartLabels", "[\"" + todayStr + "\"]");
@@ -95,7 +134,25 @@ public class DashboardServlet extends HttpServlet {
             req.setAttribute("pieHoanTat", 0L);
             req.setAttribute("pieCho", 0L);
             req.setAttribute("pieHuy", 0L);
+            req.setAttribute("tongTonKho", 0L);
         }
         req.getRequestDispatcher("/WEB-INF/trangChu/index.jsp").forward(req, resp);
+    }
+
+    private double calculateGrowth(BigDecimal current, BigDecimal previous) {
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) == 0) {
+            if (current != null && current.compareTo(BigDecimal.ZERO) > 0) {
+                return 100.0;
+            }
+            return 0.0;
+        }
+        if (current == null) {
+            current = BigDecimal.ZERO;
+        }
+        
+        double currDouble = current.doubleValue();
+        double prevDouble = previous.doubleValue();
+        
+        return ((currDouble - prevDouble) / prevDouble) * 100.0;
     }
 }
