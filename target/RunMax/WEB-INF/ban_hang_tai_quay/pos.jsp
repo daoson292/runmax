@@ -1464,6 +1464,7 @@
                 </c:forEach>
             </c:if>
         ];
+        let quickAddCount = {};
         let selectedSpctIds = new Set();
 
         function toggleSpctSelection(id, isChecked) {
@@ -1599,14 +1600,15 @@
             }
         }
 
-        async function quickAddProduct(id, maxQty, btn) {
+        async function quickAddProduct(id, btn) {
             const hdId = ${currentHd != null ? currentHd.id : 'null'};
             if (!hdId) {
                 showBootstrapAlert('Vui lòng chọn hoặc tạo hóa đơn trước!', 'warning');
                 return;
             }
-
+            
             const originalHtml = btn.innerHTML;
+            const originalClass = btn.className;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
             btn.disabled = true;
 
@@ -1645,6 +1647,9 @@
                     toast.show();
                 }
 
+                // Cập nhật bộ đếm
+                quickAddCount[id] = (quickAddCount[id] || 0) + 1;
+
                 // Update UI state
                 if (!existingCartIds.includes(id)) {
                     existingCartIds.push(id);
@@ -1652,20 +1657,15 @@
                 const tongSpDonEl = document.getElementById('tongSpDon');
                 if (tongSpDonEl) tongSpDonEl.innerText = existingCartIds.length;
 
-                btn.innerHTML = '<i class="bi bi-check-lg"></i> Đã thêm';
-                btn.className = 'btn btn-secondary opacity-50 px-3';
+                // Cập nhật lại nút UI
+                btn.innerHTML = `<i class="bi bi-cart-check"></i> Đã thêm (x\${quickAddCount[id]})`;
+                btn.className = 'btn btn-success fw-bold shadow-sm px-3';
+                btn.disabled = false; // Luôn mở khóa để bấm tiếp
+
                 
-                // Also disable its checkbox and update stock
+                // Update realtime stock display (decrease by 1 visually)
                 const row = btn.closest('tr');
                 if(row) {
-                    row.classList.add('table-secondary', 'opacity-75');
-                    const cb = row.querySelector('.spct-checkbox');
-                    if (cb) {
-                        cb.disabled = true;
-                        cb.checked = false;
-                    }
-                    
-                    // Update realtime stock
                     const stockCell = row.querySelectorAll('td')[4];
                     if (stockCell) {
                         const stockSpan = stockCell.querySelector('span.fw-bold');
@@ -1682,17 +1682,11 @@
                         }
                     }
                 }
-                
-                // If it was selected, remove it from selection
-                if (selectedSpctIds.has(id)) {
-                    selectedSpctIds.delete(id);
-                    updateBatchAddButton();
-                    updateSelectAllCheckbox();
-                }
 
             } catch (err) {
                 showBootstrapAlert('Lỗi kết nối!', 'danger');
                 btn.innerHTML = originalHtml;
+                btn.className = originalClass;
                 btn.disabled = false;
             }
         }
@@ -1771,28 +1765,35 @@
 
             let html = '';
             currentItems.forEach(spct => {
+                let addedQty = quickAddCount[spct.id] || 0;
+                
                 const isOutOfStock = spct.soLuongKhaDung <= 0;
-                const isInCart = existingCartIds.includes(spct.id);
-                const disabled = isOutOfStock || isInCart;
+                const disabled = isOutOfStock;
                 
                 const rowClass = disabled ? 'table-secondary opacity-75' : '';
                 const brandBadge = spct.thuongHieu ? `<span class="badge bg-secondary me-1">\${spct.thuongHieu}</span>` : '';
-                const stockHtml = isOutOfStock 
+                
+                // Deduct the quantity we just added in this modal from the original stock display
+                let currentVisualStock = spct.soLuongKhaDung - addedQty;
+                if (currentVisualStock < 0) currentVisualStock = 0;
+                
+                const stockHtml = (isOutOfStock || currentVisualStock === 0)
                     ? `<span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-x-circle me-1"></i>Hết hàng (0)</span>`
-                    : `<span class="fw-bold text-dark">\${spct.soLuongKhaDung}</span>`;
+                    : `<span class="fw-bold text-dark">\${currentVisualStock}</span>`;
                 
                 let actionHtml = '';
-                if (isInCart) {
-                    actionHtml = `<button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
-                                    Đã có trong giỏ
-                                  </button>`;
-                } else if (isOutOfStock) {
+                if (isOutOfStock) {
                     actionHtml = `<button type="button" class="btn btn-secondary opacity-50 px-3" disabled style="border-radius: 8px;">
                                     <i class="bi bi-cart-x me-1"></i> Hết
                                   </button>`;
+                } else if (addedQty > 0) {
+                    actionHtml = `<button type="button" class="btn btn-success fw-bold shadow-sm px-3" style="border-radius: 8px;"
+                                onclick="quickAddProduct(\${spct.id}, this)">
+                                <i class="bi bi-cart-check"></i> Đã thêm (x\${addedQty})
+                            </button>`;
                 } else {
                     actionHtml = `<button type="button" class="btn btn-danger fw-bold shadow-sm px-3" style="border-radius: 8px;"
-                                onclick="quickAddProduct(\${spct.id}, \${spct.soLuongKhaDung}, this)">
+                                onclick="quickAddProduct(\${spct.id}, this)">
                                 <i class="bi bi-cart-plus me-1"></i> Chọn
                             </button>`;
                 }
