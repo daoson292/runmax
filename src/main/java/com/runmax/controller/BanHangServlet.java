@@ -157,6 +157,7 @@ public class BanHangServlet extends HttpServlet {
             case "them-sp", "themSanPham"     -> handleThemSP(req, resp);
             case "them-nhieu-sp"              -> handleThemNhieuSP(req, resp);
             case "cap-nhat-sl", "capNhatSoLuong" -> handleCapNhatSL(req, resp);
+            case "cap-nhat-sl-ajax"           -> handleCapNhatSLAjax(req, resp);
             case "xoa-sp", "xoaSanPham"       -> handleXoaSP(req, resp);
             case "ap-voucher", "apVoucher"    -> handleApVoucher(req, resp);
             case "ap-voucher-ajax", "apVoucherAjax" -> handleApVoucherAjax(req, resp);
@@ -253,6 +254,56 @@ public class BanHangServlet extends HttpServlet {
             redirectUrl += (hdId != null ? "&" : "?") + "error=sl-vuot-ton";
         }
         resp.sendRedirect(redirectUrl);
+    }
+
+    private void handleCapNhatSLAjax(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        JsonObject responseJson = new JsonObject();
+        try {
+            String hdIdStr = req.getParameter("hdId");
+            String chiTietIdStr = req.getParameter("chiTietId");
+            String soLuongStr = req.getParameter("soLuong");
+
+            if (hdIdStr == null || chiTietIdStr == null || soLuongStr == null) {
+                responseJson.addProperty("status", "error");
+                responseJson.addProperty("message", "Dữ liệu gửi lên không đầy đủ (có thể bị null).");
+                resp.getWriter().write(new Gson().toJson(responseJson));
+                return;
+            }
+
+            Long hdId = Long.parseLong(hdIdStr);
+            Long chiTietId = Long.parseLong(chiTietIdStr);
+            int soLuong = Integer.parseInt(soLuongStr);
+
+            boolean ok = hdService.capNhatSoLuong(chiTietId, soLuong);
+            if (!ok && soLuong > 0) {
+                responseJson.addProperty("status", "error");
+                responseJson.addProperty("message", "Số lượng vượt quá tồn kho khả dụng!");
+                resp.getWriter().write(new Gson().toJson(responseJson));
+                return;
+            }
+
+            HoaDon hd = hdService.findById(hdId);
+            List<HoaDonChiTiet> chiTiets = hdService.findChiTiet(hdId);
+            HoaDonChiTiet updatedCt = chiTiets.stream().filter(ct -> ct.getId().equals(chiTietId)).findFirst().orElse(null);
+
+            responseJson.addProperty("status", "success");
+            JsonObject data = new JsonObject();
+            data.addProperty("tienHang", hd.getTienHang());
+            data.addProperty("soTienGiam", hd.getSoTienGiam());
+            data.addProperty("tongTien", hd.getTongTien());
+            if (updatedCt != null) {
+                data.addProperty("thanhTienItem", updatedCt.getThanhTien());
+            }
+            responseJson.add("data", data);
+            resp.getWriter().write(new Gson().toJson(responseJson));
+        } catch (Exception e) {
+            e.printStackTrace();
+            responseJson.addProperty("status", "error");
+            responseJson.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
+            resp.getWriter().write(new Gson().toJson(responseJson));
+        }
     }
 
     private void handleXoaSP(HttpServletRequest req, HttpServletResponse resp) throws IOException {

@@ -361,7 +361,7 @@
                                         <td><span class="badge bg-light text-dark border">${item.mauSac.ten}</span></td>
                                         <td><span class="badge bg-danger">${item.kichCo.ten}</span></td>
                                         <td class="text-center">
-                                            <span class="badge ${item.soLuongTon > 10 ? 'bg-success' : 'bg-warning text-dark'}">
+                                            <span id="stock-spct-${item.id}" class="badge ${item.soLuongTon > 10 ? 'bg-success' : 'bg-warning text-dark'}">
                                                 ${item.soLuongTon}
                                             </span>
                                         </td>
@@ -744,5 +744,56 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        // Lắng nghe sự kiện đồng bộ tồn kho từ tab POS
+        if ('BroadcastChannel' in window) {
+            const inventoryChannel = new BroadcastChannel('inventory_sync_channel');
+            
+            inventoryChannel.onmessage = function(event) {
+                try {
+                    const data = event.data;
+                    if (data && data.type === 'DEDUCT' && data.spctId) {
+                        const stockEl = document.getElementById('stock-spct-' + data.spctId);
+                        if (stockEl) {
+                            // Tính toán số lượng mới
+                            let currentStock = parseInt(stockEl.innerText) || 0;
+                            currentStock = Math.max(0, currentStock - data.qty);
+                            stockEl.innerText = currentStock;
+                            
+                            // Cập nhật lại màu sắc (Warning nếu dưới 10)
+                            if (currentStock <= 10) {
+                                stockEl.className = 'badge bg-warning text-dark';
+                            } else {
+                                stockEl.className = 'badge bg-success';
+                            }
+                            
+                            // Hiệu ứng Flash Color nháy sáng
+                            const originalBg = stockEl.style.backgroundColor;
+                            const originalColor = stockEl.style.color;
+                            const originalTransition = stockEl.style.transition;
+                            
+                            stockEl.style.transition = 'all 0.3s ease';
+                            stockEl.style.backgroundColor = '#dc3545'; // Đỏ nổi bật
+                            stockEl.style.color = '#fff';
+                            stockEl.style.transform = 'scale(1.2)';
+                            stockEl.style.display = 'inline-block';
+                            
+                            setTimeout(() => {
+                                stockEl.style.backgroundColor = originalBg;
+                                stockEl.style.color = originalColor;
+                                stockEl.style.transform = 'scale(1)';
+                                setTimeout(() => {
+                                    stockEl.style.transition = originalTransition;
+                                }, 300);
+                            }, 400);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Inventory Sync Error:', e);
+                }
+            };
+        }
+    </script>
 </body>
 </html>
