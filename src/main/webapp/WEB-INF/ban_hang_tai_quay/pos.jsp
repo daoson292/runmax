@@ -1393,21 +1393,42 @@
 
     <script>
         // --- INVENTORY SYNC ACROSS TABS ---
-        const inventoryChannel = new BroadcastChannel('inventory_sync_channel');
-        inventoryChannel.onmessage = function(event) {
-            if (event.data && event.data.type === 'DEDUCT') {
-                const id = event.data.spctId;
-                const qty = event.data.qty || 1;
-                
+        window.inventoryChannel = new BroadcastChannel('inventory_sync_channel');
+        window.inventoryChannel.onmessage = function(event) {
+            const data = event.data;
+            if (!data) return;
+
+            if (data.type === 'INVENTORY_DELTA' && Array.isArray(data.deltas)) {
+                // Protocol mới: batch deltas từ tab POS khác
+                data.deltas.forEach(function(d) {
+                    if (typeof availableSpctList !== 'undefined') {
+                        const spctObj = availableSpctList.find(s => s.id === d.spctId);
+                        if (spctObj) {
+                            spctObj.soLuongKhaDung = Math.max(0, spctObj.soLuongKhaDung - d.delta);
+                        }
+                    }
+                });
+                if (typeof renderPosProductTable === 'function') renderPosProductTable();
+            }
+            else if (data.type === 'DEDUCT') {
+                // Backward compat cho tab san-pham/chi-tiet
+                const id = typeof data.spctId === 'string' ? parseInt(data.spctId) : data.spctId;
+                const qty = data.qty || 1;
                 if (typeof availableSpctList !== 'undefined') {
                     const spctObj = availableSpctList.find(s => s.id === id);
-                    if (spctObj && spctObj.soLuongKhaDung > 0) {
-                        spctObj.soLuongKhaDung = Math.max(0, spctObj.soLuongKhaDung - qty);
-                    }
-                    if (typeof renderPosProductTable === 'function') {
-                        renderPosProductTable();
-                    }
+                    if (spctObj) spctObj.soLuongKhaDung = Math.max(0, spctObj.soLuongKhaDung - qty);
                 }
+                if (typeof renderPosProductTable === 'function') renderPosProductTable();
+            }
+            else if (data.type === 'ADD_BACK') {
+                // Backward compat — BUG-04 fix: tab POS khác xóa SP → cộng kho lại
+                const id = typeof data.spctId === 'string' ? parseInt(data.spctId) : data.spctId;
+                const qty = data.qty || 1;
+                if (typeof availableSpctList !== 'undefined') {
+                    const spctObj = availableSpctList.find(s => s.id === id);
+                    if (spctObj) spctObj.soLuongKhaDung += qty;
+                }
+                if (typeof renderPosProductTable === 'function') renderPosProductTable();
             }
         };
 
@@ -1481,25 +1502,11 @@
                 }
                 
                 const actionType = formData.get('action');
+                
+                // === CENTRALIZED SYNC ===
+                syncPosStateAndInventory();
+                
                 if (actionType === 'xoa-sp') {
-                    const spctIdXoa = formData.get('spctId');
-                    if (spctIdXoa && window.quickAddCount) {
-                        delete window.quickAddCount[spctIdXoa];
-                        const quickBtn = document.getElementById('btn-quick-add-' + spctIdXoa);
-                        if (quickBtn) {
-                            quickBtn.className = 'btn btn-danger fw-bold shadow-sm px-3';
-                            quickBtn.innerHTML = '<i class="bi bi-cart-plus me-1"></i> Chọn';
-                        }
-                        
-                        // Cross-tab sync: Return inventory
-                        if (window.inventoryChannel) {
-                            const maSpXoa = formData.get('maSp');
-                            const soLuongXoa = formData.get('soLuong') ? parseInt(formData.get('soLuong')) : 1;
-                            const payload = { type: 'ADD_BACK', spctId: spctIdXoa, qty: soLuongXoa, maSp: maSpXoa };
-                            console.log("POS gửi:", payload);
-                            window.inventoryChannel.postMessage(payload);
-                        }
-                    }
                     showBootstrapAlert('Đã xóa sản phẩm khỏi giỏ!', 'success');
                 } else {
                     showBootstrapAlert('Thao tác thành công!', 'success');
@@ -1517,8 +1524,6 @@
                 const currentTienHang = parseFloat(document.getElementById('currentTienHang') ? document.getElementById('currentTienHang').value : 0) || 0;
                 const activeHdId = ${currentHd != null ? currentHd.id : 'null'};
                 autoEvaluateVoucher(activeHdId, currentTienHang);
-                
-                updateModalCartCounter();
                 
                 setTimeout(() => {
                     if (btn) {
@@ -1556,7 +1561,118 @@
             </c:if>
         ];
         window.quickAddCount = window.quickAddCount || {};
+        window._previousCartState = {};
         let selectedSpctIds = new Set();
+
+        /**
+         * CENTRALIZED SYNC ENGINE — Single Source of Truth = DOM.
+         *
+         * Quét trực tiếp bảng giỏ hàng #pos-cart-container để thu thập
+         * trạng thái thực, tính delta, rồi cập nhật tất cả 5 state:
+         * quickAddCount, availableSpctList, existingCartIds, Modal UI, BroadcastChannel.
+         */
+        function syncPosStateAndInventory() {
+            // === PHASE 1: Thu thập trạng thái mới từ DOM ===
+            const newCartState = {};  // { spctId(number): soLuong(number) }
+            document.querySelectorAll('#pos-cart-container tbody tr').forEach(function(row) {
+                const spctInput = row.querySelector('input[name="spctId"]');
+                const qtyInput = row.querySelector('input[name="soLuong"]');
+                if (spctInput && qtyInput) {
+                    const spctId = parseInt(spctInput.value);
+                    const qty = parseInt(qtyInput.value) || 0;
+                    if (!isNaN(spctId) && qty > 0) {
+                        newCartState[spctId] = (newCartState[spctId] || 0) + qty;
+                    }
+                }
+            });
+
+            // === PHASE 2: Tính Delta so với state trước ===
+            const deltas = {};  // { spctId: deltaQty } (+ = thêm/tăng, - = bớt/xóa)
+            const allIds = new Set([
+                ...Object.keys(window._previousCartState || {}).map(Number),
+                ...Object.keys(newCartState).map(Number)
+            ]);
+            allIds.forEach(function(id) {
+                const oldQty = (window._previousCartState || {})[id] || 0;
+                const newQty = newCartState[id] || 0;
+                const diff = newQty - oldQty;
+                if (diff !== 0) {
+                    deltas[id] = diff;
+                }
+            });
+
+            // === PHASE 3: Ghi đè quickAddCount từ DOM thực tế ===
+            window.quickAddCount = {};
+            for (const idStr of Object.keys(newCartState)) {
+                window.quickAddCount[parseInt(idStr)] = newCartState[parseInt(idStr)];
+            }
+
+            // === PHASE 4: Apply Delta vào availableSpctList ===
+            if (typeof availableSpctList !== 'undefined') {
+                for (const idStr of Object.keys(deltas)) {
+                    const id = parseInt(idStr);
+                    const spctObj = availableSpctList.find(function(s) { return s.id === id; });
+                    if (spctObj) {
+                        // delta > 0 = thêm vào giỏ → trừ kho; delta < 0 = bớt/xóa → cộng kho
+                        spctObj.soLuongKhaDung = Math.max(0, spctObj.soLuongKhaDung - deltas[idStr]);
+                    }
+                }
+            }
+
+            // === PHASE 5: Cập nhật existingCartIds ===
+            existingCartIds = Object.keys(newCartState).map(Number);
+
+            // === PHASE 6: Render lại Modal UI ===
+            if (typeof renderPosProductTable === 'function') {
+                renderPosProductTable();
+            }
+
+            // === PHASE 7: BroadcastChannel — gửi dual-format cho backward compat ===
+            if (window.inventoryChannel && Object.keys(deltas).length > 0) {
+                // 7a. Protocol mới cho tab POS khác
+                const deltaPayload = [];
+                for (const idStr of Object.keys(deltas)) {
+                    const id = parseInt(idStr);
+                    let maSp = null;
+                    if (typeof availableSpctList !== 'undefined') {
+                        const obj = availableSpctList.find(function(s) { return s.id === id; });
+                        if (obj) maSp = obj.maSp;
+                    }
+                    deltaPayload.push({ spctId: id, delta: deltas[idStr], maSp: maSp });
+                }
+                window.inventoryChannel.postMessage({ type: 'INVENTORY_DELTA', deltas: deltaPayload });
+
+                // 7b. Backward compat: gửi từng DEDUCT/ADD_BACK cho tab san-pham/chi-tiet
+                deltaPayload.forEach(function(d) {
+                    if (d.delta > 0) {
+                        window.inventoryChannel.postMessage({ type: 'DEDUCT', spctId: d.spctId, qty: d.delta, maSp: d.maSp });
+                    } else if (d.delta < 0) {
+                        window.inventoryChannel.postMessage({ type: 'ADD_BACK', spctId: d.spctId, qty: Math.abs(d.delta), maSp: d.maSp });
+                    }
+                });
+            }
+
+            // === PHASE 8: Lưu state hiện tại làm base cho lần sync tiếp ===
+            window._previousCartState = {};
+            for (const idStr of Object.keys(newCartState)) {
+                window._previousCartState[parseInt(idStr)] = newCartState[parseInt(idStr)];
+            }
+
+            // === PHASE 9: Cập nhật counter Modal ===
+            if (typeof updateModalCartCounter === 'function') {
+                updateModalCartCounter();
+            }
+
+            // === Observability: Log cho debug ===
+            if (Object.keys(deltas).length > 0) {
+                console.log('[POS Sync Engine]', {
+                    deltas: deltas,
+                    newCartState: newCartState,
+                    quickAddCount: window.quickAddCount,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
 
         function toggleSpctSelection(id, isChecked) {
             if (isChecked) {
@@ -1670,33 +1786,10 @@
 
                 showBootstrapAlert('Đã đẩy thành công ' + selectedSpctIds.size + ' sản phẩm vào hóa đơn!', 'success');
 
-                // Clear selection and existing Cart logic
-                selectedSpctIds.forEach(id => {
-                    if (!existingCartIds.includes(id)) {
-                        existingCartIds.push(id);
-                    }
-                    if (typeof availableSpctList !== 'undefined') {
-                        const spctObj = availableSpctList.find(s => s.id === id);
-                        if (spctObj && spctObj.soLuongKhaDung > 0) {
-                            spctObj.soLuongKhaDung -= 1;
-                        }
-                    }
-                    if (window.inventoryChannel) {
-                        let maSpToSync = null;
-                        if (typeof availableSpctList !== 'undefined') {
-                            const spctObj = availableSpctList.find(s => s.id === id);
-                            if (spctObj) maSpToSync = spctObj.maSp;
-                        }
-                        const payload = { type: 'DEDUCT', spctId: id, qty: 1, maSp: maSpToSync };
-                        console.log("POS gửi:", payload);
-                        window.inventoryChannel.postMessage(payload);
-                    }
-                });
-                
-                updateModalCartCounter();
+                // === CENTRALIZED SYNC ===
+                syncPosStateAndInventory();
 
                 uncheckAllSpct();
-                renderPosProductTable(); // Re-render to lock the newly added ones
                 
                 const modalEl = document.getElementById('modalSearchProduct');
                 const modal = bootstrap.Modal.getInstance(modalEl);
@@ -1753,36 +1846,17 @@
                 const currentTienHang = parseFloat(document.getElementById('currentTienHang') ? document.getElementById('currentTienHang').value : 0) || 0;
                 if (typeof autoEvaluateVoucher === 'function') autoEvaluateVoucher(hdId, currentTienHang);
 
-                if (!existingCartIds.includes(spctId)) {
-                    existingCartIds.push(spctId);
-                }
-                
-                updateModalCartCounter();
+                // === CENTRALIZED SYNC ===
+                syncPosStateAndInventory();
 
-                window.quickAddCount[spctId] = (window.quickAddCount[spctId] || 0) + 1;
-                btn.className = 'btn btn-success fw-bold shadow-sm px-3';
-                btn.innerHTML = `<i class="bi bi-cart-check"></i> Đã thêm (x\${window.quickAddCount[spctId]})`;
-                btn.style.borderRadius = '8px';
+                // Cập nhật trạng thái nút Quick Add sau sync
+                const addedQty = window.quickAddCount[spctId] || 0;
+                if (addedQty > 0) {
+                    btn.className = 'btn btn-success fw-bold shadow-sm px-3';
+                    btn.innerHTML = `<i class="bi bi-cart-check"></i> Đã thêm (x\${addedQty})`;
+                    btn.style.borderRadius = '8px';
+                }
                 btn.disabled = false;
-                
-                if (typeof availableSpctList !== 'undefined') {
-                    const spctObj = availableSpctList.find(s => s.id === spctId);
-                    if (spctObj && spctObj.soLuongKhaDung > 0) {
-                        spctObj.soLuongKhaDung -= 1;
-                    }
-                }
-                if (window.inventoryChannel) {
-                    let maSpToSync = null;
-                    if (typeof availableSpctList !== 'undefined') {
-                        const spctObj = availableSpctList.find(s => s.id === spctId);
-                        if (spctObj) maSpToSync = spctObj.maSp;
-                    }
-                    const payload = { type: 'DEDUCT', spctId: spctId, qty: 1, maSp: maSpToSync };
-                    console.log("POS gửi:", payload);
-                    window.inventoryChannel.postMessage(payload);
-                }
-                
-                if (typeof renderPosProductTable === 'function') renderPosProductTable();
             })
             .catch(err => {
                 console.error("Lỗi quickAddPOS: ", err);
@@ -2193,6 +2267,27 @@
         // Initialize when modal is fully opened to avoid DOM issues, or just on DOM ready.
         document.addEventListener('DOMContentLoaded', function() {
             initPosFilters();
+
+            // Khởi tạo _previousCartState từ DOM hiện tại để lần sync đầu tiên có base
+            var initState = {};
+            document.querySelectorAll('#pos-cart-container tbody tr').forEach(function(row) {
+                var spctInput = row.querySelector('input[name="spctId"]');
+                var qtyInput = row.querySelector('input[name="soLuong"]');
+                if (spctInput && qtyInput) {
+                    var spctId = parseInt(spctInput.value);
+                    var qty = parseInt(qtyInput.value) || 0;
+                    if (!isNaN(spctId) && qty > 0) {
+                        initState[spctId] = (initState[spctId] || 0) + qty;
+                    }
+                }
+            });
+            window._previousCartState = initState;
+            
+            // Đồng bộ quickAddCount từ DOM ban đầu
+            window.quickAddCount = {};
+            for (var idStr in initState) {
+                window.quickAddCount[parseInt(idStr)] = initState[parseInt(idStr)];
+            }
         });
     </script>
 
@@ -2471,67 +2566,32 @@
                     
                     if (document.getElementById('currentTienHang')) document.getElementById('currentTienHang').value = data.data.tienHang || 0;
                     
+                    // === CENTRALIZED SYNC ===
+                    syncPosStateAndInventory();
+                    
+                    // Update UI state for specific quick add button based on sync result
                     const spctIdEl = form.querySelector('input[name="spctId"]');
                     if (spctIdEl && window.quickAddCount) {
                         const spctId = spctIdEl.value;
-                        const soLuongMoi = parseInt(newVal);
+                        const addedQty = window.quickAddCount[spctId] || 0;
+                        const btn = document.getElementById('btn-quick-add-' + spctId);
                         
-                        if (soLuongMoi > 0) {
-                            window.quickAddCount[spctId] = soLuongMoi;
-                            const btn = document.getElementById('btn-quick-add-' + spctId);
-                            if (btn) {
-                                btn.innerHTML = `<i class="bi bi-cart-check"></i> Đã thêm (x\${soLuongMoi})`;
+                        if (btn) {
+                            if (addedQty > 0) {
+                                btn.innerHTML = `<i class="bi bi-cart-check"></i> Đã thêm (x\${addedQty})`;
                                 btn.classList.remove('btn-danger', 'btn-outline-danger');
                                 btn.classList.add('btn-success');
-                            }
-                        } else {
-                            delete window.quickAddCount[spctId];
-                            const btn = document.getElementById('btn-quick-add-' + spctId);
-                            if (btn) {
+                            } else {
                                 btn.innerHTML = `<i class="bi bi-cart-plus me-1"></i> Chọn`;
                                 btn.className = 'btn btn-danger fw-bold shadow-sm px-3';
                             }
                         }
                     }
-                    
-                    // Cross-tab sync
-                    const deltaQty = newVal - oldVal;
-                    const spctIdNum = parseInt(spctIdEl.value);
-                    const maSpEl = form.querySelector('input[name="maSp"]');
-                    const maSpToSync = maSpEl ? maSpEl.value : null;
 
-                    // 1. Tự cập nhật tồn kho ở mảng local (Tab POS)
-                    if (typeof availableSpctList !== 'undefined') {
-                        const spctObj = availableSpctList.find(s => s.id === spctIdNum);
-                        if (spctObj) {
-                            if (deltaQty > 0) {
-                                spctObj.soLuongKhaDung = Math.max(0, spctObj.soLuongKhaDung - deltaQty);
-                            } else if (deltaQty < 0) {
-                                spctObj.soLuongKhaDung += Math.abs(deltaQty);
-                            }
-                        }
-                    }
-
-                    // 2. Render lại UI trong Modal ngay lập tức
-                    if (typeof renderPosProductTable === 'function') renderPosProductTable();
-
-                    // 3. Gửi BroadcastChannel sang Tab Danh mục Sản phẩm
-                    if (window.inventoryChannel && spctIdEl) {
-                        if (deltaQty > 0) {
-                            const payload = { type: 'DEDUCT', spctId: spctIdNum, qty: deltaQty, maSp: maSpToSync };
-                            window.inventoryChannel.postMessage(payload);
-                        } else if (deltaQty < 0) {
-                            const payload = { type: 'ADD_BACK', spctId: spctIdNum, qty: Math.abs(deltaQty), maSp: maSpToSync };
-                            window.inventoryChannel.postMessage(payload);
-                        }
-                    }
-                    
                     if (typeof autoEvaluateVoucher === 'function') {
                         const activeHdId = ${currentHd != null ? currentHd.id : 'null'};
                         autoEvaluateVoucher(activeHdId, data.data.tienHang || 0);
                     }
-                    
-                    if (typeof updateModalCartCounter === 'function') updateModalCartCounter();
                 } else {
                     showBootstrapAlert(data.message || 'Lỗi cập nhật số lượng', 'danger');
                     input.value = oldVal;
