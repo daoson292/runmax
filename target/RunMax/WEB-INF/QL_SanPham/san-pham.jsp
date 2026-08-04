@@ -84,6 +84,21 @@
         }
         .status-radio input[type=radio]:checked + label { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
         .status-radio input[type=radio] { display: none; }
+
+        /* Realtime Stock Update Animation */
+        .flash-update-deduct { animation: flashRed 0.6s ease; }
+        .flash-update-add { animation: flashGreen 0.6s ease; }
+        
+        @keyframes flashRed {
+            0% { transform: scale(1); background-color: #fca5a5 !important; }
+            50% { transform: scale(1.15); background-color: #ef4444 !important; color: white !important; }
+            100% { transform: scale(1); }
+        }
+        @keyframes flashGreen {
+            0% { transform: scale(1); background-color: #86efac !important; }
+            50% { transform: scale(1.15); background-color: #22c55e !important; color: white !important; }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -315,6 +330,67 @@
         const wb = XLSX.utils.table_to_book(table, { sheet: 'Sản phẩm' });
         XLSX.writeFile(wb, 'SanPham_RunMax_' + new Date().toLocaleDateString('vi-VN').replace(/\//g,'_') + '.xlsx');
     });
+
+    // Realtime Inventory Sync
+    const inventoryChannel = new BroadcastChannel('inventory_sync_channel');
+    inventoryChannel.onmessage = function(event) {
+        console.log("Tab Danh Mục nhận được:", event.data);
+        const data = event.data;
+        if (!data || !data.maSp) return; // Bỏ qua nếu tin nhắn rác
+        
+        if (data.type === 'DEDUCT' || data.type === 'ADD_BACK') {
+            const rows = document.querySelectorAll('table tbody tr');
+            let found = false;
+            rows.forEach((row, index) => {
+                const rowText = row.innerText;
+                if (rowText.includes(data.maSp)) {
+                    found = true;
+                    console.log(`Tìm thấy mã \${data.maSp} ở dòng thứ \${index + 1}`);
+                    const cells = row.querySelectorAll('td');
+                    let tdTon = null;
+                    
+                    // Lặp qua các ô, tìm ô chứa số lượng tồn hiện tại
+                    // Dấu hiệu: ô chứa class badge nhưng không chứa rounded-pill, nội dung là số
+                    cells.forEach(cell => {
+                        const badge = cell.querySelector('.badge');
+                        if (badge && !badge.classList.contains('rounded-pill')) {
+                            const textVal = badge.innerText.trim();
+                            if (/^\d+$/.test(textVal)) {
+                                tdTon = cell;
+                            }
+                        }
+                    });
+                    
+                    if (tdTon) {
+                        const badge = tdTon.querySelector('.badge');
+                        if (badge) {
+                            let currentStock = parseInt(badge.innerText.trim()) || 0;
+                            
+                            if (data.type === 'DEDUCT') currentStock -= data.qty;
+                            if (data.type === 'ADD_BACK') currentStock += data.qty;
+                            
+                            if (currentStock < 0) currentStock = 0;
+                            
+                            badge.innerText = currentStock;
+                            console.log(`Cập nhật thành công dòng \${index + 1}: \${data.type} \${data.qty} -> Tồn kho mới: \${currentStock}`);
+                            
+                            // Update classes
+                            badge.className = currentStock > 0 ? 'badge bg-info text-dark fw-bold' : 'badge bg-warning text-dark fw-bold';
+                            
+                            // Animation
+                            const flashClass = data.type === 'DEDUCT' ? 'flash-update-deduct' : 'flash-update-add';
+                            badge.classList.remove('flash-update-deduct', 'flash-update-add');
+                            void badge.offsetWidth; // trigger reflow
+                            badge.classList.add(flashClass);
+                        }
+                    } else {
+                        console.warn(`Dòng \${index + 1} có mã \${data.maSp} nhưng không tìm thấy cột Tồn Kho hợp lệ`);
+                    }
+                }
+            });
+            if (!found) console.warn("Không tìm thấy dòng nào chứa mã:", data.maSp);
+        }
+    };
     </script>
 </body>
 </html>

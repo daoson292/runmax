@@ -186,9 +186,11 @@
                                                                         <input type="hidden" name="action" value="cap-nhat-sl-ajax">
                                                                         <input type="hidden" name="hdId" value="${currentHd.id}">
                                                                         <input type="hidden" name="chiTietId" value="${ct.id}">
+                                                                        <input type="hidden" name="spctId" value="${ct.sanPhamChiTiet.id}">
+                                                                        <input type="hidden" name="maSp" value="${ct.sanPhamChiTiet.sanPham.maSp}">
                                                                         <div class="input-group input-group-sm" style="width: 125px;">
                                                                             <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="updateQuantityAjax(this.form, -1)" title="Giảm số lượng">-</button>
-                                                                            <input type="number" name="soLuong" class="form-control text-center fw-bold px-1" value="${ct.soLuong}" min="1" max="${ct.sanPhamChiTiet.soLuongKhaDung + ct.soLuong}" onchange="updateQuantityAjax(this.form, 0, this.value)">
+                                                                            <input type="number" name="soLuong" class="form-control text-center fw-bold px-1" value="${ct.soLuong}" min="1" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57" max="${ct.sanPhamChiTiet.soLuongKhaDung + ct.soLuong}" onchange="updateQuantityAjax(this.form, 0, this.value)">
                                                                             <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="updateQuantityAjax(this.form, 1)" title="Tăng số lượng">+</button>
                                                                         </div>
                                                                     </form>
@@ -201,6 +203,8 @@
                                                                         <input type="hidden" name="action" value="xoa-sp">
                                                                         <input type="hidden" name="hdId" value="${currentHd.id}">
                                                                         <input type="hidden" name="chiTietId" value="${ct.id}">
+                                                                        <input type="hidden" name="spctId" value="${ct.sanPhamChiTiet.id}">
+                                                                        <input type="hidden" name="maSp" value="${ct.sanPhamChiTiet.sanPham.maSp}">
                                                                         <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button>
                                                                     </form>
                                                                 </td>
@@ -287,7 +291,6 @@
                                                                     </span>
                                                                     <span id="best-voucher-badge"></span>
                                                                 </div>
-                                                                <div id="upsell-mini-ticket-msg"></div>
                                                                 <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.75rem;">
                                                                     Mã: ${currentHd.phieuGiamGia.maPhieu}
                                                                 </span>
@@ -297,6 +300,7 @@
                                                             <i class="bi bi-trash3"></i>
                                                         </button>
                                                     </div>
+                                                    <div id="upsell-mini-ticket-msg"></div>
                                                 </c:when>
                                                 <c:otherwise>
                                                     <button type="button" class="btn btn-outline-danger w-100 fw-bold d-flex align-items-center justify-content-center gap-2" style="border-style: dashed; padding: 10px;" onclick="new bootstrap.Modal(document.getElementById('modalVoucherPicker')).show()">
@@ -742,7 +746,6 @@
                                                 </span>
                                                 <span id="best-voucher-badge"></span>
                                             </div>
-                                            <div id="upsell-mini-ticket-msg"></div>
                                             <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.75rem;">
                                                 Mã: \${data.pggMa}
                                             </span>
@@ -752,6 +755,7 @@
                                         <i class="bi bi-trash3"></i>
                                     </button>
                                 </div>
+                                <div id="upsell-mini-ticket-msg"></div>
                             `;
                         } else {
                             html += `
@@ -1365,7 +1369,7 @@
                 <div class="modal-footer justify-content-between bg-light border-top">
                     <div class="d-flex align-items-center">
                         <button type="button" class="btn btn-outline-secondary px-4 fw-semibold" onclick="uncheckAllSpct()">Bỏ chọn tất cả</button>
-                        <span class="text-primary fw-bold ms-4">Tổng SP trong đơn hiện tại: <span id="tongSpDon">0</span></span>
+                        <span class="text-primary fw-bold ms-4">Tổng SP trong đơn hiện tại: <span id="modal-cart-counter">0</span></span>
                     </div>
                     <button type="button" class="btn btn-runmax px-5 fw-bold d-none" id="btnConfirmBatchAdd" onclick="confirmBatchAdd(${currentHd != null ? currentHd.id : 'null'}, this)">
                         <i class="bi bi-check2-all me-2"></i> XÁC NHẬN THÊM (0)
@@ -1424,7 +1428,28 @@
             if (urlParams.has('kw')) {
                 openSearchModal();
             }
+            
+            const modalSearchProduct = document.getElementById('modalSearchProduct');
+            if (modalSearchProduct) {
+                modalSearchProduct.addEventListener('show.bs.modal', function () {
+                    updateModalCartCounter();
+                });
+            }
         });
+        
+        function updateModalCartCounter() {
+            const counterEl = document.getElementById('modal-cart-counter');
+            if (!counterEl) return;
+            const cartContainer = document.getElementById('pos-cart-container');
+            if (!cartContainer) return;
+            
+            let totalQty = 0;
+            const qtyInputs = cartContainer.querySelectorAll('input[name="soLuong"]');
+            qtyInputs.forEach(input => {
+                totalQty += parseInt(input.value) || 0;
+            });
+            counterEl.innerText = totalQty;
+        }
 
         async function handleAjaxAddToCart(event, form) {
             event.preventDefault();
@@ -1455,7 +1480,30 @@
                     document.getElementById('pos-cart-container').innerHTML = newCart.innerHTML;
                 }
                 
-                showBootstrapAlert('Đã thêm sản phẩm vào giỏ!', 'success');
+                const actionType = formData.get('action');
+                if (actionType === 'xoa-sp') {
+                    const spctIdXoa = formData.get('spctId');
+                    if (spctIdXoa && window.quickAddCount) {
+                        delete window.quickAddCount[spctIdXoa];
+                        const quickBtn = document.getElementById('btn-quick-add-' + spctIdXoa);
+                        if (quickBtn) {
+                            quickBtn.className = 'btn btn-danger fw-bold shadow-sm px-3';
+                            quickBtn.innerHTML = '<i class="bi bi-cart-plus me-1"></i> Chọn';
+                        }
+                        
+                        // Cross-tab sync: Return inventory
+                        if (window.inventoryChannel) {
+                            const maSpXoa = formData.get('maSp');
+                            const soLuongXoa = formData.get('soLuong') ? parseInt(formData.get('soLuong')) : 1;
+                            const payload = { type: 'ADD_BACK', spctId: spctIdXoa, qty: soLuongXoa, maSp: maSpXoa };
+                            console.log("POS gửi:", payload);
+                            window.inventoryChannel.postMessage(payload);
+                        }
+                    }
+                    showBootstrapAlert('Đã xóa sản phẩm khỏi giỏ!', 'success');
+                } else {
+                    showBootstrapAlert('Thao tác thành công!', 'success');
+                }
                 
                 const oldPaymentBlock = document.getElementById('pos-payment-block');
                 const newPaymentBlock = doc.getElementById('pos-payment-block');
@@ -1469,6 +1517,8 @@
                 const currentTienHang = parseFloat(document.getElementById('currentTienHang') ? document.getElementById('currentTienHang').value : 0) || 0;
                 const activeHdId = ${currentHd != null ? currentHd.id : 'null'};
                 autoEvaluateVoucher(activeHdId, currentTienHang);
+                
+                updateModalCartCounter();
                 
                 setTimeout(() => {
                     if (btn) {
@@ -1632,12 +1682,18 @@
                         }
                     }
                     if (window.inventoryChannel) {
-                        window.inventoryChannel.postMessage({ type: 'DEDUCT', spctId: id, qty: 1 });
+                        let maSpToSync = null;
+                        if (typeof availableSpctList !== 'undefined') {
+                            const spctObj = availableSpctList.find(s => s.id === id);
+                            if (spctObj) maSpToSync = spctObj.maSp;
+                        }
+                        const payload = { type: 'DEDUCT', spctId: id, qty: 1, maSp: maSpToSync };
+                        console.log("POS gửi:", payload);
+                        window.inventoryChannel.postMessage(payload);
                     }
                 });
                 
-                const tongSpDonEl = document.getElementById('tongSpDon');
-                if (tongSpDonEl) tongSpDonEl.innerText = existingCartIds.length;
+                updateModalCartCounter();
 
                 uncheckAllSpct();
                 renderPosProductTable(); // Re-render to lock the newly added ones
@@ -1700,8 +1756,8 @@
                 if (!existingCartIds.includes(spctId)) {
                     existingCartIds.push(spctId);
                 }
-                const tongSpDonEl = document.getElementById('tongSpDon');
-                if (tongSpDonEl) tongSpDonEl.innerText = existingCartIds.length;
+                
+                updateModalCartCounter();
 
                 window.quickAddCount[spctId] = (window.quickAddCount[spctId] || 0) + 1;
                 btn.className = 'btn btn-success fw-bold shadow-sm px-3';
@@ -1716,7 +1772,14 @@
                     }
                 }
                 if (window.inventoryChannel) {
-                    window.inventoryChannel.postMessage({ type: 'DEDUCT', spctId: spctId, qty: 1 });
+                    let maSpToSync = null;
+                    if (typeof availableSpctList !== 'undefined') {
+                        const spctObj = availableSpctList.find(s => s.id === spctId);
+                        if (spctObj) maSpToSync = spctObj.maSp;
+                    }
+                    const payload = { type: 'DEDUCT', spctId: spctId, qty: 1, maSp: maSpToSync };
+                    console.log("POS gửi:", payload);
+                    window.inventoryChannel.postMessage(payload);
                 }
                 
                 if (typeof renderPosProductTable === 'function') renderPosProductTable();
@@ -1826,12 +1889,12 @@
                                   </button>`;
                 } else if (addedQty > 0) {
                     actionHtml = `<button type="button" class="btn btn-success fw-bold shadow-sm px-3" style="border-radius: 8px;"
-                                onclick="quickAddPOS(this, \${spct.id})">
+                                id="btn-quick-add-\${spct.id}" onclick="quickAddPOS(this, \${spct.id})">
                                 <i class="bi bi-cart-check"></i> Đã thêm (x\${addedQty})
                             </button>`;
                 } else {
                     actionHtml = `<button type="button" class="btn btn-danger fw-bold shadow-sm px-3" style="border-radius: 8px;"
-                                onclick="quickAddPOS(this, \${spct.id})">
+                                id="btn-quick-add-\${spct.id}" onclick="quickAddPOS(this, \${spct.id})">
                                 <i class="bi bi-cart-plus me-1"></i> Chọn
                             </button>`;
                 }
@@ -1865,8 +1928,7 @@
             updateBatchAddButton();
             updateSelectAllCheckbox();
             
-            const tongSpDonEl = document.getElementById('tongSpDon');
-            if (tongSpDonEl) tongSpDonEl.innerText = existingCartIds.length;
+            updateModalCartCounter();
 
             // Render pagination
             let pageHtml = '';
@@ -2352,14 +2414,14 @@
                 newVal = parseInt(input.value) + delta;
             }
             
-            if (isNaN(newVal)) return;
-
-            if (newVal <= 0) {
-                showBootstrapConfirm('Bạn có chắc muốn xóa sản phẩm này?', function() {
-                    form.querySelector('input[name="action"]').value = 'xoa-sp';
-                    handleAjaxAddToCart({ preventDefault: () => {} }, form);
-                });
-                input.value = oldVal;
+            if (isNaN(newVal) || newVal <= 0) {
+                if (typeof showBootstrapAlert === 'function') {
+                    showBootstrapAlert('Số lượng phải là số nguyên lớn hơn 0!', 'danger');
+                } else {
+                    alert('Số lượng phải là số nguyên lớn hơn 0!');
+                }
+                input.value = (oldVal > 0) ? oldVal : 1;
+                newVal = (oldVal > 0) ? oldVal : 1;
                 return;
             }
             
@@ -2409,10 +2471,67 @@
                     
                     if (document.getElementById('currentTienHang')) document.getElementById('currentTienHang').value = data.data.tienHang || 0;
                     
+                    const spctIdEl = form.querySelector('input[name="spctId"]');
+                    if (spctIdEl && window.quickAddCount) {
+                        const spctId = spctIdEl.value;
+                        const soLuongMoi = parseInt(newVal);
+                        
+                        if (soLuongMoi > 0) {
+                            window.quickAddCount[spctId] = soLuongMoi;
+                            const btn = document.getElementById('btn-quick-add-' + spctId);
+                            if (btn) {
+                                btn.innerHTML = `<i class="bi bi-cart-check"></i> Đã thêm (x\${soLuongMoi})`;
+                                btn.classList.remove('btn-danger', 'btn-outline-danger');
+                                btn.classList.add('btn-success');
+                            }
+                        } else {
+                            delete window.quickAddCount[spctId];
+                            const btn = document.getElementById('btn-quick-add-' + spctId);
+                            if (btn) {
+                                btn.innerHTML = `<i class="bi bi-cart-plus me-1"></i> Chọn`;
+                                btn.className = 'btn btn-danger fw-bold shadow-sm px-3';
+                            }
+                        }
+                    }
+                    
+                    // Cross-tab sync
+                    const deltaQty = newVal - oldVal;
+                    const spctIdNum = parseInt(spctIdEl.value);
+                    const maSpEl = form.querySelector('input[name="maSp"]');
+                    const maSpToSync = maSpEl ? maSpEl.value : null;
+
+                    // 1. Tự cập nhật tồn kho ở mảng local (Tab POS)
+                    if (typeof availableSpctList !== 'undefined') {
+                        const spctObj = availableSpctList.find(s => s.id === spctIdNum);
+                        if (spctObj) {
+                            if (deltaQty > 0) {
+                                spctObj.soLuongKhaDung = Math.max(0, spctObj.soLuongKhaDung - deltaQty);
+                            } else if (deltaQty < 0) {
+                                spctObj.soLuongKhaDung += Math.abs(deltaQty);
+                            }
+                        }
+                    }
+
+                    // 2. Render lại UI trong Modal ngay lập tức
+                    if (typeof renderPosProductTable === 'function') renderPosProductTable();
+
+                    // 3. Gửi BroadcastChannel sang Tab Danh mục Sản phẩm
+                    if (window.inventoryChannel && spctIdEl) {
+                        if (deltaQty > 0) {
+                            const payload = { type: 'DEDUCT', spctId: spctIdNum, qty: deltaQty, maSp: maSpToSync };
+                            window.inventoryChannel.postMessage(payload);
+                        } else if (deltaQty < 0) {
+                            const payload = { type: 'ADD_BACK', spctId: spctIdNum, qty: Math.abs(deltaQty), maSp: maSpToSync };
+                            window.inventoryChannel.postMessage(payload);
+                        }
+                    }
+                    
                     if (typeof autoEvaluateVoucher === 'function') {
                         const activeHdId = ${currentHd != null ? currentHd.id : 'null'};
                         autoEvaluateVoucher(activeHdId, data.data.tienHang || 0);
                     }
+                    
+                    if (typeof updateModalCartCounter === 'function') updateModalCartCounter();
                 } else {
                     showBootstrapAlert(data.message || 'Lỗi cập nhật số lượng', 'danger');
                     input.value = oldVal;
@@ -2510,20 +2629,23 @@
             
             window.targetVoucherUpsell = targetVoucher ? { missing, targetTienGiam } : null;
             
-            // 1.5. Cập nhật Badge "Tốt nhất" và Upsell text cho Mini-Ticket đang áp dụng
+            // 1.5. Cập nhật Badge "Tốt nhất" cho Mini-Ticket
             const badgeContainer = document.getElementById('best-voucher-badge');
-            const upsellMsgContainer = document.getElementById('upsell-mini-ticket-msg');
-            
-            if (badgeContainer) badgeContainer.innerHTML = '';
-            if (upsellMsgContainer) upsellMsgContainer.innerHTML = '';
-            
-            if (targetVoucher) {
-                if (upsellMsgContainer) {
-                    upsellMsgContainer.innerHTML = `<div class="small text-danger fw-semibold mt-1">Mua thêm \${formatCurrency(missing)} để giảm tới \${formatCurrency(targetTienGiam)}</div>`;
+            if (badgeContainer) {
+                if (bestVoucher && currentAppliedId === bestVoucher.id) {
+                    badgeContainer.innerHTML = '<span class="badge bg-success ms-1" style="font-size: 0.7rem;">⭐ Tốt nhất</span>';
+                } else {
+                    badgeContainer.innerHTML = '';
                 }
-            } else if (bestVoucher && currentAppliedId === bestVoucher.id) {
-                if (badgeContainer) {
-                    badgeContainer.innerHTML = '<span class="badge bg-success ms-2 shadow-sm"><i class="bi bi-star-fill text-warning"></i> Tốt nhất</span>';
+            }
+            
+            // 1.6 Cập nhật Upsell Message cho Mini-Ticket
+            const upsellMsgContainer = document.getElementById('upsell-mini-ticket-msg');
+            if (upsellMsgContainer) {
+                if (targetVoucher) {
+                    upsellMsgContainer.innerHTML = `<div class="text-danger mt-2 fst-italic" style="font-size: 0.85rem;"><i class="bi bi-info-circle"></i> Mua thêm <b>\${formatCurrency(missing)}</b> để được giảm <b>\${formatCurrency(targetTienGiam)}</b></div>`;
+                } else {
+                    upsellMsgContainer.innerHTML = '';
                 }
             }
             
@@ -2535,7 +2657,8 @@
             const currentTienHangEl = document.getElementById('currentTienHang');
             if (currentTienHangEl) {
                 const initTienHang = parseInt(currentTienHangEl.value) || 0;
-                suggestUpsell(initTienHang);
+                const activeHdId = ${currentHd != null ? currentHd.id : 'null'};
+                if(typeof autoEvaluateVoucher === 'function') autoEvaluateVoucher(activeHdId, initTienHang);
             }
         });
         let currentDaTra = 0;
