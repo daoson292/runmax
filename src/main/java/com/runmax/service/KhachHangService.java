@@ -11,8 +11,8 @@ public class KhachHangService {
     private final KhachHangRepository khRepo = new KhachHangRepository();
     private final DiaChiKhachHangRepository dcRepo = new DiaChiKhachHangRepository();
 
-    public List<KhachHang> findAll(String keyword, Integer trangThai) {
-        List<KhachHang> list = khRepo.findAll(keyword, trangThai);
+    public List<KhachHang> findAll(String keyword, Integer trangThai, int offset, int limit) {
+        List<KhachHang> list = khRepo.findAll(keyword, trangThai, offset, limit);
         for (KhachHang kh : list) {
             if (kh.getId() != null) {
                 DiaChiKhachHang dc = dcRepo.findDefaultByKhachHangId(kh.getId());
@@ -30,8 +30,12 @@ public class KhachHangService {
         return list;
     }
 
-    public List<KhachHang> getAll(String keyword, Integer trangThai) {
-        return findAll(keyword, trangThai);
+    public Long countAll(String keyword, Integer trangThai) {
+        return khRepo.countAll(keyword, trangThai);
+    }
+
+    public List<KhachHang> findAll(String keyword, Integer trangThai) {
+        return findAll(keyword, trangThai, 0, Integer.MAX_VALUE);
     }
 
     public KhachHang findById(Long id) { return khRepo.findById(id); }

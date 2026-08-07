@@ -17,12 +17,18 @@ public class SanPhamChiTietRepository {
     public List<SanPhamChiTiet> findAll(String keyword, Long mauSacId, Long kichCoId,
                                         Long deGiayId, Integer trangThai,
                                         BigDecimal giaMin, BigDecimal giaMax) {
-        return findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, null);
+        return findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, null, 0, Integer.MAX_VALUE);
     }
 
     public List<SanPhamChiTiet> findAll(String keyword, Long mauSacId, Long kichCoId,
                                         Long deGiayId, Integer trangThai,
                                         BigDecimal giaMin, BigDecimal giaMax, Long sanPhamId) {
+        return findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, sanPhamId, 0, Integer.MAX_VALUE);
+    }
+
+    public List<SanPhamChiTiet> findAll(String keyword, Long mauSacId, Long kichCoId,
+                                        Long deGiayId, Integer trangThai,
+                                        BigDecimal giaMin, BigDecimal giaMax, Long sanPhamId, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder(
                 "FROM SanPhamChiTiet s WHERE 1=1");
@@ -80,8 +86,75 @@ public class SanPhamChiTietRepository {
             if (giaMin != null) query.setParameter("gMin", giaMin);
             if (giaMax != null) query.setParameter("gMax", giaMax);
 
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
+
             List<SanPhamChiTiet> list = query.list();
             return list;
+        }
+    }
+
+    public Long countAll(String keyword, Long mauSacId, Long kichCoId,
+                         Long deGiayId, Integer trangThai,
+                         BigDecimal giaMin, BigDecimal giaMax, Long sanPhamId) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            StringBuilder hql = new StringBuilder(
+                "SELECT COUNT(s) FROM SanPhamChiTiet s WHERE 1=1");
+
+            Long kwId = null;
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String kw = keyword.trim();
+                hql.append(" AND (LOWER(s.sanPham.tenSp) LIKE :kw" +
+                            " OR LOWER(s.sanPham.maSp) LIKE :kw" +
+                            " OR LOWER(s.mauSac.ten) LIKE :kw" +
+                            " OR LOWER(s.kichCo.ten) LIKE :kw" +
+                            " OR LOWER(s.deGiay.ten) LIKE :kw" +
+                            " OR LOWER(s.sanPham.thuongHieu.ten) LIKE :kw");
+                try {
+                    kwId = Long.parseLong(kw);
+                    hql.append(" OR s.id = :kwId");
+                } catch (Exception ignored) {}
+                hql.append(")");
+            }
+            if (sanPhamId != null && sanPhamId > 0) {
+                hql.append(" AND s.sanPham.id = :spId");
+            }
+            if (mauSacId != null && mauSacId > 0) {
+                hql.append(" AND s.mauSac.id = :msId");
+            }
+            if (kichCoId != null && kichCoId > 0) {
+                hql.append(" AND s.kichCo.id = :kcId");
+            }
+            if (deGiayId != null && deGiayId > 0) {
+                hql.append(" AND s.deGiay.id = :dgId");
+            }
+            if (trangThai != null && trangThai >= 0) {
+                hql.append(" AND s.trangThai = :tt");
+            }
+            if (giaMin != null) {
+                hql.append(" AND s.giaBan >= :gMin");
+            }
+            if (giaMax != null) {
+                hql.append(" AND s.giaBan <= :gMax");
+            }
+
+            Query<Long> query = session.createQuery(hql.toString(), Long.class);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
+                if (kwId != null) {
+                    query.setParameter("kwId", kwId);
+                }
+            }
+            if (sanPhamId != null && sanPhamId > 0) query.setParameter("spId", sanPhamId);
+            if (mauSacId != null && mauSacId > 0)  query.setParameter("msId", mauSacId);
+            if (kichCoId != null && kichCoId > 0)  query.setParameter("kcId", kichCoId);
+            if (deGiayId != null && deGiayId > 0)  query.setParameter("dgId", deGiayId);
+            if (trangThai != null && trangThai >= 0) query.setParameter("tt", trangThai);
+            if (giaMin != null) query.setParameter("gMin", giaMin);
+            if (giaMax != null) query.setParameter("gMax", giaMax);
+
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
         }
     }
 

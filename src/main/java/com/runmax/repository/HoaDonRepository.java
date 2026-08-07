@@ -19,7 +19,7 @@ import java.util.List;
 public class HoaDonRepository {
 
     public List<HoaDon> findAll(String maHd, Integer trangThai,
-                                LocalDateTime tuNgay, LocalDateTime denNgay) {
+                                LocalDateTime tuNgay, LocalDateTime denNgay, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder("FROM HoaDon h WHERE 1=1");
             if (maHd != null && !maHd.trim().isEmpty()) {
@@ -43,7 +43,41 @@ public class HoaDonRepository {
             if (trangThai != null && trangThai >= 0) query.setParameter("tt", trangThai);
             if (tuNgay != null) query.setParameter("tn", tuNgay);
             if (denNgay != null) query.setParameter("dn", denNgay);
+            
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
+            
             return query.list();
+        }
+    }
+
+    public Long countAll(String maHd, Integer trangThai,
+                         LocalDateTime tuNgay, LocalDateTime denNgay) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            StringBuilder hql = new StringBuilder("SELECT COUNT(h) FROM HoaDon h WHERE 1=1");
+            if (maHd != null && !maHd.trim().isEmpty()) {
+                hql.append(" AND LOWER(h.maHd) LIKE :ma");
+            }
+            if (trangThai != null && trangThai >= 0) {
+                hql.append(" AND h.trangThai = :tt");
+            }
+            if (tuNgay != null) {
+                hql.append(" AND h.ngayTao >= :tn");
+            }
+            if (denNgay != null) {
+                hql.append(" AND h.ngayTao <= :dn");
+            }
+
+            Query<Long> query = session.createQuery(hql.toString(), Long.class);
+            if (maHd != null && !maHd.trim().isEmpty()) {
+                query.setParameter("ma", "%" + maHd.trim().toLowerCase() + "%");
+            }
+            if (trangThai != null && trangThai >= 0) query.setParameter("tt", trangThai);
+            if (tuNgay != null) query.setParameter("tn", tuNgay);
+            if (denNgay != null) query.setParameter("dn", denNgay);
+            
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
         }
     }
 

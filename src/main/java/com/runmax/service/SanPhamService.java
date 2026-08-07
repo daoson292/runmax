@@ -49,24 +49,30 @@ public class SanPhamService {
         sp.setGiaMax(maxPrice);
     }
 
-    public List<SanPham> findAll(String keyword, Long thuongHieuId, Long chatLieuId, Integer trangThai) {
-        List<SanPham> list = repository.findAll(keyword, thuongHieuId, chatLieuId, trangThai);
+    public List<SanPham> findAll(String keyword, Long thuongHieuId, Long chatLieuId, Integer trangThai, int offset, int limit) {
+        List<SanPham> list = repository.findAll(keyword, thuongHieuId, chatLieuId, trangThai, offset, limit);
         populateStats(list);
         return list;
+    }
+
+    public Long countAll(String keyword, Long thuongHieuId, Long chatLieuId, Integer trangThai) {
+        return repository.countAll(keyword, thuongHieuId, chatLieuId, trangThai);
+    }
+
+    public List<SanPham> findAll(String keyword, Long thuongHieuId, Long chatLieuId, Integer trangThai) {
+        return findAll(keyword, thuongHieuId, chatLieuId, trangThai, 0, Integer.MAX_VALUE);
     }
 
     public List<SanPham> findAll(String keyword, Long thuongHieuId) {
-        List<SanPham> list = repository.findAll(keyword, thuongHieuId);
-        populateStats(list);
-        return list;
+        return findAll(keyword, thuongHieuId, null, null, 0, Integer.MAX_VALUE);
     }
 
     public List<SanPham> getAll(String keyword, Long thuongHieuId, Long chatLieuId, Integer trangThai) {
-        return findAll(keyword, thuongHieuId, chatLieuId, trangThai);
+        return findAll(keyword, thuongHieuId, chatLieuId, trangThai, 0, Integer.MAX_VALUE);
     }
 
     public List<SanPham> getAll(String keyword, Long thuongHieuId) {
-        return findAll(keyword, thuongHieuId);
+        return findAll(keyword, thuongHieuId, null, null, 0, Integer.MAX_VALUE);
     }
 
     public SanPham findById(Long id) {
@@ -106,20 +112,19 @@ public class SanPhamService {
         return repository.update(sp);
     }
 
-    /** Kiểm tra mã sản phẩm đã tồn tại chưa (cho validate) */
     public boolean isMaSPExists(String maSp) {
-        return repository.findAll(null, null, null, null).stream()
+        return findAll(null, null, null, null).stream()
             .anyMatch(sp -> maSp.equalsIgnoreCase(sp.getMaSp()));
     }
 
     /** Kiểm tra tên sản phẩm đã tồn tại chưa (cho validate) */
     public boolean isTenSPExists(String tenSp) {
-        return repository.findAll(null, null, null, null).stream()
+        return findAll(null, null, null, null).stream()
             .anyMatch(sp -> tenSp.equalsIgnoreCase(sp.getTenSp()));
     }
 
     public String getNextMaSp() {
-        long count = repository.findAll(null, null, null, null).size();
+        long count = findAll(null, null, null, null).size();
         return String.format("SP%05d", count + 1);
     }
 }

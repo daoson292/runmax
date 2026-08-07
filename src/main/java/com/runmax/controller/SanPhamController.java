@@ -76,7 +76,23 @@ public class SanPhamController extends HttpServlet {
         String ttStr = req.getParameter("trangThai");
         Integer tt = (ttStr != null && !ttStr.isEmpty()) ? Integer.parseInt(ttStr) : null;
 
-        List<SanPham> sanPhams = spService.findAll(keyword, thId, clId, tt);
+        int page = 1;
+        int size = 10;
+        String pageStr = req.getParameter("page");
+        if (pageStr != null && !pageStr.isEmpty()) {
+            try {
+                page = Integer.parseInt(pageStr);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+        if (page < 1) page = 1;
+        int offset = (page - 1) * size;
+
+        Long totalRecords = spService.countAll(keyword, thId, clId, tt);
+        int totalPages = (int) Math.ceil((double) totalRecords / size);
+
+        List<SanPham> sanPhams = spService.findAll(keyword, thId, clId, tt, offset, size);
         req.setAttribute("danhSachSanPham", sanPhams);
         req.setAttribute("thuongHieus", thService.findAll(null, null));
         req.setAttribute("chatLieus", clService.findAll(null));
@@ -84,6 +100,11 @@ public class SanPhamController extends HttpServlet {
         req.setAttribute("thuongHieuId", thId);
         req.setAttribute("chatLieuId", clId);
         req.setAttribute("trangThai", tt);
+
+        req.setAttribute("currentPage", page);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalRecords", totalRecords);
+
         req.getRequestDispatcher("/WEB-INF/QL_SanPham/san-pham.jsp").forward(req, resp);
     }
 

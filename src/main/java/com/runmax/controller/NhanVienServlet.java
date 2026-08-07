@@ -60,11 +60,33 @@ public class NhanVienServlet extends HttpServlet {
         String ttStr   = req.getParameter("trangThai");
         Long vtId = (vtIdStr != null && !vtIdStr.isEmpty()) ? Long.parseLong(vtIdStr) : null;
         Integer tt = (ttStr != null && !ttStr.isEmpty()) ? Integer.parseInt(ttStr) : null;
-        req.setAttribute("nhanViens", nvService.findAll(keyword, vtId, tt));
+
+        int page = 1;
+        int size = 10;
+        String pageStr = req.getParameter("page");
+        if (pageStr != null && !pageStr.isEmpty()) {
+            try {
+                page = Integer.parseInt(pageStr);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+        if (page < 1) page = 1;
+        int offset = (page - 1) * size;
+
+        Long totalRecords = nvService.countAll(keyword, vtId, tt);
+        int totalPages = (int) Math.ceil((double) totalRecords / size);
+
+        req.setAttribute("nhanViens", nvService.findAll(keyword, vtId, tt, offset, size));
         req.setAttribute("vaiTros", vtService.findAll());
         req.setAttribute("keyword", keyword);
         req.setAttribute("vaiTroId", vtId);
         req.setAttribute("trangThai", tt);
+
+        req.setAttribute("currentPage", page);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalRecords", totalRecords);
+
         req.getRequestDispatcher("/WEB-INF/QL_Tai_Khoan/nhan-vien.jsp").forward(req, resp);
     }
 

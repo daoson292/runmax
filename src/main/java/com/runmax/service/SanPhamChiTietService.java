@@ -11,14 +11,26 @@ public class SanPhamChiTietService {
 
     public List<SanPhamChiTiet> findAll(String keyword, Long mauSacId, Long kichCoId,
                                          Long deGiayId, Integer trangThai,
+                                         BigDecimal giaMin, BigDecimal giaMax, Long sanPhamId, int offset, int limit) {
+        return repo.findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, sanPhamId, offset, limit);
+    }
+
+    public Long countAll(String keyword, Long mauSacId, Long kichCoId,
+                         Long deGiayId, Integer trangThai,
+                         BigDecimal giaMin, BigDecimal giaMax, Long sanPhamId) {
+        return repo.countAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, sanPhamId);
+    }
+
+    public List<SanPhamChiTiet> findAll(String keyword, Long mauSacId, Long kichCoId,
+                                         Long deGiayId, Integer trangThai,
                                          BigDecimal giaMin, BigDecimal giaMax) {
-        return repo.findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, null);
+        return repo.findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, null, 0, Integer.MAX_VALUE);
     }
 
     public List<SanPhamChiTiet> findAll(String keyword, Long mauSacId, Long kichCoId,
                                          Long deGiayId, Integer trangThai,
                                          BigDecimal giaMin, BigDecimal giaMax, Long sanPhamId) {
-        return repo.findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, sanPhamId);
+        return repo.findAll(keyword, mauSacId, kichCoId, deGiayId, trangThai, giaMin, giaMax, sanPhamId, 0, Integer.MAX_VALUE);
     }
 
     public List<SanPhamChiTiet> findBySanPhamId(Long sanPhamId) {

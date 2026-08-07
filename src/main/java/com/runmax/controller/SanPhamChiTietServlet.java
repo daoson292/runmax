@@ -87,7 +87,23 @@ public class SanPhamChiTietServlet extends HttpServlet {
         BigDecimal gMin = (gMinStr != null && !gMinStr.isEmpty()) ? new BigDecimal(gMinStr) : null;
         BigDecimal gMax = (gMaxStr != null && !gMaxStr.isEmpty()) ? new BigDecimal(gMaxStr) : null;
 
-        List<SanPhamChiTiet> list = spctService.findAll(keyword, mauSacId, kichCoId, deGiayId, tt, gMin, gMax, sanPhamId);
+        int page = 1;
+        int size = 10;
+        String pageStr = req.getParameter("page");
+        if (pageStr != null && !pageStr.isEmpty()) {
+            try {
+                page = Integer.parseInt(pageStr);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+        if (page < 1) page = 1;
+        int offset = (page - 1) * size;
+
+        Long totalRecords = spctService.countAll(keyword, mauSacId, kichCoId, deGiayId, tt, gMin, gMax, sanPhamId);
+        int totalPages = (int) Math.ceil((double) totalRecords / size);
+
+        List<SanPhamChiTiet> list = spctService.findAll(keyword, mauSacId, kichCoId, deGiayId, tt, gMin, gMax, sanPhamId, offset, size);
         if (sanPhamId != null) {
             req.setAttribute("filterSanPham", spService.findById(sanPhamId));
         }
@@ -115,6 +131,11 @@ public class SanPhamChiTietServlet extends HttpServlet {
         req.setAttribute("sanPhamId", sanPhamId);
         req.setAttribute("giaMin", gMinStr);
         req.setAttribute("giaMax", gMaxStr);
+
+        req.setAttribute("currentPage", page);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalRecords", totalRecords);
+
         req.getRequestDispatcher("/WEB-INF/QL_SanPham/chi-tiet.jsp").forward(req, resp);
     }
 

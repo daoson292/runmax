@@ -299,18 +299,57 @@
                     <!-- Pagination info -->
                     <div class="d-flex align-items-center justify-content-between px-4 py-3 border-top no-print">
                         <small class="text-muted">
-                            Hiển thị <strong>${fn:length(hoaDons)}</strong> / tổng <strong>${fn:length(hoaDons)}</strong> bản ghi
+                            Hiển thị <strong>${fn:length(hoaDons)}</strong> / tổng <strong>${totalRecords != null ? totalRecords : fn:length(hoaDons)}</strong> bản ghi
                         </small>
                         <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-left"></i></button>
-                            <span class="btn btn-sm btn-danger">Trang 1</span>
-                            <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>
+                            <c:set var="filterParams" value=""/>
+                            <c:if test="${not empty param.maHd}">
+                                <c:set var="filterParams" value="${filterParams}&maHd=${param.maHd}"/>
+                            </c:if>
+                            <c:if test="${not empty param.trangThai}">
+                                <c:set var="filterParams" value="${filterParams}&trangThai=${param.trangThai}"/>
+                            </c:if>
+                            <c:if test="${not empty param.tuNgay}">
+                                <c:set var="filterParams" value="${filterParams}&tuNgay=${param.tuNgay}"/>
+                            </c:if>
+                            <c:if test="${not empty param.denNgay}">
+                                <c:set var="filterParams" value="${filterParams}&denNgay=${param.denNgay}"/>
+                            </c:if>
+
+                            <c:choose>
+                                <c:when test="${currentPage > 1}">
+                                    <a href="${pageContext.request.contextPath}/hoa-don?page=${currentPage - 1}${filterParams}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+                                </c:when>
+                                <c:otherwise>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-left"></i></button>
+                                </c:otherwise>
+                            </c:choose>
+
+                            <c:forEach begin="1" end="${totalPages > 0 ? totalPages : 1}" var="i">
+                                <c:choose>
+                                    <c:when test="${i == currentPage}">
+                                        <span class="btn btn-sm btn-danger">${i}</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:if test="${i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2)}">
+                                            <a href="${pageContext.request.contextPath}/hoa-don?page=${i}${filterParams}" class="btn btn-sm btn-outline-secondary">${i}</a>
+                                        </c:if>
+                                        <c:if test="${i == currentPage - 3 || i == currentPage + 3}">
+                                            <span class="btn btn-sm btn-outline-secondary border-0" disabled>...</span>
+                                        </c:if>
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:forEach>
+
+                            <c:choose>
+                                <c:when test="${currentPage < totalPages}">
+                                    <a href="${pageContext.request.contextPath}/hoa-don?page=${currentPage + 1}${filterParams}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+                                </c:when>
+                                <c:otherwise>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
-                        <select class="form-select form-select-sm" style="width:130px;">
-                            <option>10 bản ghi / trang</option>
-                            <option>20 bản ghi / trang</option>
-                            <option>50 bản ghi / trang</option>
-                        </select>
                     </div>
                 </div>
 

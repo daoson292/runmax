@@ -60,12 +60,33 @@ public class PhieuGiamGiaServlet extends HttpServlet {
         Integer tt = (ttStr != null && !ttStr.isEmpty()) ? Integer.parseInt(ttStr) : null;
         java.time.LocalDateTime denNgay = (denNgayStr != null && !denNgayStr.isEmpty())
             ? java.time.LocalDate.parse(denNgayStr).atTime(23, 59, 59) : null;
-        req.setAttribute("phieuList", pggService.findAll(keyword, tt, null, denNgay));
+
+        int page = 1;
+        int size = 10;
+        String pageStr = req.getParameter("page");
+        if (pageStr != null && !pageStr.isEmpty()) {
+            try {
+                page = Integer.parseInt(pageStr);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+        if (page < 1) page = 1;
+        int offset = (page - 1) * size;
+
+        Long totalRecords = pggService.countAll(keyword, tt, null, denNgay);
+        int totalPages = (int) Math.ceil((double) totalRecords / size);
+
+        req.setAttribute("phieuList", pggService.findAll(keyword, tt, null, denNgay, offset, size));
         req.setAttribute("keyword", keyword);
         req.setAttribute("trangThai", ttStr);
         req.setAttribute("loaiGiam", loaiGiam);
         req.setAttribute("loaiPhieu", loaiPhieu);
         req.setAttribute("denNgay", denNgayStr);
+
+        req.setAttribute("currentPage", page);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalRecords", totalRecords);
         req.getRequestDispatcher("/WEB-INF/giamGia/phieu-giam-gia.jsp").forward(req, resp);
     }
 

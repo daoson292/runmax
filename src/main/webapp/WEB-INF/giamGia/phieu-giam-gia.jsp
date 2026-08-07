@@ -259,18 +259,63 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div class="d-flex align-items-center justify-content-between px-4 py-3 border-top">
-                        <small class="text-muted">Hiển thị <strong>${fn:length(phieuList)}</strong> / tổng <strong>${fn:length(phieuList)}</strong> bản ghi</small>
+                    <!-- Pagination info -->
+                    <div class="d-flex align-items-center justify-content-between px-4 py-3 border-top no-print">
+                        <small class="text-muted">
+                            Hiển thị <strong>${fn:length(phieuList)}</strong> / tổng <strong>${totalRecords != null ? totalRecords : fn:length(phieuList)}</strong> bản ghi
+                        </small>
                         <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-left"></i></button>
-                            <span class="btn btn-sm btn-danger">Trang 1</span>
-                            <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>
+                            <c:set var="filterParams" value=""/>
+                            <c:if test="${not empty param.keyword}">
+                                <c:set var="filterParams" value="${filterParams}&keyword=${param.keyword}"/>
+                            </c:if>
+                            <c:if test="${not empty param.trangThai}">
+                                <c:set var="filterParams" value="${filterParams}&trangThai=${param.trangThai}"/>
+                            </c:if>
+                            <c:if test="${not empty param.loaiGiam}">
+                                <c:set var="filterParams" value="${filterParams}&loaiGiam=${param.loaiGiam}"/>
+                            </c:if>
+                            <c:if test="${not empty param.loaiPhieu}">
+                                <c:set var="filterParams" value="${filterParams}&loaiPhieu=${param.loaiPhieu}"/>
+                            </c:if>
+                            <c:if test="${not empty param.denNgay}">
+                                <c:set var="filterParams" value="${filterParams}&denNgay=${param.denNgay}"/>
+                            </c:if>
+
+                            <c:choose>
+                                <c:when test="${currentPage > 1}">
+                                    <a href="${pageContext.request.contextPath}/phieu-giam-gia?page=${currentPage - 1}${filterParams}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+                                </c:when>
+                                <c:otherwise>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-left"></i></button>
+                                </c:otherwise>
+                            </c:choose>
+
+                            <c:forEach begin="1" end="${totalPages > 0 ? totalPages : 1}" var="i">
+                                <c:choose>
+                                    <c:when test="${i == currentPage}">
+                                        <span class="btn btn-sm btn-danger">${i}</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:if test="${i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2)}">
+                                            <a href="${pageContext.request.contextPath}/phieu-giam-gia?page=${i}${filterParams}" class="btn btn-sm btn-outline-secondary">${i}</a>
+                                        </c:if>
+                                        <c:if test="${i == currentPage - 3 || i == currentPage + 3}">
+                                            <span class="btn btn-sm btn-outline-secondary border-0" disabled>...</span>
+                                        </c:if>
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:forEach>
+
+                            <c:choose>
+                                <c:when test="${currentPage < totalPages}">
+                                    <a href="${pageContext.request.contextPath}/phieu-giam-gia?page=${currentPage + 1}${filterParams}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+                                </c:when>
+                                <c:otherwise>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
-                        <select class="form-select form-select-sm" style="width:130px;">
-                            <option>10 bản ghi / trang</option>
-                            <option>20 bản ghi / trang</option>
-                        </select>
                     </div>
                 </div>
 

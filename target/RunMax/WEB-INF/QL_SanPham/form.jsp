@@ -328,6 +328,48 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
     <script>
+        // --- BẮT ĐẦU: Xử lý format tiền tệ realtime ---
+        document.addEventListener('input', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('currency-input')) {
+                let originalValue = e.target.value;
+                let cursorPosition = e.target.selectionStart;
+                let oldLength = originalValue.length;
+
+                let val = originalValue.replace(/[^\d]/g, '');
+                
+                if (val !== '') {
+                    let formattedValue = new Intl.NumberFormat('vi-VN').format(parseInt(val, 10));
+                    e.target.value = formattedValue;
+                    
+                    let newLength = formattedValue.length;
+                    cursorPosition = cursorPosition + (newLength - oldLength);
+                    if(cursorPosition < 0) cursorPosition = 0;
+                    
+                    try { e.target.setSelectionRange(cursorPosition, cursorPosition); } catch(err) {}
+                } else {
+                    e.target.value = '';
+                }
+            }
+        });
+
+        window.unformatCurrencyInputs = function(form) {
+            if (!form) return;
+            const currencyInputs = form.querySelectorAll('.currency-input');
+            currencyInputs.forEach(input => {
+                input.value = input.value.replace(/\./g, '');
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.currency-input').forEach(input => {
+                let val = input.value.replace(/[^\d]/g, '');
+                if (val !== '') {
+                    input.value = new Intl.NumberFormat('vi-VN').format(parseInt(val, 10));
+                }
+            });
+        });
+        // --- KẾT THÚC: Xử lý format tiền tệ realtime ---
+
         // Cấu trúc lưu trữ biến thể đang hiển thị
         // variantMap[colorId_sizeId_soleId] = { colorId, colorTen, sizeId, sizeTen, soleId, soleTen, sl, gia }
         let generatedVariants = [];
@@ -473,8 +515,8 @@
         }
 
         function applyToAllVariants() {
-            const bulkSl = document.getElementById('bulkSl').value.replace(/[^\d]/g, '');
-            const bulkGia = document.getElementById('bulkGia').value.replace(/[^\d]/g, '');
+            const bulkSl = document.getElementById('bulkSl').value.replace(/\./g, '');
+            const bulkGia = document.getElementById('bulkGia').value.replace(/\./g, '');
 
             if (!bulkSl && !bulkGia) {
                 showBootstrapAlert("Vui lòng nhập Số lượng hoặc Đơn giá chung để áp dụng!", "danger");
@@ -655,7 +697,9 @@
             const slInputs = document.querySelectorAll('input[name="variantSoLuong"]');
             const giaInputs = document.querySelectorAll('input[name="variantGiaBan"]');
             for (let i = 0; i < slInputs.length; i++) {
-                if (parseInt(slInputs[i].value, 10) < 0 || parseInt(giaInputs[i].value, 10) < 0) {
+                let slVal = parseInt(slInputs[i].value.replace(/\./g, ''), 10);
+                let giaVal = parseInt(giaInputs[i].value.replace(/\./g, ''), 10);
+                if (slVal < 0 || giaVal < 0) {
                     slInputs[i].classList.add('is-invalid');
                     giaInputs[i].classList.add('is-invalid');
                     showBootstrapAlert("Số lượng và đơn giá biến thể không được là số âm!", "danger");

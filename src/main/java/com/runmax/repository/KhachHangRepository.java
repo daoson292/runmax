@@ -10,7 +10,7 @@ import java.util.List;
 
 public class KhachHangRepository {
 
-    public List<KhachHang> findAll(String keyword, Integer trangThai) {
+    public List<KhachHang> findAll(String keyword, Integer trangThai, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder("FROM KhachHang kh WHERE 1=1");
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -25,7 +25,30 @@ public class KhachHangRepository {
                 query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
             }
             if (trangThai != null && trangThai >= 0) query.setParameter("tt", trangThai);
+            
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
+            
             return query.list();
+        }
+    }
+
+    public Long countAll(String keyword, Integer trangThai) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            StringBuilder hql = new StringBuilder("SELECT COUNT(kh) FROM KhachHang kh WHERE 1=1");
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                hql.append(" AND (LOWER(kh.maKh) LIKE :kw OR LOWER(kh.hoTen) LIKE :kw OR LOWER(kh.sdt) LIKE :kw OR LOWER(kh.email) LIKE :kw OR EXISTS (FROM DiaChiKhachHang dc WHERE dc.khachHang = kh AND (LOWER(dc.tinhThanhPho) LIKE :kw OR LOWER(dc.quanHuyen) LIKE :kw OR LOWER(dc.phuongXa) LIKE :kw OR LOWER(dc.diaChiChiTiet) LIKE :kw)))");
+            }
+            if (trangThai != null && trangThai >= 0) {
+                hql.append(" AND kh.trangThai = :tt");
+            }
+            Query<Long> query = session.createQuery(hql.toString(), Long.class);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
+            }
+            if (trangThai != null && trangThai >= 0) query.setParameter("tt", trangThai);
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
         }
     }
 

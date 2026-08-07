@@ -410,6 +410,74 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination info -->
+                    <div class="d-flex align-items-center justify-content-between px-4 py-3 border-top no-print">
+                        <small class="text-muted">
+                            Hiển thị <strong>${fn:length(spctList)}</strong> / tổng <strong>${totalRecords != null ? totalRecords : fn:length(spctList)}</strong> bản ghi
+                        </small>
+                        <div class="d-flex align-items-center gap-2">
+                            <c:set var="filterParams" value=""/>
+                            <c:if test="${not empty param.keyword}">
+                                <c:set var="filterParams" value="${filterParams}&keyword=${param.keyword}"/>
+                            </c:if>
+                            <c:if test="${not empty param.mauSacId}">
+                                <c:set var="filterParams" value="${filterParams}&mauSacId=${param.mauSacId}"/>
+                            </c:if>
+                            <c:if test="${not empty param.kichCoId}">
+                                <c:set var="filterParams" value="${filterParams}&kichCoId=${param.kichCoId}"/>
+                            </c:if>
+                            <c:if test="${not empty param.deGiayId}">
+                                <c:set var="filterParams" value="${filterParams}&deGiayId=${param.deGiayId}"/>
+                            </c:if>
+                            <c:if test="${not empty param.trangThai}">
+                                <c:set var="filterParams" value="${filterParams}&trangThai=${param.trangThai}"/>
+                            </c:if>
+                            <c:if test="${not empty param.giaMin}">
+                                <c:set var="filterParams" value="${filterParams}&giaMin=${param.giaMin}"/>
+                            </c:if>
+                            <c:if test="${not empty param.giaMax}">
+                                <c:set var="filterParams" value="${filterParams}&giaMax=${param.giaMax}"/>
+                            </c:if>
+                            <c:if test="${not empty param.sanPhamId}">
+                                <c:set var="filterParams" value="${filterParams}&sanPhamId=${param.sanPhamId}"/>
+                            </c:if>
+
+                            <c:choose>
+                                <c:when test="${currentPage > 1}">
+                                    <a href="${pageContext.request.contextPath}/san-pham-chi-tiet?page=${currentPage - 1}${filterParams}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+                                </c:when>
+                                <c:otherwise>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-left"></i></button>
+                                </c:otherwise>
+                            </c:choose>
+
+                            <c:forEach begin="1" end="${totalPages > 0 ? totalPages : 1}" var="i">
+                                <c:choose>
+                                    <c:when test="${i == currentPage}">
+                                        <span class="btn btn-sm btn-danger">${i}</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:if test="${i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2)}">
+                                            <a href="${pageContext.request.contextPath}/san-pham-chi-tiet?page=${i}${filterParams}" class="btn btn-sm btn-outline-secondary">${i}</a>
+                                        </c:if>
+                                        <c:if test="${i == currentPage - 3 || i == currentPage + 3}">
+                                            <span class="btn btn-sm btn-outline-secondary border-0" disabled>...</span>
+                                        </c:if>
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:forEach>
+
+                            <c:choose>
+                                <c:when test="${currentPage < totalPages}">
+                                    <a href="${pageContext.request.contextPath}/san-pham-chi-tiet?page=${currentPage + 1}${filterParams}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+                                </c:when>
+                                <c:otherwise>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -479,30 +547,13 @@
 
             $('#tableSPCT').DataTable({
                 searching: false,
-                dom: "<'row'<'col-sm-12'tr>>" +
-                     "<'d-flex align-items-center justify-content-between px-4 py-3 border-top no-print'ipl>",
+                paging: false,
+                info: false,
+                dom: "<'row'<'col-sm-12'tr>>",
                 language: {
-                    emptyTable: "Không có dữ liệu trong bảng",
-                    info: "Hiển thị <strong>_START_ - _END_</strong> / tổng <strong>_TOTAL_</strong> bản ghi",
-                    infoEmpty: "Hiển thị <strong>0 - 0</strong> / tổng <strong>0</strong> bản ghi",
-                    infoFiltered: "(được lọc từ _MAX_ bản ghi)",
-                    lengthMenu: "_MENU_",
-                    loadingRecords: "Đang tải...",
-                    processing: "Đang xử lý...",
-                    zeroRecords: "Không tìm thấy kết quả nào",
-                    paginate: {
-                        first: "Đầu",
-                        last: "Cuối",
-                        next: '<i class="bi bi-chevron-right"></i>',
-                        previous: '<i class="bi bi-chevron-left"></i>'
-                    }
+                    emptyTable: "Không có dữ liệu trong bảng"
                 },
-                lengthMenu: [
-                    [10, 20, 50],
-                    ["10 bản ghi / trang", "20 bản ghi / trang", "50 bản ghi / trang"]
-                ],
-                order: [[0, 'asc']],
-                pageLength: 10
+                order: [[0, 'asc']]
             });
         });
 

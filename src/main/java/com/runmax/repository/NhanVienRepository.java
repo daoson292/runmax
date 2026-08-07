@@ -10,7 +10,7 @@ import java.util.List;
 
 public class NhanVienRepository {
 
-    public List<NhanVien> findAll(String keyword, Long vaiTroId, Integer trangThai) {
+    public List<NhanVien> findAll(String keyword, Long vaiTroId, Integer trangThai, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder("FROM NhanVien nv WHERE 1=1");
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -30,7 +30,35 @@ public class NhanVienRepository {
             }
             if (vaiTroId != null && vaiTroId > 0) query.setParameter("vtId", vaiTroId);
             if (trangThai != null && trangThai >= 0) query.setParameter("tt", trangThai);
+            
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
+            
             return query.list();
+        }
+    }
+
+    public Long countAll(String keyword, Long vaiTroId, Integer trangThai) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            StringBuilder hql = new StringBuilder("SELECT COUNT(nv) FROM NhanVien nv WHERE 1=1");
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                hql.append(" AND (LOWER(nv.maNv) LIKE :kw OR LOWER(nv.hoTen) LIKE :kw OR LOWER(nv.sdt) LIKE :kw OR LOWER(nv.email) LIKE :kw)");
+            }
+            if (vaiTroId != null && vaiTroId > 0) {
+                hql.append(" AND nv.vaiTro.id = :vtId");
+            }
+            if (trangThai != null && trangThai >= 0) {
+                hql.append(" AND nv.trangThai = :tt");
+            }
+
+            Query<Long> query = session.createQuery(hql.toString(), Long.class);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
+            }
+            if (vaiTroId != null && vaiTroId > 0) query.setParameter("vtId", vaiTroId);
+            if (trangThai != null && trangThai >= 0) query.setParameter("tt", trangThai);
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
         }
     }
 

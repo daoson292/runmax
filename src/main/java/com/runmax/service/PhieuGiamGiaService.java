@@ -10,8 +10,18 @@ public class PhieuGiamGiaService {
     private final PhieuGiamGiaRepository repo = new PhieuGiamGiaRepository();
 
     public List<PhieuGiamGia> findAll(String keyword, Integer trangThai,
+                                       LocalDateTime tuNgay, LocalDateTime denNgay, int offset, int limit) {
+        return repo.findAll(keyword, trangThai, tuNgay, denNgay, offset, limit);
+    }
+
+    public Long countAll(String keyword, Integer trangThai,
+                         LocalDateTime tuNgay, LocalDateTime denNgay) {
+        return repo.countAll(keyword, trangThai, tuNgay, denNgay);
+    }
+
+    public List<PhieuGiamGia> findAll(String keyword, Integer trangThai,
                                        LocalDateTime tuNgay, LocalDateTime denNgay) {
-        return repo.findAll(keyword, trangThai, tuNgay, denNgay);
+        return repo.findAll(keyword, trangThai, tuNgay, denNgay, 0, Integer.MAX_VALUE);
     }
 
     public List<PhieuGiamGia> findActive() { return repo.findActive(); }

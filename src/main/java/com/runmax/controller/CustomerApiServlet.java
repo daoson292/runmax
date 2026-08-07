@@ -39,7 +39,7 @@ public class CustomerApiServlet extends HttpServlet {
             if (term == null) term = "";
             
             // Search active customers
-            List<KhachHang> list = khachHangService.getAll(term, 1);
+            List<KhachHang> list = khachHangService.findAll(term, 1);
             
             // Format for Select2 and Custom Autosuggest
             List<Map<String, String>> results = list.stream().map(kh -> {

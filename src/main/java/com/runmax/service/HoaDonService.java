@@ -17,12 +17,17 @@ public class HoaDonService {
     private final KhachHangRepository       khRepo   = new KhachHangRepository();
 
     public List<HoaDon> findAll(String maHd, Integer trangThai,
-                                 LocalDateTime tuNgay, LocalDateTime denNgay) {
-        return hdRepo.findAll(maHd, trangThai, tuNgay, denNgay);
+                                 LocalDateTime tuNgay, LocalDateTime denNgay, int offset, int limit) {
+        return hdRepo.findAll(maHd, trangThai, tuNgay, denNgay, offset, limit);
+    }
+
+    public Long countAll(String maHd, Integer trangThai,
+                         LocalDateTime tuNgay, LocalDateTime denNgay) {
+        return hdRepo.countAll(maHd, trangThai, tuNgay, denNgay);
     }
 
     public List<HoaDon> getAll(String keyword, Integer trangThai) {
-        return hdRepo.findAll(keyword, trangThai, null, null);
+        return hdRepo.findAll(keyword, trangThai, null, null, 0, Integer.MAX_VALUE);
     }
 
     public HoaDon findById(Long id)        { return hdRepo.findById(id); }

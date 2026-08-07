@@ -13,12 +13,16 @@ public class NhanVienService {
     // -------------------------------------------------------------------------
     // Tìm kiếm
     // -------------------------------------------------------------------------
-    public List<NhanVien> findAll(String keyword, Long vaiTroId, Integer trangThai) {
-        return repo.findAll(keyword, vaiTroId, trangThai);
+    public List<NhanVien> findAll(String keyword, Long vaiTroId, Integer trangThai, int offset, int limit) {
+        return repo.findAll(keyword, vaiTroId, trangThai, offset, limit);
     }
 
-    public List<NhanVien> getAll(String keyword, Long vaiTroId, Integer trangThai) {
-        return repo.findAll(keyword, vaiTroId, trangThai);
+    public Long countAll(String keyword, Long vaiTroId, Integer trangThai) {
+        return repo.countAll(keyword, vaiTroId, trangThai);
+    }
+
+    public List<NhanVien> findAll(String keyword, Long vaiTroId, Integer trangThai) {
+        return repo.findAll(keyword, vaiTroId, trangThai, 0, Integer.MAX_VALUE);
     }
 
     public NhanVien findById(Long id)   { return repo.findById(id); }

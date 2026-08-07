@@ -562,6 +562,48 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
     <script>
+        // --- BẮT ĐẦU: Xử lý format tiền tệ realtime ---
+        document.addEventListener('input', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('currency-input')) {
+                let originalValue = e.target.value;
+                let cursorPosition = e.target.selectionStart;
+                let oldLength = originalValue.length;
+
+                let val = originalValue.replace(/[^\d]/g, '');
+                
+                if (val !== '') {
+                    let formattedValue = new Intl.NumberFormat('vi-VN').format(parseInt(val, 10));
+                    e.target.value = formattedValue;
+                    
+                    let newLength = formattedValue.length;
+                    cursorPosition = cursorPosition + (newLength - oldLength);
+                    if(cursorPosition < 0) cursorPosition = 0;
+                    
+                    try { e.target.setSelectionRange(cursorPosition, cursorPosition); } catch(err) {}
+                } else {
+                    e.target.value = '';
+                }
+            }
+        });
+
+        window.unformatCurrencyInputs = function(form) {
+            if (!form) return;
+            const currencyInputs = form.querySelectorAll('.currency-input');
+            currencyInputs.forEach(input => {
+                input.value = input.value.replace(/\./g, '');
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.currency-input').forEach(input => {
+                let val = input.value.replace(/[^\d]/g, '');
+                if (val !== '') {
+                    input.value = new Intl.NumberFormat('vi-VN').format(parseInt(val, 10));
+                }
+            });
+        });
+        // --- KẾT THÚC: Xử lý format tiền tệ realtime ---
+
         /* ─── Live Preview ─── */
         const moneyFormatter = new Intl.NumberFormat('vi-VN');
 
@@ -674,7 +716,7 @@
             } else { tenPhieuInput.setCustomValidity(''); }
 
             const soLuongInput = document.getElementById('inputSoLuong');
-            const soLuong = parseInt(soLuongInput?.value || '0', 10);
+            const soLuong = parseInt((soLuongInput?.value || '0').replace(/\./g, ''), 10);
             if (isNaN(soLuong) || soLuong <= 0) {
                 soLuongInput.setCustomValidity('Số lượng phải lớn hơn 0!');
                 soLuongInput.classList.add('is-invalid');
@@ -706,7 +748,7 @@
 
             const loai = document.querySelector('input[name="loaiGiam"]:checked')?.value || '1';
             const giaTriInput = document.getElementById('inputGiaTriGiam');
-            const giaTriGiam  = parseFloat(giaTriInput?.value || '0');
+            const giaTriGiam  = parseFloat((giaTriInput?.value || '0').replace(/\./g, ''));
             if (loai === '1') {
                 if (isNaN(giaTriGiam) || giaTriGiam < 1 || giaTriGiam > 100) {
                     giaTriInput.setCustomValidity('Giá trị giảm phải từ 1% đến 100%!');
@@ -730,7 +772,7 @@
             }
 
             const dieuKienInput = document.getElementById('inputDieuKienGiam');
-            const dieuKienGiam  = parseFloat(dieuKienInput?.value || '0');
+            const dieuKienGiam  = parseFloat((dieuKienInput?.value || '0').replace(/\./g, ''));
             if (isNaN(dieuKienGiam) || dieuKienGiam < 0) {
                 dieuKienInput.setCustomValidity('Điều kiện đơn hàng không được âm!');
                 dieuKienInput.classList.add('is-invalid');
@@ -743,7 +785,7 @@
 
             const inputGiamToiDa = document.getElementById('inputGiamToiDa');
             if (loai === '1' && inputGiamToiDa.value !== '') {
-                const giamToiDa = parseFloat(inputGiamToiDa.value || '0');
+                const giamToiDa = parseFloat((inputGiamToiDa.value || '0').replace(/\./g, ''));
                 if (isNaN(giamToiDa) || giamToiDa < 0) {
                     inputGiamToiDa.setCustomValidity('Số tiền giảm tối đa không được âm!');
                     inputGiamToiDa.classList.add('is-invalid');

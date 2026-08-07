@@ -107,7 +107,24 @@ public class HoaDonServlet extends HttpServlet {
         LocalDateTime denNgay = (dnStr != null && !dnStr.isEmpty())
             ? LocalDate.parse(dnStr).atTime(23, 59, 59) : null;
 
-        var list = hdService.findAll(maHd, tt, tuNgay, denNgay);
+        int page = 1;
+        int size = 10;
+        String pageStr = req.getParameter("page");
+        if (pageStr != null && !pageStr.isEmpty()) {
+            try {
+                page = Integer.parseInt(pageStr);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+        if (page < 1) page = 1;
+        int offset = (page - 1) * size;
+
+        Long totalRecords = hdService.countAll(maHd, tt, tuNgay, denNgay);
+        int totalPages = (int) Math.ceil((double) totalRecords / size);
+
+        var list = hdService.findAll(maHd, tt, tuNgay, denNgay, offset, size);
+        
         req.setAttribute("hoaDons", list);
         req.setAttribute("danhSachHoaDon", list);
         req.setAttribute("maHd", maHd);
@@ -116,6 +133,10 @@ public class HoaDonServlet extends HttpServlet {
         req.setAttribute("denNgay", dnStr);
         req.setAttribute("error", req.getParameter("error"));
         req.setAttribute("errorCode", req.getParameter("code"));
+        
+        req.setAttribute("currentPage", page);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalRecords", totalRecords);
 
         req.getRequestDispatcher("/WEB-INF/hoa-don/danh-sach.jsp").forward(req, resp);
     }

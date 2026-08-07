@@ -65,9 +65,31 @@ public class KhachHangServlet extends HttpServlet {
         String keyword = req.getParameter("keyword");
         String ttStr   = req.getParameter("trangThai");
         Integer tt = (ttStr != null && !ttStr.isEmpty()) ? Integer.parseInt(ttStr) : null;
-        req.setAttribute("khachHangs", khService.findAll(keyword, tt));
+
+        int page = 1;
+        int size = 10;
+        String pageStr = req.getParameter("page");
+        if (pageStr != null && !pageStr.isEmpty()) {
+            try {
+                page = Integer.parseInt(pageStr);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+        if (page < 1) page = 1;
+        int offset = (page - 1) * size;
+
+        Long totalRecords = khService.countAll(keyword, tt);
+        int totalPages = (int) Math.ceil((double) totalRecords / size);
+
+        req.setAttribute("khachHangs", khService.findAll(keyword, tt, offset, size));
         req.setAttribute("keyword", keyword);
         req.setAttribute("trangThai", tt);
+
+        req.setAttribute("currentPage", page);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalRecords", totalRecords);
+
         req.getRequestDispatcher("/WEB-INF/QL_Tai_Khoan/khach-hang.jsp").forward(req, resp);
     }
 

@@ -2,6 +2,7 @@ package com.runmax.controller;
 
 import com.runmax.entity.*;
 import com.runmax.service.*;
+import com.runmax.repository.HoaDonRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -39,7 +40,7 @@ public class BanHangServlet extends HttpServlet {
             String sdt = req.getParameter("sdt");
             resp.setContentType("application/json;charset=UTF-8");
             if (sdt != null && !sdt.trim().isEmpty()) {
-                com.runmax.entity.KhachHang kh = new com.runmax.repository.KhachHangRepository().findBySdt(sdt.trim());
+                com.runmax.entity.KhachHang kh = khService.findBySdt(sdt.trim());
                 if (kh != null) {
                     resp.getWriter().write("{\"found\":true,\"id\":" + kh.getId() + ",\"hoTen\":\"" + kh.getHoTen().replace("\"", "\\\"") + "\"}");
                     return;
@@ -527,7 +528,7 @@ public class BanHangServlet extends HttpServlet {
         if (khIdStr != null && !khIdStr.trim().isEmpty()) {
             try {
                 Long khId = Long.parseLong(khIdStr);
-                KhachHang kh = new com.runmax.repository.KhachHangRepository().findById(khId);
+                KhachHang kh = khService.findById(khId);
                 if (kh != null && !java.util.Objects.equals(
                         hd.getKhachHang() != null ? hd.getKhachHang().getId() : null, khId)) {
                     hd.setKhachHang(kh);
@@ -538,7 +539,7 @@ public class BanHangServlet extends HttpServlet {
             // Tìm theo SĐT
             String sdtClean = sdt.trim().isEmpty() ? null : sdt.trim();
             if (sdtClean != null) {
-                KhachHang kh = new com.runmax.repository.KhachHangRepository().findBySdt(sdtClean);
+                KhachHang kh = khService.findBySdt(sdtClean);
                 if (kh != null) {
                     Long currentKhId = hd.getKhachHang() != null ? hd.getKhachHang().getId() : null;
                     if (!java.util.Objects.equals(currentKhId, kh.getId())) {
@@ -553,7 +554,7 @@ public class BanHangServlet extends HttpServlet {
         }
 
         if (changed) {
-            new com.runmax.repository.HoaDonRepository().update(hd);
+            new HoaDonRepository().update(hd);
         }
     }
 

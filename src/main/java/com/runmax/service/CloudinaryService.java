@@ -17,7 +17,7 @@ public class CloudinaryService {
     private static final String CLOUD_NAME = "hq5yd481".trim();
     private static final String API_KEY    = "381417382149126".trim();
     // API Secret do người dùng cung cấp
-    private static String API_SECRET = "UFrk5-6GEYKWYAygq7nP2rlrXjg".trim();
+    private static String API_SECRET = "UFrk5-6GEYKWYAyGq7nP2rlrXjg".trim();
 
     private Cloudinary cloudinary;
 
