@@ -14,11 +14,10 @@ import java.util.Map;
 // Cloudinary Upload Service (Tiện ích tải ảnh lên đám mây Cloudinary + Fallback Local Disk).
 public class CloudinaryService {
 
-    private static final String CLOUD_NAME = "hq5yd481";
-    private static final String API_KEY    = "793213759265169";
+    private static final String CLOUD_NAME = "hq5yd481".trim();
+    private static final String API_KEY    = "381417382149126".trim();
     // API Secret do người dùng cung cấp
-    private static String API_SECRET = System.getenv("CLOUDINARY_API_SECRET") != null
-            ? System.getenv("CLOUDINARY_API_SECRET") : "UFrk5-6GEYKWYAyGq7nP2rlrXjg";
+    private static String API_SECRET = "UFrk5-6GEYKWYAygq7nP2rlrXjg".trim();
 
     private Cloudinary cloudinary;
 
@@ -33,20 +32,20 @@ public class CloudinaryService {
     }
 
     private void initCloudinary() {
-        Map<String, String> config = ObjectUtils.asMap(
-                "cloud_name", CLOUD_NAME,
-                "api_key", API_KEY,
-                "api_secret", API_SECRET,
+        Map<String, Object> config = ObjectUtils.asMap(
+                "cloud_name", CLOUD_NAME.trim(),
+                "api_key", API_KEY.trim(),
+                "api_secret", API_SECRET.trim(),
                 "secure", true
         );
         this.cloudinary = new Cloudinary(config);
     }
 
-    public String uploadImage(Part filePart, String folder) {
+    public String uploadImage(Part filePart, String folder) throws Exception {
         return uploadImage(filePart, folder, null);
     }
 
-    public String uploadImage(Part filePart, String folder, HttpServletRequest req) {
+    public String uploadImage(Part filePart, String folder, HttpServletRequest req) throws Exception {
         if (filePart == null || filePart.getSize() <= 0) {
             return null;
         }
@@ -85,36 +84,10 @@ public class CloudinaryService {
                 return secureUrl;
             }
         } catch (Exception e) {
-            System.err.println("[CloudinaryService] Lỗi Cloudinary API/Network: " + e.getMessage() + ". Đang chuyển sang lưu tại máy chủ (local disk)...");
-            if (req != null) {
-                return saveToLocal(filePart, folder, req);
-            }
+            System.err.println("[CloudinaryService] Lỗi Cloudinary API/Network: " + e.getMessage());
+            e.printStackTrace();
+            throw new Exception("Lỗi kết nối tới Cloudinary API: " + e.getMessage(), e);
         }
         return null;
-    }
-
-    private String saveToLocal(Part filePart, String folder, HttpServletRequest req) {
-        try {
-            String originalName = filePart.getSubmittedFileName();
-            String cleanName = System.currentTimeMillis() + "_" + originalName.replaceAll("[^a-zA-Z0-9.-]", "_");
-            String relPath = "assets/uploads/" + (folder != null ? folder.replace("runmax/", "") + "/" : "");
-            String realDirPath = req.getServletContext().getRealPath("/") + relPath;
-            File dir = new File(realDirPath);
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-            File destFile = new File(dir, cleanName);
-            try (InputStream in = filePart.getInputStream();
-                 FileOutputStream out = new FileOutputStream(destFile)) {
-                in.transferTo(out);
-            }
-            String url = req.getContextPath() + "/" + relPath + cleanName;
-            System.out.println("[CloudinaryService] Đã lưu ảnh tại local: " + url);
-            return url;
-        } catch (Exception ex) {
-            System.err.println("[CloudinaryService] Lỗi khi lưu ảnh local: " + ex.getMessage());
-            ex.printStackTrace();
-            return null;
-        }
     }
 }

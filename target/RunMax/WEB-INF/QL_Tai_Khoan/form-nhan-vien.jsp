@@ -131,28 +131,28 @@
                                        value="${nhanVienEdit != null && nhanVienEdit.ngaySinh != null ? nhanVienEdit.ngaySinh : ''}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Tỉnh/Thành phố</label>
-                                <select id="tinhThanhSelect" name="tinhThanhPho" class="form-select">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Tỉnh/Thành phố <span class="text-danger">*</span></label>
+                                <select id="tinhThanhSelect" name="tinhThanhPho" class="form-select" required>
                                     <option value="">-- Chọn Tỉnh/Thành phố --</option>
                                 </select>
                             </div>
 
                             <!-- Hàng 5: Quận/Huyện & Phường/Xã | Tên đường -->
                             <div class="col-md-3">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Quận/Huyện</label>
-                                <select id="quanHuyenSelect" name="quanHuyen" class="form-select" disabled>
+                                <label class="form-label fw-semibold text-secondary small mb-1">Quận/Huyện <span class="text-danger">*</span></label>
+                                <select id="quanHuyenSelect" name="quanHuyen" class="form-select" required disabled>
                                     <option value="">-- Chọn Quận/Huyện --</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Phường/Xã/Đặc khu</label>
-                                <select id="phuongXaSelect" name="phuongXa" class="form-select" disabled>
+                                <label class="form-label fw-semibold text-secondary small mb-1">Phường/Xã/Đặc khu <span class="text-danger">*</span></label>
+                                <select id="phuongXaSelect" name="phuongXa" class="form-select" required disabled>
                                     <option value="">-- Chọn Phường/Xã/Đặc khu --</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Tên đường</label>
-                                <input type="text" name="diaChiChiTiet" class="form-control"
+                                <label class="form-label fw-semibold text-secondary small mb-1">Tên đường <span class="text-danger">*</span></label>
+                                <input type="text" name="diaChiChiTiet" class="form-control" required
                                        value="${nhanVienEdit != null ? nhanVienEdit.diaChiChiTiet : ''}" placeholder="Số nhà, tên đường...">
                             </div>
 
@@ -253,10 +253,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center p-4">
-                    <div class="p-4 bg-light border rounded-3 mb-3 d-flex flex-column align-items-center justify-content-center" style="height: 220px; border-style: dashed !important;">
-                        <i class="bi bi-camera-video text-danger mb-2" style="font-size: 3rem;"></i>
-                        <p class="text-muted small mb-0">Đưa mã QR trên thẻ CCCD vào khung hình camera để tự động điền thông tin.</p>
-                    </div>
+                    <div id="qr-reader" style="width: 100%; min-height: 250px;"></div>
                     <div class="alert alert-warning small mb-0 text-start">
                         <i class="bi bi-info-circle-fill me-1"></i> Tính năng quét trực tiếp cần thiết bị hỗ trợ Camera hoặc máy đọc mã vạch kết nối USB.
                     </div>
@@ -269,6 +266,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="${pageContext.request.contextPath}/assets/js/address-helper.js"></script>
     <script>
         function previewAvatar(input) {
@@ -329,7 +327,46 @@
             if (distSelect && distSelect.value !== "") distSelect.disabled = false;
             if (wardSelect && wardSelect.value !== "") wardSelect.disabled = false;
             form.classList.add('was-validated');
-            return true;
+
+            // Ngăn chặn form submit ngay lập tức
+            if (event) {
+                event.preventDefault();
+            }
+
+            // Hiển thị Popup xác nhận
+            Swal.fire({
+                title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Xác nhận lưu?</span>',
+                html: '<span style="color: #666; font-size: 15px;">Bạn có chắc chắn muốn lưu thông tin này vào hệ thống?</span>',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-floppy me-1"></i> Đồng ý lưu',
+                cancelButtonText: 'Hủy bỏ',
+                buttonsStyling: true,
+                customClass: {
+                    popup: 'rounded-4 shadow-sm border-0',
+                    confirmButton: 'px-4 py-2 fw-bold rounded-pill',
+                    cancelButton: 'px-4 py-2 fw-bold rounded-pill'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Disable nút submit để tránh double-click
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                        submitBtn.disabled = true;
+                    }
+                    // Thực hiện submit form bypass qua hàm onsubmit
+                    form.submit();
+                } else {
+                    // Khôi phục trạng thái disable để không bị lỗi UX nếu người dùng chọn Hủy
+                    if (distSelect && distSelect.value !== "") distSelect.disabled = true;
+                    if (wardSelect && wardSelect.value !== "") wardSelect.disabled = true;
+                }
+            });
+
+            return false; // Luôn trả về false để onsubmit gốc không tự chạy
         }
 
         // Ẩn/Hiện và bật/tắt ô nhập tay Tài khoản & Mật khẩu cho form Thêm mới
@@ -396,6 +433,70 @@
                     btn.classList.remove("btn-success");
                     btn.classList.add("btn-outline-danger");
                 }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script>
+        let html5QrcodeScanner;
+
+        const modalScanQREl = document.getElementById('modalScanQR');
+        if (modalScanQREl) {
+            modalScanQREl.addEventListener('shown.bs.modal', function () {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader", { fps: 10, qrbox: 250 }, false);
+                html5QrcodeScanner.render(onScanSuccess);
+            });
+
+            modalScanQREl.addEventListener('hidden.bs.modal', function () {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.clear();
+                }
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            const parts = decodedText.split('|');
+            if (parts.length >= 6) {
+                // Họ Tên
+                const hoTenInput = document.querySelector('input[name="hoTen"]');
+                if (hoTenInput) hoTenInput.value = parts[2];
+
+                // Ngày sinh
+                const ngaySinhInput = document.querySelector('input[name="ngaySinh"]');
+                if (ngaySinhInput) {
+                    const dobRaw = parts[3];
+                    if (dobRaw.length === 8) {
+                        const day = dobRaw.substring(0, 2);
+                        const month = dobRaw.substring(2, 4);
+                        const year = dobRaw.substring(4, 8);
+                        ngaySinhInput.value = year + '-' + month + '-' + day;
+                    }
+                }
+
+                // Giới tính
+                if (parts[4].includes('Nam')) {
+                    const genderNam = document.getElementById('genderNam');
+                    if (genderNam) genderNam.checked = true;
+                } else {
+                    const genderNu = document.getElementById('genderNu');
+                    if (genderNu) genderNu.checked = true;
+                }
+
+                // Địa chỉ thường trú
+                const diaChiInput = document.querySelector('input[name="diaChiChiTiet"]');
+                if (diaChiInput) diaChiInput.value = parts[5];
+
+                if (typeof showToast === 'function') {
+                    showToast('Quét mã CCCD thành công!', 'success', 'Thành công');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire('Thành công', 'Quét mã CCCD thành công!', 'success');
+                } else {
+                    alert('Quét mã CCCD thành công!');
+                }
+
+                const modal = bootstrap.Modal.getInstance(modalScanQREl);
+                if (modal) modal.hide();
             }
         }
     </script>

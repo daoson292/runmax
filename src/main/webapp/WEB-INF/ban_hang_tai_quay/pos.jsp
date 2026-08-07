@@ -190,7 +190,7 @@
                                                                         <input type="hidden" name="maSp" value="${ct.sanPhamChiTiet.sanPham.maSp}">
                                                                         <div class="input-group input-group-sm" style="width: 125px;">
                                                                             <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="updateQuantityAjax(this.form, -1)" title="Giảm số lượng">-</button>
-                                                                            <input type="number" name="soLuong" class="form-control text-center fw-bold px-1" value="${ct.soLuong}" min="1" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57" max="${ct.sanPhamChiTiet.soLuongKhaDung + ct.soLuong}" onchange="updateQuantityAjax(this.form, 0, this.value)">
+                                                                            <input type="text" inputmode="numeric" name="soLuong" class="form-control text-center fw-bold px-1 currency-input" value="${ct.soLuong}" min="1" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57" max="${ct.sanPhamChiTiet.soLuongKhaDung + ct.soLuong}" onchange="updateQuantityAjax(this.form, 0, this.value)">
                                                                             <button type="button" class="btn btn-outline-secondary px-2 fw-bold" onclick="updateQuantityAjax(this.form, 1)" title="Tăng số lượng">+</button>
                                                                         </div>
                                                                     </form>
@@ -349,7 +349,7 @@
                                         <div class="mb-3">
                                             <label class="form-label small fw-semibold text-muted mb-2">Phương thức thanh toán</label>
                                             <div class="row g-2">
-                                                <div class="col-6">
+                                                <div class="col-4">
                                                     <input type="radio" class="btn-check payment-method-radio" name="ptttId" id="ptttCash" value="1" onchange="handlePtttChange(this)" checked>
                                                     <label class="btn btn-outline-secondary border-0 w-100 h-100 text-start p-2 payment-method-card" for="ptttCash">
                                                         <div class="d-flex align-items-center">
@@ -363,7 +363,7 @@
                                                         </div>
                                                     </label>
                                                 </div>
-                                                <div class="col-6">
+                                                <div class="col-4">
                                                     <input type="radio" class="btn-check payment-method-radio" name="ptttId" id="ptttQr" value="2" onchange="handlePtttChange(this)">
                                                     <label class="btn btn-outline-secondary border-0 w-100 h-100 text-start p-2 payment-method-card" for="ptttQr">
                                                         <div class="d-flex align-items-center">
@@ -373,6 +373,20 @@
                                                             <div>
                                                                 <div class="fw-bold" style="font-size: 0.85rem; line-height: 1.2;">Chuyển khoản</div>
                                                                 <div class="text-muted" style="font-size: 0.7rem;">QR Code</div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="radio" class="btn-check payment-method-radio" name="ptttId" id="ptttCombo" value="3" onchange="handlePtttChange(this)">
+                                                    <label class="btn btn-outline-secondary border-0 w-100 h-100 text-start p-2 payment-method-card" for="ptttCombo">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="icon-circle bg-light text-secondary me-2 flex-shrink-0">
+                                                                <i class="bi bi-pie-chart-fill fs-5"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="fw-bold" style="font-size: 0.85rem; line-height: 1.2;">Kết hợp</div>
+                                                                <div class="text-muted" style="font-size: 0.7rem;">Tiền mặt + QR</div>
                                                             </div>
                                                         </div>
                                                     </label>
@@ -561,7 +575,8 @@
             form.classList.add('was-validated');
             
             const ptttCash = document.getElementById('ptttCash');
-            if (ptttCash && ptttCash.checked) {
+            const ptttCombo = document.getElementById('ptttCombo');
+            if ((ptttCash && ptttCash.checked) || (ptttCombo && ptttCombo.checked)) {
                 const khachPhaiTra = parseInt(document.getElementById('posTongTien').innerText.replace(/[^\d]/g, '')) || 0;
                 const daThanhToan = parseInt(document.getElementById('posDaTra').innerText.replace(/[^\d]/g, '')) || 0;
                 const thucSuConNo = khachPhaiTra - daThanhToan;
@@ -578,7 +593,11 @@
                 document.getElementById('cashModalRequiredAmount').innerText = new Intl.NumberFormat('vi-VN').format(requiredAmt) + ' ₫';
                 
                 const inputEl = document.getElementById('cashModalInputAmount');
-                inputEl.value = new Intl.NumberFormat('vi-VN').format(requiredAmt);
+                if (ptttCombo && ptttCombo.checked) {
+                    inputEl.value = ''; // Kết hợp thì để trống cho khách tự nhập số nhỏ hơn
+                } else {
+                    inputEl.value = new Intl.NumberFormat('vi-VN').format(requiredAmt);
+                }
                 
                 const cashModalEl = document.getElementById('modalNhapTienMat');
                 const cashModal = new bootstrap.Modal(cashModalEl);
@@ -593,6 +612,29 @@
                 btnConfirm.onclick = function() {
                     const rawVal = inputEl.value.replace(/[^\d]/g, '');
                     const amount = parseInt(rawVal);
+                    const selectedMethod = document.querySelector('input[name="ptttId"]:checked').value;
+                    const expectedAmount = parseInt(document.getElementById('posConNo').innerText.replace(/[^\d]/g, '')) || 0;
+                    
+                    if (selectedMethod === '1') {
+                        if (isNaN(amount) || amount < expectedAmount) {
+                            if (typeof showBootstrapAlert === 'function') {
+                                showBootstrapAlert('Thanh toán tiền mặt phải nhập đủ hoặc lớn hơn số tiền cần thu!', 'danger');
+                            } else {
+                                Swal.fire('Lỗi', 'Thanh toán tiền mặt phải nhập đủ hoặc lớn hơn số tiền cần thu!', 'error');
+                            }
+                            return;
+                        }
+                    } else if (selectedMethod === '3') {
+                        if (isNaN(amount) || amount <= 0 || amount >= expectedAmount) {
+                            if (typeof showBootstrapAlert === 'function') {
+                                showBootstrapAlert('Số tiền mặt phải nhỏ hơn tổng tiền. Nếu khách đưa đủ, vui lòng chọn phương thức Tiền mặt!', 'danger');
+                            } else {
+                                Swal.fire('Lỗi', 'Số tiền mặt phải nhỏ hơn tổng tiền. Nếu khách đưa đủ, vui lòng chọn phương thức Tiền mặt!', 'error');
+                            }
+                            return;
+                        }
+                    }
+
                     if (!isNaN(amount) && amount > 0) {
                         cashModal.hide();
                         fetch('${pageContext.request.contextPath}/api/order/pay-partial', {
@@ -612,35 +654,39 @@
                                 document.getElementById('posDaTra').innerText = formatCurrency(currentDaTra);
                                 document.getElementById('posConNo').innerText = formatCurrency(currentConNo);
                                 
-                                if (currentConNo <= 0) {
-                                    Swal.fire({
-                                        title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
-                                        html: '<span style="color: #666; font-size: 15px;">Thanh toán hoàn tất!</span>',
-                                        icon: 'success',
-                                        iconColor: '#dc3545',
-                                        confirmButtonText: 'Đã hiểu & Đóng',
-                                        confirmButtonColor: '#dc3545',
-                                        buttonsStyling: true,
-                                        customClass: {
-                                            popup: 'rounded-4 shadow-lg border-0',
-                                            confirmButton: 'px-4 py-2 fw-bold rounded-pill'
-                                        }
-                                    }).then(() => {
-                                        submitPosFormWithCustomer(form);
-                                    });
+                                if (selectedMethod === '3') {
+                                    handlePtttChange({value: '2'});
                                 } else {
-                                    Swal.fire({
-                                        title: '<span style="color: #333; font-weight: 700; font-size: 20px;">Ghi nhận thanh toán</span>',
-                                        html: `<span style="color: #666; font-size: 15px;">Khách vừa trả <strong style="color: #dc3545;">\${formatCurrency(amount)}</strong>. Vui lòng thanh toán phần còn lại!</span>`,
-                                        icon: 'info',
-                                        iconColor: '#dc3545', // Màu đỏ thương hiệu
-                                        confirmButtonText: 'Đã hiểu',
-                                        confirmButtonColor: '#dc3545', // Đổi nút tím thành nút đỏ
-                                        customClass: {
-                                            popup: 'rounded-4 shadow-lg border-0',
-                                            confirmButton: 'px-4 py-2 fw-bold rounded-pill'
-                                        }
-                                    });
+                                    if (currentConNo <= 0) {
+                                        Swal.fire({
+                                            title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
+                                            html: '<span style="color: #666; font-size: 15px;">Thanh toán hoàn tất!</span>',
+                                            icon: 'success',
+                                            iconColor: '#dc3545',
+                                            confirmButtonText: 'Đã hiểu & Đóng',
+                                            confirmButtonColor: '#dc3545',
+                                            buttonsStyling: true,
+                                            customClass: {
+                                                popup: 'rounded-4 shadow-lg border-0',
+                                                confirmButton: 'px-4 py-2 fw-bold rounded-pill'
+                                            }
+                                        }).then(() => {
+                                            submitPosFormWithCustomer(form);
+                                        });
+                                    } else {
+                                        Swal.fire({
+                                            title: '<span style="color: #333; font-weight: 700; font-size: 20px;">Ghi nhận thanh toán</span>',
+                                            html: `<span style="color: #666; font-size: 15px;">Khách vừa trả <strong style="color: #dc3545;">\${formatCurrency(amount)}</strong>. Vui lòng thanh toán phần còn lại!</span>`,
+                                            icon: 'info',
+                                            iconColor: '#dc3545', // Màu đỏ thương hiệu
+                                            confirmButtonText: 'Đã hiểu',
+                                            confirmButtonColor: '#dc3545', // Đổi nút tím thành nút đỏ
+                                            customClass: {
+                                                popup: 'rounded-4 shadow-lg border-0',
+                                                confirmButton: 'px-4 py-2 fw-bold rounded-pill'
+                                            }
+                                        });
+                                    }
                                 }
                             } else {
                                 Swal.fire('Lỗi', 'Không thể ghi nhận thanh toán: ' + data.message, 'error');
@@ -2211,21 +2257,28 @@
                                         document.getElementById('posDaTra').innerText = new Intl.NumberFormat('vi-VN').format(currentDaTra) + ' ₫';
                                         document.getElementById('posConNo').innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
                                         
+                                        modal.hide();
                                         Swal.fire({
                                             title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
-                                            html: '<span style="color: #666; font-size: 15px;">Thanh toán thành công qua QR!</span>',
+                                            html: '<span style="color: #666; font-size: 15px;">Thanh toán QR hoàn tất! Bạn có muốn in hóa đơn cho khách không?</span>',
                                             icon: 'success',
                                             iconColor: '#dc3545',
-                                            confirmButtonText: 'Đã hiểu & Đóng',
+                                            showCancelButton: true,
                                             confirmButtonColor: '#dc3545',
+                                            cancelButtonColor: '#6c757d',
+                                            confirmButtonText: '<i class="bi bi-printer me-1"></i> Có, in ngay',
+                                            cancelButtonText: 'Không, đóng',
                                             buttonsStyling: true,
                                             customClass: {
                                                 popup: 'rounded-4 shadow-lg border-0',
-                                                confirmButton: 'px-4 py-2 fw-bold rounded-pill'
+                                                confirmButton: 'px-4 py-2 fw-bold rounded-pill',
+                                                cancelButton: 'px-4 py-2 fw-bold rounded-pill'
                                             }
                                         }).then((result) => {
-                                            if (result.isConfirmed || result.isDismissed) {
-                                                modal.hide();
+                                            const maHdToPrint = '${currentHd != null ? currentHd.id : ""}';
+                                            if (result.isConfirmed) {
+                                                window.location.href = '${pageContext.request.contextPath}/hoa-don?action=detail&id=' + maHdToPrint + '&print=true';
+                                            } else {
                                                 window.location.href = '${pageContext.request.contextPath}/ban-hang';
                                             }
                                         });
@@ -2500,13 +2553,13 @@
         function updateQuantityAjax(form, delta, explicitValue) {
             const input = form.querySelector('input[name="soLuong"]');
             const btns = form.querySelectorAll('button');
-            const oldVal = parseInt(input.defaultValue) || parseInt(input.value) || 1;
+            const oldVal = parseInt(String(input.defaultValue).replace(/[^\d]/g, '')) || parseInt(String(input.value).replace(/[^\d]/g, '')) || 1;
             let newVal;
             
             if (explicitValue !== undefined) {
-                newVal = parseInt(explicitValue);
+                newVal = parseInt(String(explicitValue).replace(/[^\d]/g, ''));
             } else {
-                newVal = parseInt(input.value) + delta;
+                newVal = parseInt(String(input.value).replace(/[^\d]/g, '')) + delta;
             }
             
             if (isNaN(newVal) || newVal <= 0) {
@@ -2852,23 +2905,30 @@
                         sessionStorage.removeItem(timerKey);
                         sessionStorage.removeItem(amountKey);
                         
+                        const modalEl = document.getElementById('modalVietQR');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
                         Swal.fire({
                             title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
-                            html: '<span style="color: #666; font-size: 15px;">Thanh toán thành công qua QR!</span>',
+                            html: '<span style="color: #666; font-size: 15px;">Thanh toán QR hoàn tất! Bạn có muốn in hóa đơn cho khách không?</span>',
                             icon: 'success',
                             iconColor: '#dc3545',
-                            confirmButtonText: 'Đã hiểu & Đóng',
+                            showCancelButton: true,
                             confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: '<i class="bi bi-printer me-1"></i> Có, in ngay',
+                            cancelButtonText: 'Không, đóng',
                             buttonsStyling: true,
                             customClass: {
                                 popup: 'rounded-4 shadow-lg border-0',
-                                confirmButton: 'px-4 py-2 fw-bold rounded-pill'
+                                confirmButton: 'px-4 py-2 fw-bold rounded-pill',
+                                cancelButton: 'px-4 py-2 fw-bold rounded-pill'
                             }
                         }).then((result) => {
-                            if (result.isConfirmed || result.isDismissed) {
-                                const modalEl = document.getElementById('modalVietQR');
-                                const modal = bootstrap.Modal.getInstance(modalEl);
-                                if (modal) modal.hide();
+                            const maHdToPrint = '${currentHd != null ? currentHd.id : ""}';
+                            if (result.isConfirmed) {
+                                window.location.href = '${pageContext.request.contextPath}/hoa-don?action=detail&id=' + maHdToPrint + '&print=true';
+                            } else {
                                 window.location.href = '${pageContext.request.contextPath}/ban-hang';
                             }
                         });
@@ -2911,7 +2971,7 @@
                     
                     <div class="mb-3 text-start">
                         <label class="form-label small fw-semibold text-secondary">Số tiền khách đưa (VNĐ):</label>
-                        <input type="text" inputmode="numeric" id="cashModalInputAmount" class="form-control form-control-lg text-center fw-bold text-primary" placeholder="0" style="font-size: 1.5rem;" oninput="let v = this.value.replace(/[^0-9]/g, ''); this.value = v ? new Intl.NumberFormat('vi-VN').format(v) : '';">
+                        <input type="text" inputmode="numeric" id="cashModalInputAmount" class="form-control form-control-lg text-center fw-bold text-primary currency-input" placeholder="0" style="font-size: 1.5rem;">
                     </div>
                 </div>
                 <div class="modal-footer bg-white p-3 border-top d-flex gap-2">

@@ -17,8 +17,8 @@ import java.util.List;
 @WebServlet("/san-pham")
 @MultipartConfig(
         fileSizeThreshold = 1024 * 1024,
-        maxFileSize       = 10 * 1024 * 1024,
-        maxRequestSize    = 50 * 1024 * 1024
+        maxFileSize       = 5242880,
+        maxRequestSize    = 20971520
 )
 public class SanPhamController extends HttpServlet {
 
@@ -233,13 +233,18 @@ public class SanPhamController extends HttpServlet {
             // Pre-upload unique color images
             for (String msIdStr : variantMauSacIds) {
                 if (msIdStr != null && !msIdStr.trim().isEmpty()) {
+                    Long msId = null;
                     try {
-                        Long msId = Long.parseLong(msIdStr.trim());
-                        if (!uploadedColorUrls.containsKey(msId)) {
-                            jakarta.servlet.http.Part filePart = null;
-                            try {
-                                filePart = req.getPart("fileAnh_color_" + msId);
-                            } catch (Exception ignored) {}
+                        msId = Long.parseLong(msIdStr.trim());
+                    } catch (Exception ignored) {}
+                    
+                    if (msId != null && !uploadedColorUrls.containsKey(msId)) {
+                        jakarta.servlet.http.Part filePart = null;
+                        try {
+                            filePart = req.getPart("fileAnh_color_" + msId);
+                        } catch (Exception ignored) {}
+                        
+                        try {
                             String url = cloudinaryService.uploadImage(filePart, "runmax/san-pham", req);
                             if (url == null) {
                                 String oldUrl = req.getParameter("oldAnh_color_" + msId);
@@ -250,8 +255,13 @@ public class SanPhamController extends HttpServlet {
                             if (url != null) {
                                 uploadedColorUrls.put(msId, url);
                             }
+                        } catch (Exception e) {
+                            req.setAttribute("error", e.getMessage());
+                            SanPham spTmp = SanPham.builder().id(id).maSp(maSp).tenSp(tenSp).moTa(moTa).thuongHieu(th).chatLieu(cl).trangThai(trangThai).build();
+                            showForm(req, resp, spTmp);
+                            return;
                         }
-                    } catch (Exception ignored) {}
+                    }
                 }
             }
 

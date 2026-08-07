@@ -635,49 +635,61 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-light">
-                    <div class="row g-4 align-items-center">
-                        <div class="col-md-4 text-center">
-                            <div class="p-3 bg-white rounded-4 shadow-sm border">
-                                <img id="skuDetailImg" src="" alt="SKU Image" class="img-fluid rounded-3 mb-2" style="max-height: 200px; object-fit: contain;">
-                                <span id="skuDetailStatus" class="badge d-block py-2 fs-6 mt-2"></span>
+                    <div class="row g-4">
+                        <!-- Cột Trái: Ảnh & Trạng thái -->
+                        <div class="col-md-5 col-lg-4 text-center d-flex flex-column">
+                            <div class="p-3 bg-white rounded-4 shadow-sm border flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                                <img id="skuDetailImg" src="" alt="SKU Image" class="img-fluid rounded-3 mb-3" style="max-height: 220px; width: 100%; object-fit: contain;">
+                                <span id="skuDetailStatus" class="badge d-block w-100 py-2 fs-6 mt-auto"></span>
                             </div>
                         </div>
-                        <div class="col-md-8">
-                            <div class="bg-white p-4 rounded-4 shadow-sm border">
-                                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                                    <h6 class="fw-bold text-dark mb-0 fs-5" id="skuDetailTenSp"></h6>
-                                    <span class="badge bg-danger fs-6" id="skuDetailMaSp"></span>
+                        
+                        <!-- Cột Phải: Thông tin chi tiết -->
+                        <div class="col-md-7 col-lg-8">
+                            <div class="bg-white p-4 rounded-4 shadow-sm border h-100">
+                                <!-- Tiêu đề SP -->
+                                <div class="d-flex justify-content-between align-items-start mb-3 border-bottom pb-3 gap-3">
+                                    <h6 class="fw-bold text-dark mb-0 fs-5 lh-base" id="skuDetailTenSp"></h6>
+                                    <span class="badge bg-danger fs-6 text-nowrap" id="skuDetailMaSp"></span>
                                 </div>
-                                <div class="row g-3 mb-3">
-                                    <div class="col-sm-6">
-                                        <label class="small text-secondary fw-semibold d-block">Mã SP chi tiết (SKU):</label>
-                                        <span class="fw-bold text-primary fs-6" id="skuDetailMaSpct" style="font-family: monospace;"></span>
+                                
+                                <!-- Thông tin Mã & Tồn kho -->
+                                <div class="row g-3 mb-4 bg-light p-2 rounded-3 border mx-0">
+                                    <div class="col-sm-6 border-end">
+                                        <label class="small text-secondary fw-semibold d-block mb-1">Mã SP chi tiết (SKU):</label>
+                                        <span class="fw-bold text-primary fs-6 text-wrap" id="skuDetailMaSpct" style="font-family: monospace; word-break: break-all;"></span>
                                     </div>
-                                    <div class="col-sm-6">
-                                        <label class="small text-secondary fw-semibold d-block">Số lượng tồn kho:</label>
+                                    <div class="col-sm-6 ps-sm-3">
+                                        <label class="small text-secondary fw-semibold d-block mb-1">Số lượng tồn kho:</label>
                                         <span class="fw-bold fs-6" id="skuDetailSoLuongTon"></span>
                                     </div>
-                                    <div class="col-sm-4">
-                                        <label class="small text-secondary fw-semibold d-block">Màu sắc:</label>
-                                        <span class="badge bg-light text-dark border px-3 py-2 fs-6" id="skuDetailMauSac"></span>
+                                </div>
+                                
+                                <!-- Thuộc tính (Màu, Size, Đế) - Chuyển sang 2 cột cho thoáng -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-sm-6">
+                                        <label class="small text-secondary fw-semibold d-block mb-1">Màu sắc:</label>
+                                        <span class="badge bg-light text-dark border px-3 py-2 fs-6 w-100 text-start text-wrap lh-base" id="skuDetailMauSac"></span>
                                     </div>
-                                    <div class="col-sm-4">
-                                        <label class="small text-secondary fw-semibold d-block">Kích cỡ:</label>
-                                        <span class="badge bg-danger px-3 py-2 fs-6" id="skuDetailKichCo"></span>
+                                    <div class="col-sm-6">
+                                        <label class="small text-secondary fw-semibold d-block mb-1">Kích cỡ:</label>
+                                        <span class="badge bg-danger px-3 py-2 fs-6 w-100 text-start" id="skuDetailKichCo"></span>
                                     </div>
-                                    <div class="col-sm-4">
-                                        <label class="small text-secondary fw-semibold d-block">Đế giày:</label>
-                                        <span class="badge bg-secondary px-3 py-2 fs-6" id="skuDetailDeGiay"></span>
+                                    <div class="col-12">
+                                        <label class="small text-secondary fw-semibold d-block mb-1">Đế giày:</label>
+                                        <span class="badge bg-secondary px-3 py-2 fs-6 w-100 text-start text-wrap lh-base" id="skuDetailDeGiay"></span>
                                     </div>
                                 </div>
-                                <div class="row g-3 pt-2 border-top">
+                                
+                                <!-- Giá bán -->
+                                <div class="row g-3 pt-3 border-top mt-auto">
                                     <div class="col-sm-6">
-                                        <label class="small text-secondary fw-semibold d-block">Giá gốc:</label>
+                                        <label class="small text-secondary fw-semibold d-block mb-1">Giá gốc:</label>
                                         <span class="fw-semibold text-muted text-decoration-line-through fs-6" id="skuDetailGiaGoc"></span>
                                     </div>
                                     <div class="col-sm-6">
-                                        <label class="small text-secondary fw-semibold d-block">Giá bán:</label>
-                                        <span class="fw-bold text-danger fs-5" id="skuDetailGiaBan"></span>
+                                        <label class="small text-secondary fw-semibold d-block mb-1">Giá bán:</label>
+                                        <span class="fw-bold text-danger fs-4" id="skuDetailGiaBan"></span>
                                     </div>
                                 </div>
                             </div>
@@ -685,10 +697,10 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-white p-3 border-top d-flex justify-content-between">
-                    <button type="button" class="btn btn-dark px-4 fw-semibold d-flex align-items-center gap-2" onclick="openQRFromDetailModal()">
+                    <button type="button" class="btn btn-dark px-4 fw-semibold d-flex align-items-center gap-2 shadow-sm" onclick="openQRFromDetailModal()">
                         <i class="bi bi-qr-code"></i> Xem & In Tem QR SKU
                     </button>
-                    <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-secondary px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">Đóng</button>
                 </div>
             </div>
         </div>

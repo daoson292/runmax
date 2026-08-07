@@ -141,4 +141,37 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // === Currency Input Formatting ===
+    // Định dạng có phân cách hàng nghìn khi người dùng gõ
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('currency-input')) {
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            if (val) {
+                e.target.value = new Intl.NumberFormat('vi-VN').format(val);
+            } else {
+                e.target.value = '';
+            }
+        }
+    });
+
+    // Format sẵn các input khi trang vừa tải xong
+    document.querySelectorAll('.currency-input').forEach(function (input) {
+        if (input.value) {
+            let val = input.value.replace(/[^0-9]/g, '');
+            if (val) {
+                input.value = new Intl.NumberFormat('vi-VN').format(val);
+            }
+        }
+    });
+
+    // === Tiện ích hỗ trợ unformat ===
+    window.unformatCurrencyInputs = function(container) {
+        if (!container) container = document;
+        container.querySelectorAll('.currency-input').forEach(function(input) {
+            if (input.value) {
+                input.value = input.value.replace(/[^0-9]/g, '');
+            }
+        });
+    };
+
 });

@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @WebServlet("/san-pham-chi-tiet")
-@MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 1024 * 1024 * 5, maxRequestSize = 1024 * 1024 * 10)
+@MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 5242880, maxRequestSize = 20971520)
 public class SanPhamChiTietServlet extends HttpServlet {
 
     private final SanPhamChiTietService spctService       = new SanPhamChiTietService();
@@ -152,7 +152,17 @@ public class SanPhamChiTietServlet extends HttpServlet {
         try {
             fileAnh = req.getPart("fileAnh");
         } catch (Exception ignored) {}
-        String uploadedUrl = cloudinaryService.uploadImage(fileAnh, "runmax/san-pham", req);
+        
+        String uploadedUrl = null;
+        try {
+            uploadedUrl = cloudinaryService.uploadImage(fileAnh, "runmax/san-pham", req);
+        } catch (Exception e) {
+            req.setAttribute("errorMessage", e.getMessage());
+            SanPhamChiTiet spctTmp = SanPhamChiTiet.builder().id(id).sanPham(sp).mauSac(ms).kichCo(kc).deGiay(dg).giaGoc(giaGoc).giaBan(giaBan).soLuongTon(soLuongTon).trangThai(trangThai).build();
+            showForm(req, resp, spctTmp);
+            return;
+        }
+        
         String anhFromForm = req.getParameter("anhDaiDien");
         String currentAnh  = (uploadedUrl != null) ? uploadedUrl : (anhFromForm != null && !anhFromForm.trim().isEmpty() ? anhFromForm.trim() : null);
 

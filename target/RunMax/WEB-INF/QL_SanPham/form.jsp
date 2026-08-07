@@ -247,11 +247,11 @@
                             <div class="p-3 mb-4 bg-light border rounded-3 d-flex flex-wrap align-items-end gap-3">
                                 <div>
                                     <label class="form-label small fw-bold text-secondary mb-1">Số lượng chung</label>
-                                    <input type="number" id="bulkSl" class="form-control form-control-sm" placeholder="VD: 100" min="0">
+                                    <input type="text" inputmode="numeric" id="bulkSl" class="form-control form-control-sm currency-input" placeholder="VD: 100" min="0">
                                 </div>
                                 <div>
                                     <label class="form-label small fw-bold text-secondary mb-1">Đơn giá bán chung (VNĐ)</label>
-                                    <input type="number" id="bulkGia" class="form-control form-control-sm" placeholder="VD: 1200000" min="0">
+                                    <input type="text" inputmode="numeric" id="bulkGia" class="form-control form-control-sm currency-input" placeholder="VD: 1200000" min="0">
                                 </div>
                                 <div>
                                     <button type="button" class="btn btn-sm btn-danger fw-semibold px-3" onclick="applyToAllVariants()">
@@ -325,6 +325,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
     <script>
         // Cấu trúc lưu trữ biến thể đang hiển thị
@@ -472,8 +473,8 @@
         }
 
         function applyToAllVariants() {
-            const bulkSl = document.getElementById('bulkSl').value;
-            const bulkGia = document.getElementById('bulkGia').value;
+            const bulkSl = document.getElementById('bulkSl').value.replace(/[^\d]/g, '');
+            const bulkGia = document.getElementById('bulkGia').value.replace(/[^\d]/g, '');
 
             if (!bulkSl && !bulkGia) {
                 showBootstrapAlert("Vui lòng nhập Số lượng hoặc Đơn giá chung để áp dụng!", "danger");
@@ -510,7 +511,7 @@
             const colorGroups = {};
             generatedVariants.forEach((v, idx) => {
                 if (!colorGroups[v.colorId]) {
-                    colorGroups[v.colorId] = { colorTen: v.colorTen, items: [] };
+                    colorGroups[v.colorId] = { colorId: v.colorId, colorTen: v.colorTen, items: [] };
                 }
                 colorGroups[v.colorId].items.push({ ...v, index: idx });
             });
@@ -546,12 +547,12 @@
                                     <input type="hidden" name="variantMauSacId" value="\${v.colorId}">
                                     <input type="hidden" name="variantKichCoId" value="\${v.sizeId}">
                                     <input type="hidden" name="variantDeGiayId" value="\${v.soleId}">
-                                    <input type="number" name="variantSoLuong" class="form-control form-control-sm variant-input ms-auto"
-                                           value="\${v.sl}" min="0" required onchange="generatedVariants[\${v.index}].sl = parseInt(this.value)||0">
+                                    <input type="text" inputmode="numeric" name="variantSoLuong" class="form-control form-control-sm variant-input ms-auto currency-input"
+                                           value="\${v.sl ? new Intl.NumberFormat('vi-VN').format(v.sl) : 0}" min="0" required onchange="generatedVariants[\${v.index}].sl = parseInt(this.value.replace(/[^0-9]/g, ''))||0">
                                 </td>
                                 <td class="text-end">
-                                    <input type="number" name="variantGiaBan" class="form-control form-control-sm variant-input ms-auto"
-                                           value="\${v.gia}" min="0" required onchange="generatedVariants[\${v.index}].gia = parseInt(this.value)||0">
+                                    <input type="text" inputmode="numeric" name="variantGiaBan" class="form-control form-control-sm variant-input ms-auto currency-input"
+                                           value="\${v.gia ? new Intl.NumberFormat('vi-VN').format(v.gia) : 0}" min="0" required onchange="generatedVariants[\${v.index}].gia = parseInt(this.value.replace(/[^0-9]/g, ''))||0">
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa dòng này" onclick="removeRow(\${v.index})">
@@ -664,7 +665,43 @@
                 }
             }
             if (form) form.classList.add('was-validated');
-            return true;
+
+            // Ngăn chặn form submit ngay lập tức
+            if (event) {
+                event.preventDefault();
+            }
+
+            // Hiển thị Popup xác nhận
+            Swal.fire({
+                title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Xác nhận lưu?</span>',
+                html: '<span style="color: #666; font-size: 15px;">Bạn có chắc chắn muốn lưu thông tin này vào hệ thống?</span>',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-floppy me-1"></i> Đồng ý lưu',
+                cancelButtonText: 'Hủy bỏ',
+                buttonsStyling: true,
+                customClass: {
+                    popup: 'rounded-4 shadow-sm border-0',
+                    confirmButton: 'px-4 py-2 fw-bold rounded-pill',
+                    cancelButton: 'px-4 py-2 fw-bold rounded-pill'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Disable nút submit để tránh double-click
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                        submitBtn.disabled = true;
+                    }
+                    // Thực hiện submit form bypass qua hàm onsubmit
+                    if (window.unformatCurrencyInputs) window.unformatCurrencyInputs(form);
+                    form.submit();
+                }
+            });
+
+            return false; // Luôn trả về false để onsubmit gốc không tự chạy
         }
     </script>
 </body>

@@ -349,7 +349,7 @@
                                     <div class="${isEdit ? 'col-md-6' : 'col-md-4'}">
                                         <label class="form-label">Số lượng phát hành <span class="text-danger">*</span></label>
                                         <div class="input-with-suffix">
-                                            <input type="number" name="soLuong" id="inputSoLuong" class="form-control" required min="1"
+                                            <input type="text" inputmode="numeric" name="soLuong" id="inputSoLuong" class="form-control currency-input" required min="1"
                                                    value="${phieu != null && phieu.soLuong != null ? phieu.soLuong : 100}"
                                                    oninput="updatePreview()">
                                             <span class="input-suffix-label">lượt</span>
@@ -402,7 +402,7 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Giá trị giảm <span class="text-danger">*</span></label>
                                         <div class="input-with-suffix">
-                                            <input type="number" name="giaTrigiam" id="inputGiaTriGiam" class="form-control fw-bold text-danger" required min="1" max="100"
+                                            <input type="text" inputmode="numeric" name="giaTrigiam" id="inputGiaTriGiam" class="form-control fw-bold text-danger currency-input" required min="1" max="100"
                                                    value="${phieu != null && phieu.giaTrigiam != null ? phieu.giaTrigiam.toBigInteger() : 10}"
                                                    oninput="checkLivePhieuInput(); updatePreview()">
                                             <span class="input-suffix-label" id="suffixGiam">${phieu != null && phieu.loaiGiam == 2 ? 'VNĐ' : '%'}</span>
@@ -415,7 +415,7 @@
                                     <div class="col-md-6" id="boxGiamToiDa">
                                         <label class="form-label">Giảm tối đa <span class="text-muted fw-normal">(tùy chọn)</span></label>
                                         <div class="input-with-suffix">
-                                            <input type="number" name="giamToiDa" id="inputGiamToiDa" class="form-control" min="0"
+                                            <input type="text" inputmode="numeric" name="giamToiDa" id="inputGiamToiDa" class="form-control currency-input" min="0"
                                                    value="${phieu != null && phieu.giamToiDa != null ? phieu.giamToiDa.toBigInteger() : ''}"
                                                    placeholder="Để trống = không giới hạn">
                                             <span class="input-suffix-label">VNĐ</span>
@@ -427,7 +427,7 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Đơn hàng tối thiểu</label>
                                         <div class="input-with-suffix">
-                                            <input type="number" name="dieuKienGiam" id="inputDieuKienGiam" class="form-control" min="0"
+                                            <input type="text" inputmode="numeric" name="dieuKienGiam" id="inputDieuKienGiam" class="form-control currency-input" min="0"
                                                    value="${phieu != null && phieu.dieuKienGiam != null ? phieu.dieuKienGiam.toBigInteger() : 0}">
                                             <span class="input-suffix-label">VNĐ</span>
                                         </div>
@@ -559,6 +559,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
     <script>
         /* ─── Live Preview ─── */
@@ -582,8 +583,8 @@
                 if (isPhanTram) {
                     previewValueEl.innerText = giaTri + '%';
                 } else {
-                    const numGiaTri = parseInt(giaTri);
-                    if (numGiaTri >= 1000 && numGiaTri % 1000 === 0) {
+                    const numGiaTri = parseInt(giaTri.replace(/[^\d]/g, ''));
+                    if (!isNaN(numGiaTri) && numGiaTri >= 1000 && numGiaTri % 1000 === 0) {
                         previewValueEl.innerText = moneyFormatter.format(numGiaTri / 1000) + 'K';
                     } else {
                         previewValueEl.innerText = moneyFormatter.format(numGiaTri) + 'đ';
@@ -648,7 +649,7 @@
             const loai = document.querySelector('input[name="loaiGiam"]:checked')?.value || '1';
             const giaTriInput = document.getElementById('inputGiaTriGiam');
             if (!giaTriInput) return;
-            const val = parseFloat(giaTriInput.value);
+            const val = parseFloat(giaTriInput.value.replace(/[^\d]/g, ''));
             if (loai === '1') {
                 giaTriInput.setCustomValidity((isNaN(val) || val < 1 || val > 100) ? 'Giá trị giảm phải từ 1% đến 100%!' : '');
             } else {
@@ -761,13 +762,68 @@
                 return false;
             }
             form.classList.add('was-validated');
-            return true;
+
+            // Ngăn chặn form submit ngay lập tức
+            if (event) {
+                event.preventDefault();
+            }
+
+            // Hiển thị Popup xác nhận
+            Swal.fire({
+                title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Xác nhận lưu?</span>',
+                html: '<span style="color: #666; font-size: 15px;">Bạn có chắc chắn muốn lưu thông tin này vào hệ thống?</span>',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-floppy me-1"></i> Đồng ý lưu',
+                cancelButtonText: 'Hủy bỏ',
+                buttonsStyling: true,
+                customClass: {
+                    popup: 'rounded-4 shadow-sm border-0',
+                    confirmButton: 'px-4 py-2 fw-bold rounded-pill',
+                    cancelButton: 'px-4 py-2 fw-bold rounded-pill'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Disable nút submit để tránh double-click
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                        submitBtn.disabled = true;
+                    }
+                    // Thực hiện submit form bypass qua hàm onsubmit
+                    if (window.unformatCurrencyInputs) window.unformatCurrencyInputs(form);
+                    form.submit();
+                }
+            });
+
+            return false; // Luôn trả về false để onsubmit gốc không tự chạy
         }
 
         // Init
         document.addEventListener('DOMContentLoaded', function() {
             handleLoaiGiamChange();
-            updatePreview();
+            
+            // --- BẮT ĐẦU: Logic tự động set "Ngày mai" cho phiếu mới ---
+            const inputBatDau = document.getElementById('inputBatDau');
+            // Nếu ô ngày bắt đầu đang trống (tức là form Thêm Mới, không có dữ liệu cũ)
+            if (inputBatDau && !inputBatDau.value) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1); // Lấy hôm nay + 1 ngày
+                
+                // Format về chuẩn YYYY-MM-DD để nhét vào thẻ <input type="date">
+                const yyyy = tomorrow.getFullYear();
+                const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                const dd = String(tomorrow.getDate()).padStart(2, '0');
+                
+                inputBatDau.value = yyyy + '-' + mm + '-' + dd;
+            }
+            // --- KẾT THÚC ---
+
+            // Gọi updatePreview sau khi đã có ngày để thẻ vé bên phải update theo
+            updatePreview(); 
+            
             const giaTriInput = document.getElementById('inputGiaTriGiam');
             if (giaTriInput) {
                 giaTriInput.addEventListener('input', checkLivePhieuInput);

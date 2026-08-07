@@ -97,14 +97,6 @@ public class NhanVienServlet extends HttpServlet {
         VaiTro vt = vtService.findById(vtId);
         int tt = (ttStr != null && !ttStr.isEmpty()) ? Integer.parseInt(ttStr) : 1;
 
-        Part fileAnh = null;
-        try {
-            fileAnh = req.getPart("fileAnh");
-        } catch (Exception ignored) {}
-        String uploadedUrl = cloudinaryService.uploadImage(fileAnh, "runmax/nhan-vien", req);
-        String anhFromForm = req.getParameter("anhDaiDien");
-        String currentAnh  = (uploadedUrl != null) ? uploadedUrl : (anhFromForm != null && !anhFromForm.trim().isEmpty() ? anhFromForm.trim() : null);
-
         boolean isEdit = (idStr != null && !idStr.isEmpty());
         Long id = isEdit ? Long.parseLong(idStr) : null;
 
@@ -115,6 +107,24 @@ public class NhanVienServlet extends HttpServlet {
                 ngaySinh = LocalDate.parse(ngaySinhStr.trim());
             } catch (Exception ignored) {}
         }
+
+        Part fileAnh = null;
+        try {
+            fileAnh = req.getPart("fileAnh");
+        } catch (Exception ignored) {}
+        
+        String uploadedUrl = null;
+        String anhFromForm = req.getParameter("anhDaiDien");
+        try {
+            uploadedUrl = cloudinaryService.uploadImage(fileAnh, "runmax/nhan-vien", req);
+        } catch (Exception e) {
+            req.setAttribute("errorMessage", "Lỗi tải ảnh lên Cloud: " + e.getMessage());
+            NhanVien nvTmp = NhanVien.builder().anhDaiDien(anhFromForm).id(id).maNv(maNv).hoTen(hoTen).sdt(sdt).email(email).tenDangNhap(tdnhap).vaiTro(vt).gioiTinh(gioiTinh).ngaySinh(ngaySinh).tinhThanhPho(tinhThanh).quanHuyen(quanHuyen).phuongXa(phuongXa).diaChiChiTiet(chiTiet).trangThai(tt).build();
+            showForm(req, resp, nvTmp);
+            return;
+        }
+        
+        String currentAnh  = (uploadedUrl != null) ? uploadedUrl : (anhFromForm != null && !anhFromForm.trim().isEmpty() ? anhFromForm.trim() : null);
 
         if (hoTen == null || hoTen.trim().isEmpty()) {
             req.setAttribute("errorMessage", "Họ và tên nhân viên không được để trống!");
