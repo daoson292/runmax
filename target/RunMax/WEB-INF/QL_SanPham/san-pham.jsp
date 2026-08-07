@@ -221,7 +221,7 @@
                             <tbody>
                                 <c:forEach var="sp" items="${danhSachSanPham}" varStatus="loop">
                                     <tr>
-                                        <td class="text-muted fw-semibold">${loop.index + 1}</td>
+                                        <td class="text-muted fw-semibold">${(currentPage != null ? currentPage - 1 : 0) * (pageSize != null ? pageSize : 10) + loop.index + 1}</td>
                                         <td class="fw-bold text-danger" style="font-family:monospace;">${sp.maSp}</td>
                                         <td class="fw-semibold text-dark">${sp.tenSp}</td>
                                         <td>
@@ -359,7 +359,7 @@
             columnDefs: [
                 { orderable: false, targets: [6, 7, 8] }
             ],
-            order: [[1, 'asc']],
+            order: [], // Bỏ sort mặc định để không làm xáo trộn STT của server
             responsive: true,
         });
     });

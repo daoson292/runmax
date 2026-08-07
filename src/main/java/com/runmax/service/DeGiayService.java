@@ -8,16 +8,24 @@ import java.util.List;
 public class DeGiayService {
     private final DeGiayRepository repository = new DeGiayRepository();
 
+    public List<DeGiay> findAll(String keyword, int offset, int limit) {
+        return repository.findAll(keyword, offset, limit);
+    }
+
     public List<DeGiay> findAll(String keyword) {
-        return repository.findAll(keyword);
+        return repository.findAll(keyword, 0, Integer.MAX_VALUE);
     }
 
     public List<DeGiay> findAll() {
-        return repository.findAll();
+        return repository.findAll(null, 0, Integer.MAX_VALUE);
     }
 
     public List<DeGiay> getAll(String keyword) {
-        return repository.findAll(keyword);
+        return repository.findAll(keyword, 0, Integer.MAX_VALUE);
+    }
+
+    public Long countAll(String keyword) {
+        return repository.countAll(keyword);
     }
 
     public DeGiay findById(Long id) {

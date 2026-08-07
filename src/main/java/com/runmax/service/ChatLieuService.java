@@ -8,12 +8,20 @@ import java.util.List;
 public class ChatLieuService {
     private final ChatLieuRepository repository = new ChatLieuRepository();
 
+    public List<ChatLieu> findAll(String keyword, int offset, int limit) {
+        return repository.findAll(keyword, offset, limit);
+    }
+
     public List<ChatLieu> findAll(String keyword) {
-        return repository.findAll(keyword);
+        return repository.findAll(keyword, 0, Integer.MAX_VALUE);
     }
 
     public List<ChatLieu> getAll(String keyword) {
-        return repository.findAll(keyword);
+        return repository.findAll(keyword, 0, Integer.MAX_VALUE);
+    }
+
+    public Long countAll(String keyword) {
+        return repository.countAll(keyword);
     }
 
     public ChatLieu findById(Long id) {

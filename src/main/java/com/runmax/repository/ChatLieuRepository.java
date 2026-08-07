@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ChatLieuRepository {
 
-    public List<ChatLieu> findAll(String keyword) {
+    public List<ChatLieu> findAll(String keyword, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             String hql = "FROM ChatLieu c WHERE 1=1";
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -22,12 +22,29 @@ public class ChatLieuRepository {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 query.setParameter("keyword", "%" + keyword.trim().toLowerCase() + "%");
             }
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
             return query.list();
         }
     }
 
+    public Long countAll(String keyword) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            String hql = "SELECT COUNT(c) FROM ChatLieu c WHERE 1=1";
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                hql += " AND LOWER(c.ten) LIKE :keyword";
+            }
+            Query<Long> query = session.createQuery(hql, Long.class);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                query.setParameter("keyword", "%" + keyword.trim().toLowerCase() + "%");
+            }
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
+        }
+    }
+
     public List<ChatLieu> findAll() {
-        return findAll(null);
+        return findAll(null, 0, Integer.MAX_VALUE);
     }
 
     public ChatLieu findById(Long id) {

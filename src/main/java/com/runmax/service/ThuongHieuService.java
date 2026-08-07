@@ -7,20 +7,33 @@ import java.util.List;
 public class ThuongHieuService {
     private final ThuongHieuRepository repo = new ThuongHieuRepository();
 
-    public List<ThuongHieu> findAll(String keyword, Long id) {
-        List<ThuongHieu> list = repo.findAll(keyword);
+    public List<ThuongHieu> findAll(String keyword, Long id, int offset, int limit) {
+        List<ThuongHieu> list = repo.findAll(keyword, offset, limit);
         if (id != null) {
             return list.stream().filter(e -> e.getId().equals(id)).toList();
         }
         return list;
     }
 
+    /** Backward-compat overload: lấy toàn bộ, lọc theo id nếu có */
+    public List<ThuongHieu> findAll(String keyword, Long id) {
+        return findAll(keyword, id, 0, Integer.MAX_VALUE);
+    }
+
+    public List<ThuongHieu> findAll(String keyword, int offset, int limit) {
+        return repo.findAll(keyword, offset, limit);
+    }
+
     public List<ThuongHieu> findAll(String keyword) {
-        return repo.findAll(keyword);
+        return repo.findAll(keyword, 0, Integer.MAX_VALUE);
     }
 
     public List<ThuongHieu> getAll(String keyword) {
-        return repo.findAll(keyword);
+        return repo.findAll(keyword, 0, Integer.MAX_VALUE);
+    }
+
+    public Long countAll(String keyword) {
+        return repo.countAll(keyword);
     }
 
     public ThuongHieu findById(Long id) { return repo.findById(id); }

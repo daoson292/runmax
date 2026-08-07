@@ -19,7 +19,7 @@ public class ThuongHieuRepository {
     /**
      * Lấy danh sách thương hiệu (có hỗ trợ tìm kiếm theo từ khóa)
      */
-    public List<ThuongHieu> findAll(String keyword) {
+    public List<ThuongHieu> findAll(String keyword, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             String hql = "FROM ThuongHieu t WHERE 1=1";
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -31,7 +31,24 @@ public class ThuongHieuRepository {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 query.setParameter("keyword", "%" + keyword.trim().toLowerCase() + "%");
             }
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
             return query.list();
+        }
+    }
+
+    public Long countAll(String keyword) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            String hql = "SELECT COUNT(t) FROM ThuongHieu t WHERE 1=1";
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                hql += " AND LOWER(t.ten) LIKE :keyword";
+            }
+            Query<Long> query = session.createQuery(hql, Long.class);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                query.setParameter("keyword", "%" + keyword.trim().toLowerCase() + "%");
+            }
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
         }
     }
 
@@ -79,7 +96,7 @@ public class ThuongHieuRepository {
     }
 
     public List<ThuongHieu> findAll() {
-        return findAll(null);
+        return findAll(null, 0, Integer.MAX_VALUE);
     }
 
     public boolean toggleStatus(Long id) {

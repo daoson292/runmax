@@ -9,7 +9,7 @@ import java.util.List;
 
 public class MauSacRepository {
 
-    public List<MauSac> findAll(String keyword) {
+    public List<MauSac> findAll(String keyword, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             String hql = "FROM MauSac m WHERE 1=1";
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -20,12 +20,29 @@ public class MauSacRepository {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
             }
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
             return query.list();
         }
     }
 
+    public Long countAll(String keyword) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            String hql = "SELECT COUNT(m) FROM MauSac m WHERE 1=1";
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                hql += " AND LOWER(m.ten) LIKE :kw";
+            }
+            var query = session.createQuery(hql, Long.class);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
+            }
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
+        }
+    }
+
     public List<MauSac> findAll() {
-        return findAll(null);
+        return findAll(null, 0, Integer.MAX_VALUE);
     }
 
     public MauSac findById(Long id) {

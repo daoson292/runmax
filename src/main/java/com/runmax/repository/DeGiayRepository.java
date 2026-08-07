@@ -10,7 +10,7 @@ import java.util.List;
 
 public class DeGiayRepository {
 
-    public List<DeGiay> findAll(String keyword) {
+    public List<DeGiay> findAll(String keyword, int offset, int limit) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             String hql = "FROM DeGiay d WHERE 1=1";
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -22,7 +22,24 @@ public class DeGiayRepository {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 query.setParameter("keyword", "%" + keyword.trim().toLowerCase() + "%");
             }
+            query.setFirstResult(offset);
+            query.setMaxResults(limit);
             return query.list();
+        }
+    }
+
+    public Long countAll(String keyword) {
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            String hql = "SELECT COUNT(d) FROM DeGiay d WHERE 1=1";
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                hql += " AND LOWER(d.ten) LIKE :keyword";
+            }
+            Query<Long> query = session.createQuery(hql, Long.class);
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                query.setParameter("keyword", "%" + keyword.trim().toLowerCase() + "%");
+            }
+            Long count = query.uniqueResult();
+            return count != null ? count : 0L;
         }
     }
 
@@ -61,7 +78,7 @@ public class DeGiayRepository {
     }
 
     public List<DeGiay> findAll() {
-        return findAll(null);
+        return findAll(null, 0, Integer.MAX_VALUE);
     }
 
     public boolean toggleStatus(Long id) {

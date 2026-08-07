@@ -202,6 +202,27 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Pagination Footer -->
+                    <c:if test="${totalPages > 1}">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+                            <div class="text-muted small fw-semibold">
+                                Trang ${currentPage} / ${totalPages}
+                            </div>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                                    <a class="page-link" href="?loai=${loaiHienTai}&keyword=${param.keyword}&page=${currentPage - 1}">Trước</a>
+                                </li>
+                                <c:forEach begin="1" end="${totalPages}" var="i">
+                                    <li class="page-item ${currentPage == i ? 'active' : ''}">
+                                        <a class="page-link" href="?loai=${loaiHienTai}&keyword=${param.keyword}&page=${i}">${i}</a>
+                                    </li>
+                                </c:forEach>
+                                <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                                    <a class="page-link" href="?loai=${loaiHienTai}&keyword=${param.keyword}&page=${currentPage + 1}">Sau</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </c:if>
                 </div>
 
             </div>

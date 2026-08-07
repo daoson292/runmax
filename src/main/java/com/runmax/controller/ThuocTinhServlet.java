@@ -79,13 +79,41 @@ public class ThuocTinhServlet extends HttpServlet {
     }
 
     private void loadList(HttpServletRequest req, String loai, String keyword) {
+        int page = 1;
+        int size = 5; // Default size for attributes
+        try {
+            if (req.getParameter("page") != null) {
+                page = Integer.parseInt(req.getParameter("page"));
+            }
+        } catch (NumberFormatException ignored) {}
+        int offset = (page - 1) * size;
+        long totalRecords = 0;
+
         switch (loai) {
-            case "thuong-hieu" -> req.setAttribute("items", thService.findAll(keyword, null));
-            case "chat-lieu"   -> req.setAttribute("items", clService.findAll(keyword));
-            case "mau-sac"     -> req.setAttribute("items", msService.findAll(keyword));
-            case "kich-co"     -> req.setAttribute("items", kcService.findAll(keyword));
-            case "de-giay"     -> req.setAttribute("items", dgService.findAll(keyword));
+            case "thuong-hieu" -> {
+                req.setAttribute("items", thService.findAll(keyword, null, offset, size));
+                totalRecords = thService.countAll(keyword);
+            }
+            case "chat-lieu" -> {
+                req.setAttribute("items", clService.findAll(keyword, offset, size));
+                totalRecords = clService.countAll(keyword);
+            }
+            case "mau-sac" -> {
+                req.setAttribute("items", msService.findAll(keyword, offset, size));
+                totalRecords = msService.countAll(keyword);
+            }
+            case "kich-co" -> {
+                req.setAttribute("items", kcService.findAll(keyword, offset, size));
+                totalRecords = kcService.countAll(keyword);
+            }
+            case "de-giay" -> {
+                req.setAttribute("items", dgService.findAll(keyword, offset, size));
+                totalRecords = dgService.countAll(keyword);
+            }
         }
+        int totalPages = (int) Math.ceil((double) totalRecords / size);
+        req.setAttribute("currentPage", page);
+        req.setAttribute("totalPages", totalPages);
     }
 
     private Object findById(String loai, Long id) {

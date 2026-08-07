@@ -274,6 +274,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('avatarPreview').src = e.target.result;
+                    document.getElementById('avatarPreview').style.display = '';
                     document.getElementById('avatarPreview').classList.remove('d-none');
                     document.getElementById('avatarText').classList.add('d-none');
                 };
@@ -438,6 +439,203 @@
     </script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
+        // ============================================================
+        //  QR CCCD – Fuzzy Address Mapping với Fallback chặt chẽ
+        // ============================================================
+
+        /**
+         * Chuẩn hoá chuỗi để so sánh fuzzy:
+         *  - lowercase
+         *  - bỏ dấu tiếng Việt (NFD decompose + strip combining)
+         *  - xoá các tiền/hậu tố hành chính nhiễu
+         */
+        function normalizeAddrToken(str) {
+            if (!str) return '';
+            const NOISE = /\b(tinh|thanh pho|tp|quan|huyen|thi xa|tx|xa|phuong|thi tran|tt)\b/gi;
+            return str
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // bỏ dấu
+                .replace(/đ/g, 'd')
+                .replace(NOISE, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        /**
+         * Tìm option khớp nhất trong <select> dựa theo fuzzy match.
+         * Trả về { value, text } của option tìm thấy, hoặc null.
+         */
+        function fuzzyFindOption(selectEl, keyword) {
+            if (!selectEl || !keyword) return null;
+            const needle = normalizeAddrToken(keyword);
+            if (!needle) return null;
+
+            let bestMatch = null;
+            let bestScore = 0;
+
+            Array.from(selectEl.options).forEach(opt => {
+                if (!opt.value) return; // bỏ qua placeholder
+                const hay = normalizeAddrToken(opt.text);
+
+                // Exact match → điểm tuyệt đối
+                if (hay === needle) {
+                    bestMatch = opt;
+                    bestScore = Infinity;
+                    return;
+                }
+
+                // Chứa chuỗi → điểm cao
+                if (hay.includes(needle) || needle.includes(hay)) {
+                    const score = Math.max(
+                        needle.length / Math.max(hay.length, 1),
+                        hay.length / Math.max(needle.length, 1)
+                    );
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMatch = opt;
+                    }
+                }
+            });
+
+            // Ngưỡng tối thiểu: tỷ lệ độ dài ký tự chung >= 0.55
+            return bestScore >= 0.55 ? bestMatch : null;
+        }
+
+        /**
+         * Đợi một <select> được populate (không còn disabled hoặc chỉ có 1 option).
+         * Timeout sau maxMs ms.
+         */
+        function waitForSelectPopulated(selectEl, maxMs = 4000) {
+            return new Promise(resolve => {
+                const deadline = Date.now() + maxMs;
+                const check = () => {
+                    const ready = !selectEl.disabled && selectEl.options.length > 1;
+                    if (ready || Date.now() > deadline) return resolve(ready);
+                    setTimeout(check, 80);
+                };
+                check();
+            });
+        }
+
+        /**
+         * Hàm mapping địa chỉ tự động từ chuỗi CCCD sang 3 dropdown + diaChiChiTiet.
+         *
+         * @param {string} rawAddress  – parts[5] từ QR CCCD, VD: "123 Lê Lợi, Phường Bến Thành, Quận 1, Thành phố Hồ Chí Minh"
+         */
+        async function autoSelectAddressMapping(rawAddress) {
+            const diaChiInput   = document.querySelector('input[name="diaChiChiTiet"]');
+            const tinhSelect    = document.getElementById('tinhThanhSelect');
+            const huyenSelect   = document.getElementById('quanHuyenSelect');
+            const xuaSelect     = document.getElementById('phuongXaSelect');
+
+            // --- Helper: đặt toàn bộ địa chỉ vào ô chi tiết và reset dropdown ---
+            function dumpFullToChiTiet(msg) {
+                if (diaChiInput) diaChiInput.value = rawAddress;
+                console.warn('[QR-CCCD]', msg, '– Đã đổ toàn bộ địa chỉ vào ô chi tiết.');
+            }
+
+            // --- 1. Bóc tách chuỗi địa chỉ ---
+            // Tách theo dấu phẩy, cắt bỏ khoảng trắng thừa
+            const segments = rawAddress.split(',').map(s => s.trim()).filter(Boolean);
+            // Lấy từ dưới lên: cuối cùng = Tỉnh, kế = Huyện, kế nữa = Xã, còn lại = chi tiết
+            const rawTinh   = segments.length >= 1 ? segments[segments.length - 1] : '';
+            const rawHuyen  = segments.length >= 2 ? segments[segments.length - 2] : '';
+            const rawXa     = segments.length >= 3 ? segments[segments.length - 3] : '';
+            const rawChiTiet = segments.length >= 4
+                ? segments.slice(0, segments.length - 3).join(', ')
+                : '';
+
+            // --- 2. Đợi dropdown Tỉnh sẵn sàng (được load bởi RunMaxAddressHelper) ---
+            const tinhReady = await waitForSelectPopulated(tinhSelect, 5000);
+            if (!tinhReady || !rawTinh) {
+                dumpFullToChiTiet('Dropdown Tỉnh chưa sẵn sàng hoặc không có dữ liệu Tỉnh');
+                return;
+            }
+
+            // --- 3. Fuzzy match Tỉnh/TP ---
+            const tinhOpt = fuzzyFindOption(tinhSelect, rawTinh);
+            if (!tinhOpt) {
+                dumpFullToChiTiet('Không tìm thấy Tỉnh/TP: "' + rawTinh + '"');
+                return; // DỪNG – đổ toàn bộ vào chi tiết
+            }
+
+            // Chọn Tỉnh và trigger change để load Huyện
+            tinhSelect.value = tinhOpt.value;
+            tinhSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // --- 4. Đợi dropdown Huyện được populate ---
+            const huyenReady = await waitForSelectPopulated(huyenSelect, 4000);
+            if (!huyenReady || !rawHuyen) {
+                // Tỉnh ok nhưng Huyện không load được: đổ Xã + Huyện + Chi tiết vào ô
+                if (diaChiInput) {
+                    const fallback = [rawChiTiet, rawXa, rawHuyen].filter(Boolean).join(', ');
+                    diaChiInput.value = fallback || rawAddress;
+                }
+                console.warn('[QR-CCCD] Dropdown Huyện chưa sẵn sàng – Fallback Huyện+Xã+ChiTiết vào ô.');
+                return;
+            }
+
+            // --- 5. Fuzzy match Quận/Huyện ---
+            const huyenOpt = fuzzyFindOption(huyenSelect, rawHuyen);
+            if (!huyenOpt) {
+                // Không khớp Huyện: đổ "Xã cũ + Huyện cũ + Chi tiết" vào ô
+                if (diaChiInput) {
+                    const fallback = [rawChiTiet, rawXa, rawHuyen].filter(Boolean).join(', ');
+                    diaChiInput.value = fallback || rawAddress;
+                }
+                console.warn('[QR-CCCD] Không tìm thấy Huyện: "' + rawHuyen + '" – Fallback vào ô chi tiết.');
+                return; // DỪNG
+            }
+
+            // Chọn Huyện và trigger change để load Xã
+            huyenSelect.value = huyenOpt.value;
+            huyenSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // --- 6. Đợi dropdown Xã được populate ---
+            const xaReady = await waitForSelectPopulated(xuaSelect, 4000);
+            if (!xaReady || !rawXa) {
+                // Huyện ok nhưng Xã không load: đổ "Xã cũ + Chi tiết" vào ô
+                if (diaChiInput) {
+                    const fallback = [rawChiTiet, rawXa].filter(Boolean).join(', ');
+                    diaChiInput.value = fallback || rawAddress;
+                }
+                console.warn('[QR-CCCD] Dropdown Xã chưa sẵn sàng – Fallback Xã+ChiTiết vào ô.');
+                return;
+            }
+
+            // --- 7. Fuzzy match Phường/Xã ---
+            const xaOpt = fuzzyFindOption(xuaSelect, rawXa);
+            if (!xaOpt) {
+                // Không khớp Xã: đổ "Xã cũ + Chi tiết" vào ô, giữ Tỉnh + Huyện đã chọn
+                if (diaChiInput) {
+                    const fallback = [rawChiTiet, rawXa].filter(Boolean).join(', ');
+                    diaChiInput.value = fallback || rawAddress;
+                }
+                console.warn('[QR-CCCD] Không tìm thấy Xã: "' + rawXa + '" – Fallback Xã vào ô chi tiết (Tỉnh+Huyện đã chọn).');
+                return; // DỪNG (Tỉnh, Huyện vẫn được giữ)
+            }
+
+            // Chọn Xã
+            xuaSelect.value = xaOpt.value;
+            xuaSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // --- 8. Đặt phần địa chỉ chi tiết (số nhà, tên đường còn lại) ---
+            if (diaChiInput) {
+                diaChiInput.value = rawChiTiet;
+            }
+
+            console.info('[QR-CCCD] Mapping hoàn tất:', {
+                tinh: tinhOpt.text,
+                huyen: huyenOpt.text,
+                xa: xaOpt.text,
+                chiTiet: rawChiTiet
+            });
+        }
+
+        // ============================================================
+        //  QR Scanner bootstrap
+        // ============================================================
         let html5QrcodeScanner;
 
         const modalScanQREl = document.getElementById('modalScanQR');
@@ -455,49 +653,55 @@
             });
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
+        async function onScanSuccess(decodedText, decodedResult) {
             const parts = decodedText.split('|');
-            if (parts.length >= 6) {
-                // Họ Tên
-                const hoTenInput = document.querySelector('input[name="hoTen"]');
-                if (hoTenInput) hoTenInput.value = parts[2];
+            if (parts.length < 6) return;
 
-                // Ngày sinh
-                const ngaySinhInput = document.querySelector('input[name="ngaySinh"]');
-                if (ngaySinhInput) {
-                    const dobRaw = parts[3];
-                    if (dobRaw.length === 8) {
-                        const day = dobRaw.substring(0, 2);
-                        const month = dobRaw.substring(2, 4);
-                        const year = dobRaw.substring(4, 8);
-                        ngaySinhInput.value = year + '-' + month + '-' + day;
-                    }
+            // ── Họ & Tên ──
+            const hoTenInput = document.querySelector('input[name="hoTen"]');
+            if (hoTenInput) hoTenInput.value = parts[2];
+
+            // ── Ngày sinh ──
+            const ngaySinhInput = document.querySelector('input[name="ngaySinh"]');
+            if (ngaySinhInput) {
+                const dobRaw = parts[3];
+                if (dobRaw.length === 8) {
+                    const day   = dobRaw.substring(0, 2);
+                    const month = dobRaw.substring(2, 4);
+                    const year  = dobRaw.substring(4, 8);
+                    ngaySinhInput.value = year + '-' + month + '-' + day;
                 }
-
-                // Giới tính
-                if (parts[4].includes('Nam')) {
-                    const genderNam = document.getElementById('genderNam');
-                    if (genderNam) genderNam.checked = true;
-                } else {
-                    const genderNu = document.getElementById('genderNu');
-                    if (genderNu) genderNu.checked = true;
-                }
-
-                // Địa chỉ thường trú
-                const diaChiInput = document.querySelector('input[name="diaChiChiTiet"]');
-                if (diaChiInput) diaChiInput.value = parts[5];
-
-                if (typeof showToast === 'function') {
-                    showToast('Quét mã CCCD thành công!', 'success', 'Thành công');
-                } else if (typeof Swal !== 'undefined') {
-                    Swal.fire('Thành công', 'Quét mã CCCD thành công!', 'success');
-                } else {
-                    alert('Quét mã CCCD thành công!');
-                }
-
-                const modal = bootstrap.Modal.getInstance(modalScanQREl);
-                if (modal) modal.hide();
             }
+
+            // ── Giới tính ──
+            const genderStr = (parts[4] || '').toLowerCase();
+            if (genderStr.includes('nam')) {
+                const genderNam = document.getElementById('genderNam');
+                if (genderNam) genderNam.checked = true;
+            } else {
+                const genderNu = document.getElementById('genderNu');
+                if (genderNu) genderNu.checked = true;
+            }
+
+            // ── Địa chỉ – đặt raw trước để không bao giờ mất dữ liệu,
+            //    rồi chạy mapping tự động (có thể ghi đè hoặc để nguyên fallback) ──
+            const diaChiInput = document.querySelector('input[name="diaChiChiTiet"]');
+            if (diaChiInput) diaChiInput.value = parts[5]; // safety net
+
+            await autoSelectAddressMapping(parts[5]);
+
+            // ── Toast / Alert ──
+            if (typeof showToast === 'function') {
+                showToast('Quét mã CCCD thành công!', 'success', 'Thành công');
+            } else if (typeof Swal !== 'undefined') {
+                Swal.fire('Thành công', 'Quét mã CCCD thành công!', 'success');
+            } else {
+                alert('Quét mã CCCD thành công!');
+            }
+
+            // ── Đóng modal ──
+            const modal = bootstrap.Modal.getInstance(modalScanQREl);
+            if (modal) modal.hide();
         }
     </script>
 </body>

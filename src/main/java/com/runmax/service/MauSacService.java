@@ -7,9 +7,13 @@ import java.util.List;
 public class MauSacService {
     private final MauSacRepository repo = new MauSacRepository();
 
-    public List<MauSac> findAll(String keyword) { return repo.findAll(keyword); }
-    public List<MauSac> findAll()               { return repo.findAll(); }
-    public List<MauSac> getAll(String keyword)  { return repo.findAll(keyword); }
+    public List<MauSac> findAll(String keyword, int offset, int limit) {
+        return repo.findAll(keyword, offset, limit);
+    }
+    public List<MauSac> findAll(String keyword) { return repo.findAll(keyword, 0, Integer.MAX_VALUE); }
+    public List<MauSac> findAll()               { return repo.findAll(null, 0, Integer.MAX_VALUE); }
+    public List<MauSac> getAll(String keyword)  { return repo.findAll(keyword, 0, Integer.MAX_VALUE); }
+    public Long countAll(String keyword)        { return repo.countAll(keyword); }
 
     public MauSac findById(Long id) { return repo.findById(id); }
     public MauSac getById(Long id)  { return repo.findById(id); }

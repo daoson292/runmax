@@ -7,8 +7,12 @@ import java.util.List;
 public class KichCoService {
     private final KichCoRepository repo = new KichCoRepository();
 
-    public List<KichCo> findAll(String keyword) { return repo.findAll(keyword); }
-    public List<KichCo> getAll(String keyword)  { return repo.findAll(keyword); }
+    public List<KichCo> findAll(String keyword, int offset, int limit) {
+        return repo.findAll(keyword, offset, limit);
+    }
+    public List<KichCo> findAll(String keyword) { return repo.findAll(keyword, 0, Integer.MAX_VALUE); }
+    public List<KichCo> getAll(String keyword)  { return repo.findAll(keyword, 0, Integer.MAX_VALUE); }
+    public Long countAll(String keyword)        { return repo.countAll(keyword); }
 
     public KichCo findById(Long id) { return repo.findById(id); }
     public KichCo getById(Long id)  { return repo.findById(id); }
