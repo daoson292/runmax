@@ -39,4 +39,12 @@
         </jsp-property-group>
     </jsp-config>
 
+    <!-- Session Config: 12 giờ (720 phút) -->
+    <session-config>
+        <session-timeout>720</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+        </cookie-config>
+    </session-config>
+
 </web-app>

@@ -41,7 +41,7 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("tenNhanVien", nv.getHoTen());
             session.setAttribute("vaiTro", nv.getVaiTro().getMaVaiTro());
             session.setAttribute("toastSuccess", "Đăng nhập thành công! Chào mừng " + nv.getHoTen() + " quay trở lại hệ thống RunMax POS.");
-            session.setMaxInactiveInterval(60 * 60); // 1 giờ
+            session.setMaxInactiveInterval(12 * 60 * 60); // 12 giờ (43200 giây)
 
             // Phân quyền redirect:
             // - Admin: vào Trang Chủ (Quick Actions hub)
