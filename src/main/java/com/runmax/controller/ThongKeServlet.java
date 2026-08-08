@@ -38,7 +38,7 @@ public class ThongKeServlet extends HttpServlet {
         req.setAttribute("doanhThuThangNay",tkService.doanhThuThangNay());
         req.setAttribute("doanhThuNamNay",  tkService.doanhThuNamNay());
         req.setAttribute("chartData",       tkService.doanhThuTheoNgay(tuNgay, denNgay));
-        req.setAttribute("topSanPham",      tkService.topSanPham(5));
+        req.setAttribute("topSanPham",      tkService.topSanPham(5, tuNgay, denNgay));
         req.setAttribute("tuNgay", tnStr != null ? tnStr : today.withDayOfMonth(1).toString());
         req.setAttribute("denNgay", dnStr != null ? dnStr : today.toString());
         req.getRequestDispatcher("/WEB-INF/thongKe/index.jsp").forward(req, resp);

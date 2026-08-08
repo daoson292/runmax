@@ -188,31 +188,13 @@
         <c:if test="${sessionScope.vaiTro == 'ROLE_ADMIN' || sessionScope.vaiTro == 'ADMIN'}">
             <% boolean isThongKeActive = "/dashboard".equals(currentPath) || "/thong-ke".equals(currentPath); %>
             <li class="runmax-menu-item">
-                <a class="runmax-menu-link <%= isThongKeActive ? "active" : "" %>"
-                   data-bs-toggle="collapse" href="#submenuThongKe"
-                   role="button" aria-expanded="<%= isThongKeActive ? "true" : "false" %>" aria-controls="submenuThongKe">
+                <a href="${pageContext.request.contextPath}/dashboard"
+                   class="runmax-menu-link <%= isThongKeActive ? "active" : "" %>">
                     <div class="runmax-menu-link-left">
                         <i class="bi bi-bar-chart-line-fill main-icon"></i>
-                        <span>Thống kê</span>
+                        <span>Thống Kê</span>
                     </div>
-                    <i class="bi bi-chevron-down chevron-icon"></i>
                 </a>
-                <div class="collapse <%= isThongKeActive ? "show" : "" %>" id="submenuThongKe">
-                    <ul class="runmax-submenu">
-                        <li>
-                            <a href="${pageContext.request.contextPath}/dashboard"
-                               class="runmax-submenu-link <%= "/dashboard".equals(currentPath) ? "sub-active" : "" %>">
-                                <i class="bi bi-pie-chart-fill"></i> Tổng quan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="${pageContext.request.contextPath}/thong-ke"
-                               class="runmax-submenu-link <%= "/thong-ke".equals(currentPath) ? "sub-active" : "" %>">
-                                <i class="bi bi-funnel-fill"></i> Báo cáo & Bộ lọc
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </li>
         </c:if>
 

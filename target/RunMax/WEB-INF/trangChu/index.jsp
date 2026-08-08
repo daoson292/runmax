@@ -39,6 +39,85 @@
         .icon-wrapper {
             transition: all 0.3s ease;
         }
+        /* Style cho bộ lọc và thẻ thống kê động */
+        .filter-card {
+            background-color: #ffffff;
+            border: 0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .filter-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+        }
+        .quick-filters .btn {
+            border-radius: 50rem;
+            padding: 5px 15px;
+            font-size: 0.85rem;
+            margin-left: 5px;
+            color: #6c757d;
+            border-color: #dee2e6;
+        }
+        .quick-filters .btn.active, .quick-filters .btn:hover {
+            background-color: #dc2626;
+            color: #fff;
+            border-color: #dc2626;
+        }
+        .stats-container {
+            display: flex;
+            background-color: #fff;
+            border: 0;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .stat-box {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            border-right: 1px solid #e2e8f0;
+        }
+        .stat-box:last-child {
+            border-right: none;
+        }
+        .stat-title-sm {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #212529;
+        }
+        .stat-subtext {
+            font-size: 0.75rem;
+            color: #adb5bd;
+            margin-top: 5px;
+        }
+        .progress-thin {
+            height: 4px;
+            margin-top: 10px;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
     </style>
 </head>
 <body>
@@ -61,94 +140,66 @@
                     </div>
                 </div>
 
-                <!-- Thẻ thống kê KPI -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-3">
-                        <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Hôm Nay</span>
-                                <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2"><i class="bi bi-calendar-day fs-5"></i></div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h3 class="fw-bold text-dark mb-0">
-                                    <fmt:formatNumber value="${doanhThuHnay != null ? doanhThuHnay : 0}" type="number" /> đ
-                                </h3>
-                                <c:choose>
-                                    <c:when test="${growthHnay >= 0}">
-                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthHnay}" pattern="#,##0.0"/>%</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthHnay}" pattern="#,##0.0"/>%</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
-                            <span class="text-muted small">So với hôm qua</span>
+                <!-- BỘ LỌC THỜI GIAN -->
+                <div class="filter-card">
+                    <div class="filter-header">
+                        <div class="filter-title">
+                            <i class="bi bi-funnel-fill text-danger"></i> Bộ lọc thống kê
+                            <span class="fs-6 fw-normal text-muted ms-2" style="font-size: 0.8rem !important;">Dữ liệu bảng và biểu đồ bên dưới được tính toán theo bộ lọc này</span>
+                        </div>
+                        <div class="quick-filters">
+                            <button type="button" class="btn btn-outline-secondary" onclick="setQuickFilter('today', this)">Hôm nay</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="setQuickFilter('week', this)">Tuần này</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="setQuickFilter('month', this)">Tháng này</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="setQuickFilter('year', this)">Năm nay</button>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Tuần Này</span>
-                                <div class="rounded-3 bg-success bg-opacity-10 text-success p-2"><i class="bi bi-calendar-week fs-5"></i></div>
+                    <form id="filterForm" action="${pageContext.request.contextPath}/dashboard" method="get">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary mb-1">Từ ngày</label>
+                                <input type="date" id="tuNgay" name="tuNgay" class="form-control" value="${tuNgay}">
                             </div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h3 class="fw-bold text-dark mb-0">
-                                    <fmt:formatNumber value="${doanhThuTuanNay != null ? doanhThuTuanNay : 0}" type="number" /> đ
-                                </h3>
-                                <c:choose>
-                                    <c:when test="${growthTuan >= 0}">
-                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthTuan}" pattern="#,##0.0"/>%</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthTuan}" pattern="#,##0.0"/>%</span>
-                                    </c:otherwise>
-                                </c:choose>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary mb-1">Đến ngày</label>
+                                <input type="date" id="denNgay" name="denNgay" class="form-control" value="${denNgay}">
                             </div>
-                            <span class="text-muted small">So với tuần trước</span>
+                            <div class="col-md-4 d-flex justify-content-end gap-2">
+                                <button type="submit" class="btn btn-danger px-4">
+                                    <i class="bi bi-search me-1"></i> Áp dụng
+                                </button>
+                                <a href="${pageContext.request.contextPath}/dashboard" class="btn btn-outline-secondary px-4">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Tháng Này</span>
-                                <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-2"><i class="bi bi-calendar-month fs-5"></i></div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h3 class="fw-bold text-dark mb-0">
-                                    <fmt:formatNumber value="${doanhThuThangNay != null ? doanhThuThangNay : 0}" type="number" /> đ
-                                </h3>
-                                <c:choose>
-                                    <c:when test="${growthThang >= 0}">
-                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthThang}" pattern="#,##0.0"/>%</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthThang}" pattern="#,##0.0"/>%</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
-                            <span class="text-muted small">So với tháng trước</span>
+                    </form>
+                </div>
+
+                <!-- Thẻ thống kê KPI (Động theo bộ lọc) -->
+                <div class="stats-container">
+                    <div class="stat-box">
+                        <div class="stat-title-sm">Doanh thu</div>
+                        <div class="stat-val text-danger">
+                            <fmt:formatNumber value="${not empty doanhThuKy ? doanhThuKy : 0}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
                         </div>
+                        <div class="stat-subtext">Đã ghi nhận trong kỳ</div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="runmax-card p-4 h-100 border-0 shadow-sm" style="background: #ffffff;">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Năm Nay</span>
-                                <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2"><i class="bi bi-graph-up-arrow fs-5"></i></div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h3 class="fw-bold text-dark mb-0">
-                                    <fmt:formatNumber value="${doanhThuNamNay != null ? doanhThuNamNay : 0}" type="number" /> đ
-                                </h3>
-                                <c:choose>
-                                    <c:when test="${growthNam >= 0}">
-                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right"></i> <fmt:formatNumber value="${growthNam}" pattern="#,##0.0"/>%</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right"></i> <fmt:formatNumber value="${growthNam}" pattern="#,##0.0"/>%</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
-                            <span class="text-muted small">So với năm trước</span>
+                    <div class="stat-box">
+                        <div class="stat-title-sm">Đơn hàng</div>
+                        <div class="stat-val">${not empty tongDonHang ? tongDonHang : 0}</div>
+                        <div class="stat-subtext">Đã thanh toán ${not empty pieHoanTat ? pieHoanTat : 0} - Hủy ${not empty pieHuy ? pieHuy : 0} - Chờ ${not empty pieCho ? pieCho : 0}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title-sm">Sản phẩm đã bán</div>
+                        <div class="stat-val">${not empty tongSanPhamBan ? tongSanPhamBan : 0}</div>
+                        <div class="stat-subtext">Items sold</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title-sm">Tỷ lệ hoàn thành</div>
+                        <div class="stat-val">${not empty tyLeHoanThanh ? tyLeHoanThanh : 0}%</div>
+                        <div class="progress progress-thin">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: ${not empty tyLeHoanThanh ? tyLeHoanThanh : 0}%" aria-valuenow="${not empty tyLeHoanThanh ? tyLeHoanThanh : 0}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
                 </div>
@@ -158,23 +209,9 @@
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
                         <div>
                             <h6 class="fw-bold text-dark mb-1">
-                                <i class="bi bi-bar-chart-line-fill text-danger me-1"></i> BIỂU ĐỒ DOANH THU BÁN GIÀY THEO THỜI GIAN
+                                <i class="bi bi-bar-chart-line-fill text-danger me-1"></i> BIỂU ĐỒ DOANH THU BÁN GIÀY TRONG KỲ
                             </h6>
                             <span class="text-muted small">Phân tích xu hướng doanh số bán hàng tự động từ cơ sở dữ liệu</span>
-                        </div>
-                        <div class="btn-group shadow-sm mt-2 mt-md-0" role="group">
-                            <a href="${pageContext.request.contextPath}/dashboard?filter=7days"
-                               class="btn btn-sm ${currentFilter == '7days' ? 'btn-danger' : 'btn-outline-secondary'}">
-                                <i class="bi bi-calendar-range me-1"></i> 7 Ngày Qua
-                            </a>
-                            <a href="${pageContext.request.contextPath}/dashboard?filter=30days"
-                               class="btn btn-sm ${currentFilter == '30days' ? 'btn-danger' : 'btn-outline-secondary'}">
-                                <i class="bi bi-calendar-month me-1"></i> 30 Ngày Qua
-                            </a>
-                            <a href="${pageContext.request.contextPath}/dashboard?filter=all"
-                               class="btn btn-sm ${currentFilter == 'all' ? 'btn-danger' : 'btn-outline-secondary'}">
-                                <i class="bi bi-calendar-check me-1"></i> Toàn Bộ Thời Gian
-                            </a>
                         </div>
                     </div>
                     <div style="position: relative; height: 320px; width: 100%;">
@@ -290,7 +327,7 @@
                     <div class="col-lg-6">
                         <div class="runmax-card mb-0 border-0 shadow-sm overflow-hidden h-100" style="background: #ffffff;">
                             <div class="px-4 py-3 d-flex justify-content-between align-items-center bg-danger">
-                                <h6 class="mb-0 fw-bold text-white"><i class="bi bi-cart-check me-2"></i> Sản Phẩm Đã Bán (Hôm Nay)</h6>
+                                <h6 class="mb-0 fw-bold text-white"><i class="bi bi-cart-check me-2"></i> Sản Phẩm Đã Bán Trong Kỳ</h6>
                             </div>
                             <div class="table-responsive" style="max-height: 350px;">
                                 <table class="table table-hover align-middle mb-0">
@@ -542,6 +579,55 @@
                 }
             } catch (err2) {
                 console.error("Lỗi khởi tạo biểu đồ tròn:", err2);
+            }
+        });
+
+        // Hàm hỗ trợ lọc nhanh ngày tháng
+        function setQuickFilter(type, btnElement) {
+            document.querySelectorAll('.quick-filters .btn').forEach(btn => btn.classList.remove('active'));
+            if (btnElement) btnElement.classList.add('active');
+
+            const tuNgay = document.getElementById('tuNgay');
+            const denNgay = document.getElementById('denNgay');
+            const today = new Date();
+            
+            let startDate = new Date();
+            let endDate = new Date();
+
+            if (type === 'today') {
+                // Today (already set to today)
+            } else if (type === 'week') {
+                const day = today.getDay();
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1); 
+                startDate = new Date(today.setDate(diff));
+            } else if (type === 'month') {
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            } else if (type === 'year') {
+                startDate = new Date(today.getFullYear(), 0, 1);
+            }
+
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `\${year}-\${month}-\${day}`;
+            };
+
+            tuNgay.value = formatDate(startDate);
+            denNgay.value = formatDate(endDate);
+
+            document.getElementById('filterForm').submit();
+        }
+
+        // Kích hoạt trạng thái button tương ứng với url
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const tuNgay = document.getElementById('tuNgay')?.value;
+            const denNgay = document.getElementById('denNgay')?.value;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const buttons = document.querySelectorAll('.quick-filters .btn');
+            
+            if (tuNgay === denNgay && tuNgay === todayStr) {
+                if(buttons[0]) buttons[0].classList.add('active');
             }
         });
     </script>

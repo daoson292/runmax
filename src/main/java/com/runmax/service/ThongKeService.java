@@ -143,9 +143,9 @@ public class ThongKeService {
         }
     }
 
-    /** Top 5 sản phẩm bán chạy */
+    /** Top sản phẩm bán chạy trong khoảng thời gian */
     @SuppressWarnings("unchecked")
-    public List<Object[]> topSanPham(int limit) {
+    public List<Object[]> topSanPham(int limit, LocalDateTime tuNgay, LocalDateTime denNgay) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
             String sql =
                 "SELECT TOP(:limit) sp.ten_sp, SUM(ct.so_luong) AS sl " +
@@ -154,20 +154,20 @@ public class ThongKeService {
                 "JOIN san_pham sp ON spct.san_pham_id = sp.id " +
                 "JOIN hoa_don hd ON ct.hoa_don_id = hd.id " +
                 "WHERE hd.trang_thai = 1 " +
+                (tuNgay != null ? " AND hd.ngay_tao >= :tn " : "") +
+                (denNgay != null ? " AND hd.ngay_tao <= :dn " : "") +
                 "GROUP BY sp.ten_sp ORDER BY sl DESC";
-            return session.createNativeQuery(sql)
-                .setParameter("limit", limit)
-                .list();
+            var query = session.createNativeQuery(sql).setParameter("limit", limit);
+            if (tuNgay != null) query.setParameter("tn", tuNgay);
+            if (denNgay != null) query.setParameter("dn", denNgay);
+            return query.list();
         }
     }
 
-    /** Sản phẩm đã bán hôm nay */
+    /** Sản phẩm đã bán trong khoảng thời gian */
     @SuppressWarnings("unchecked")
-    public List<Object[]> sanPhamDaBanHomNay() {
+    public List<Object[]> sanPhamDaBanTrongKy(LocalDateTime tuNgay, LocalDateTime denNgay) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
-            LocalDateTime start = LocalDate.now().atStartOfDay();
-            LocalDateTime end   = start.plusDays(1).minusNanos(1);
-            
             String sql =
                 "SELECT sp.ten_sp, SUM(ct.so_luong) AS sl " +
                 "FROM hoa_don_chi_tiet ct " +
@@ -175,22 +175,27 @@ public class ThongKeService {
                 "JOIN san_pham sp ON spct.san_pham_id = sp.id " +
                 "JOIN hoa_don hd ON ct.hoa_don_id = hd.id " +
                 "WHERE hd.trang_thai = 1 " +
-                "AND hd.ngay_tao >= :start AND hd.ngay_tao <= :end " +
+                (tuNgay != null ? " AND hd.ngay_tao >= :tn " : "") +
+                (denNgay != null ? " AND hd.ngay_tao <= :dn " : "") +
                 "GROUP BY sp.ten_sp ORDER BY sl DESC";
                 
-            return session.createNativeQuery(sql)
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .list();
+            var query = session.createNativeQuery(sql);
+            if (tuNgay != null) query.setParameter("tn", tuNgay);
+            if (denNgay != null) query.setParameter("dn", denNgay);
+            return query.list();
         }
     }
 
     /** Đếm số lượng đơn hàng theo trạng thái (0: chờ, 1: hoàn tất, 2: đã hủy) */
-    public long demDonTheoTrangThai(int trangThai) {
+    public long demDonTheoTrangThai(int trangThai, LocalDateTime tuNgay, LocalDateTime denNgay) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
-            Long count = session.createQuery("SELECT COUNT(h) FROM HoaDon h WHERE h.trangThai = :tt", Long.class)
-                .setParameter("tt", trangThai)
-                .uniqueResult();
+            String hql = "SELECT COUNT(h) FROM HoaDon h WHERE h.trangThai = :tt";
+            if (tuNgay != null) hql += " AND h.ngayTao >= :tn";
+            if (denNgay != null) hql += " AND h.ngayTao <= :dn";
+            var query = session.createQuery(hql, Long.class).setParameter("tt", trangThai);
+            if (tuNgay != null) query.setParameter("tn", tuNgay);
+            if (denNgay != null) query.setParameter("dn", denNgay);
+            Long count = query.uniqueResult();
             return count == null ? 0 : count;
         }
     }
