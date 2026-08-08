@@ -192,7 +192,7 @@
                    class="runmax-menu-link <%= isThongKeActive ? "active" : "" %>">
                     <div class="runmax-menu-link-left">
                         <i class="bi bi-bar-chart-line-fill main-icon"></i>
-                        <span>Tổng quan & Thống kê</span>
+                        <span>Thống Kê</span>
                     </div>
                 </a>
             </li>
