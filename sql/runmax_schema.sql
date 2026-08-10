@@ -332,9 +332,16 @@ INSERT INTO phuong_thuc_thanh_toan (ma_pt, ten_pt, trang_thai) VALUES
 -- Phiếu giảm giá
 INSERT INTO phieu_giam_gia (ma_phieu, ten_phieu, loai_phieu, loai_giam, gia_tri_giam, giam_toi_da, dieu_kien_giam, so_luong, mo_ta, ngay_bat_dau, ngay_ket_thuc, trang_thai)
 VALUES
-    ('PGG00001', N'Sale chào mùa hè 2026',       1, 1, 10,     200000, 500000,  9999, N'Giảm 10% tối đa 200k cho đơn từ 500k', '2026-04-28', '2026-09-29', 0),
-    ('PGG00002', N'Giảm 100k cho runner mới', 1, 2, 100000, NULL,   300000,  9999, N'Giảm thẳng 100k cho đơn từ 300k',          '2026-04-28', '2026-09-29', 0),
-    ('PGG00003', N'Flash Sale cuối tuần',          1, 1, 15,     300000, 800000,  3,    N'Giảm 15% tối đa 300k, chỉ 3 suất',     '2026-04-28', '2026-09-14', 0);
+    ('PGG00001', N'Sale chào mùa hè 2026',       1, 1, 10,     200000, 500000,  9999, N'Giảm 10% tối đa 200k cho đơn từ 500k', '2026-04-28', '2026-09-29', 1),
+    ('PGG00002', N'Giảm 100k cho runner mới', 1, 2, 100000, NULL,   300000,  9999, N'Giảm thẳng 100k cho đơn từ 300k',          '2026-04-28', '2026-09-29', 1),
+    ('PGG00003', N'Flash Sale cuối tuần',          1, 1, 15,     300000, 800000,  3,    N'Giảm 15% tối đa 300k, chỉ 3 suất',     '2026-04-28', '2026-09-14', 1),
+    ('PGG00004', N'Mừng quốc khánh 2/9',          1, 1, 20,     500000, 1000000, 100,  N'Giảm 20% tối đa 500k cho đơn từ 1tr',   '2026-09-01', '2026-09-05', 0),
+    ('PGG00005', N'Tri ân khách hàng cũ',          2, 2, 200000, NULL,   500000,  50,   N'Giảm thẳng 200k cho khách quen',        '2026-01-01', '2026-12-31', 1),
+    ('PGG00006', N'Sinh nhật RunMax',            1, 1, 50,     1000000, 2000000, 10,   N'Sale nửa giá mừng sinh nhật',          '2025-10-01', '2025-10-31', 2),
+    ('PGG00007', N'Black Friday sớm',            1, 2, 50000,  NULL,   100000,  500,  N'Giảm 50k cho mọi đơn hàng',             '2026-11-20', '2026-11-30', 0),
+    ('PGG00008', N'Khuyến mãi hết hạn',          1, 1, 5,      50000,  200000,  0,    N'Đã hết số lượng sử dụng',               '2026-01-01', '2026-12-31', 2),
+    ('PGG00009', N'Voucher lỗi hệ thống',        1, 2, 999000, NULL,   1000000, 1,    N'Voucher bị vô hiệu hóa',                '2026-01-01', '2026-12-31', 3),
+    ('PGG00010', N'Freeship mọi đơn (giả lập)',  1, 2, 30000,  NULL,   0,       9999, N'Giảm 30k coi như freeship',             '2026-01-01', '2026-12-31', 1);
 
 -- Khách hàng
 INSERT INTO khach_hang (ma_kh, ho_ten, sdt, email, trang_thai) VALUES
@@ -358,61 +365,28 @@ INSERT INTO san_pham (ma_sp, ten_sp, thuong_hieu_id, chat_lieu_id, mo_ta, trang_
     ('SP00004', N'New Balance Fresh Foam X 1080v13',  4, 1, N'Giày chạy bộ đường dài êm ái tối đa cho runner nam',     1);
 
 -- San phẩm chi tiết (SKU biến thể theo Size/Màu/Đế)
-INSERT INTO san_pham_chi_tiet (san_pham_id, mau_sac_id, kich_co_id, de_giay_id, gia_goc, gia_ban, so_luong_ton, trang_thai)
+INSERT INTO san_pham_chi_tiet (san_pham_id, mau_sac_id, kich_co_id, de_giay_id, gia_goc, gia_ban, so_luong_ton, trang_thai, anh_dai_dien)
 VALUES
     -- SP00001 RunMax AeroGlide Carbon - Đen, sz 40, 41, 42
-    (1, 1, 2, 1, 2200000, 2490000, 25, 1),
-    (1, 1, 3, 1, 2200000, 2490000, 30, 1),
-    (1, 1, 4, 1, 2200000, 2490000, 18, 1),
+    (1, 1, 2, 1, 2200000, 2490000, 25, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (1, 1, 3, 1, 2200000, 2490000, 30, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (1, 1, 4, 1, 2200000, 2490000, 18, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
     -- SP00001 RunMax AeroGlide Carbon - Trắng Sứ, sz 41, 42
-    (1, 2, 3, 1, 2200000, 2590000, 15, 1),
-    (1, 2, 4, 1, 2200000, 2590000, 12, 1),
+    (1, 2, 3, 1, 2200000, 2590000, 15, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
+    (1, 2, 4, 1, 2200000, 2590000, 12, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
     -- SP00002 Nike Pegasus 40 - Đen, sz 40, 41, 42, 43
-    (2, 1, 2, 3, 2800000, 3190000, 20, 1),
-    (2, 1, 3, 3, 2800000, 3190000, 45, 1),
-    (2, 1, 4, 3, 2800000, 3190000, 22, 1),
+    (2, 1, 2, 3, 2800000, 3190000, 20, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (2, 1, 3, 3, 2800000, 3190000, 45, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (2, 1, 4, 3, 2800000, 3190000, 22, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
     -- SP00002 Nike Pegasus 40 - Đỏ Cam, sz 41
-    (2, 3, 3, 3, 2800000, 3290000, 14, 1),
+    (2, 3, 3, 3, 2800000, 3290000, 14, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
     -- SP00003 Adidas Ultraboost Light - Trắng, sz 40, 41, 42
-    (3, 2, 2, 2, 3500000, 3990000, 20, 1),
-    (3, 2, 3, 2, 3500000, 3990000, 18, 1),
-    (3, 2, 4, 2, 3500000, 3990000, 14, 1),
+    (3, 2, 2, 2, 3500000, 3990000, 20, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
+    (3, 2, 3, 2, 3500000, 3990000, 18, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
+    (3, 2, 4, 2, 3500000, 3990000, 14, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
     -- SP00004 New Balance Fresh Foam - Xanh Navy, sz 41, 42
-    (4, 4, 3, 4, 3100000, 3490000, 16, 1),
-    (4, 4, 4, 4, 3100000, 3490000,  9, 1);
-
--- Hóa đơn mẫu
-INSERT INTO hoa_don (khach_hang_id, nhan_vien_id, phieu_giam_gia_id, ma_hd,
-                     tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao)
-VALUES
-    (1,    2, NULL, 'HD00001', 2200000, 0,      2200000, 1, '2026-04-29 10:30:00'),
-    (2,    2, 1,    'HD00002', 2300000, 230000, 2070000, 1, '2026-04-29 14:15:00'),
-    (NULL, 2, NULL, 'HD00003', 4700000, 0,      4700000, 1, '2026-04-29 16:00:00');
-
--- Chi tiết hóa đơn mẫu
-INSERT INTO hoa_don_chi_tiet (hoa_don_id, spct_id, so_luong, don_gia, thanh_tien, trang_thai)
-VALUES
-    (1, 1, 1, 2200000, 2200000, 1),
-    (2, 7, 1, 2400000, 2400000, 1),
-    (3, 1, 1, 2200000, 2200000, 1),
-    (3, 9, 1, 2500000, 2500000, 1);
-
--- Lịch sử thanh toán mẫu
-INSERT INTO lich_su_thanh_toan (hoa_don_id, pttt_id, so_tien, ngay_thanh_toan, trang_thai)
-VALUES
-    (1, 1, 2200000, '2026-04-29 10:31:00', 1),
-    (2, 2, 2070000, '2026-04-29 14:16:00', 1),
-    (3, 1, 4700000, '2026-04-29 16:01:00', 1);
-
--- Lịch sử hóa đơn mẫu
-INSERT INTO lich_su_hoa_don (hoa_don_id, nguoi_thao_tac, hanh_dong, thoi_gian)
-VALUES
-    (1, N'admin', N'Tạo hóa đơn HD00001', '2026-04-29 10:30:00'),
-    (1, N'admin', N'Thanh toán hóa đơn HD00001', '2026-04-29 10:31:00'),
-    (2, N'banhang', N'Tạo hóa đơn HD00002', '2026-04-29 14:15:00'),
-    (2, N'banhang', N'Thanh toán hóa đơn HD00002', '2026-04-29 14:16:00'),
-    (3, N'banhang', N'Tạo hóa đơn HD00003', '2026-04-29 16:00:00'),
-    (3, N'banhang', N'Thanh toán hóa đơn HD00003', '2026-04-29 16:01:00');
+    (4, 4, 3, 4, 3100000, 3490000, 16, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (4, 4, 4, 4, 3100000, 3490000,  9, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg');
 
 -- Bổ sung thêm Sản phẩm giày bóng đá đa dạng cho RunMax
 INSERT INTO san_pham (ma_sp, ten_sp, thuong_hieu_id, chat_lieu_id, mo_ta, trang_thai) VALUES
@@ -424,32 +398,102 @@ INSERT INTO san_pham (ma_sp, ten_sp, thuong_hieu_id, chat_lieu_id, mo_ta, trang_
     ('SP00010', N'Kamito TA11 Pro TF',       5, 1, N'Giày bóng đá sân cỏ nhân tạo Tuấn Anh thiết kế riêng cho sân Việt Nam', 1);
 
 -- Bổ sung SPCT cho các sản phẩm mới
-INSERT INTO san_pham_chi_tiet (san_pham_id, mau_sac_id, kich_co_id, de_giay_id, gia_goc, gia_ban, so_luong_ton, trang_thai)
+INSERT INTO san_pham_chi_tiet (san_pham_id, mau_sac_id, kich_co_id, de_giay_id, gia_goc, gia_ban, so_luong_ton, trang_thai, anh_dai_dien)
 VALUES
-    (5, 3, 3, 1, 2800000, 3190000, 15, 1),
-    (5, 3, 4, 1, 2800000, 3190000, 20, 1),
-    (6, 2, 3, 2, 1750000, 2050000, 25, 1),
-    (6, 2, 4, 2, 1750000, 2050000, 18, 1),
-    (7, 1, 4, 5, 3200000, 3600000, 12, 1),
-    (7, 3, 4, 5, 3200000, 3600000, 10, 1),
-    (8, 2, 4, 2, 2100000, 2450000, 14, 1),
-    (9, 1, 4, 1, 2300000, 2690000,  9, 1),
-    (10, 4, 3, 1, 680000, 850000,  50, 1),
-    (10, 4, 4, 1, 680000, 850000,  45, 1);
+    (5, 3, 3, 1, 2800000, 3190000, 15, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (5, 3, 4, 1, 2800000, 3190000, 20, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (6, 2, 3, 2, 1750000, 2050000, 25, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
+    (6, 2, 4, 2, 1750000, 2050000, 18, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
+    (7, 1, 4, 5, 3200000, 3600000, 12, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (7, 3, 4, 5, 3200000, 3600000, 10, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (8, 2, 4, 2, 2100000, 2450000, 14, 1, 'https://res.cloudinary.com/demo/image/upload/w_500,h_500,c_fill/sneaker.jpg'),
+    (9, 1, 4, 1, 2300000, 2690000,  9, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (10, 4, 3, 1, 680000, 850000,  50, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg'),
+    (10, 4, 4, 1, 680000, 850000,  45, 1, 'https://res.cloudinary.com/demo/image/upload/v1688647087/shoes.jpg');
 
--- Bổ sung Hóa đơn chờ thanh toán (trang_thai = 0) phục vụ ngay cho quầy POS Bán hàng
+-- Hóa đơn mẫu (Bổ sung đầy đủ các trạng thái)
 INSERT INTO hoa_don (khach_hang_id, nhan_vien_id, phieu_giam_gia_id, ma_hd,
                      tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao)
 VALUES
-    (3,    2, NULL, 'HD00004', 3190000, 0,    3190000, 0, GETDATE()),
-    (NULL, 3, NULL, 'HD00005',  850000, 0,     850000, 0, GETDATE()),
-    (NULL, 3, NULL, 'HD00006', 2050000, 0,    2050000, 0, GETDATE());
+    -- Đã thanh toán (1)
+    (1,    2, NULL, 'HD00001', 2200000, 0,      2200000, 1, '2026-04-29 10:30:00'),
+    (2,    2, 1,    'HD00002', 2300000, 230000, 2070000, 1, '2026-04-29 14:15:00'),
+    (NULL, 2, NULL, 'HD00003', 4700000, 0,      4700000, 1, '2026-04-29 16:00:00'),
+    -- Chờ thanh toán (0)
+    (3,    2, NULL, 'HD00004', 3190000, 0,      3190000, 0, GETDATE()),
+    (NULL, 3, NULL, 'HD00005', 850000,  0,      850000,  0, GETDATE()),
+    (NULL, 3, NULL, 'HD00006', 2050000, 0,      2050000, 0, GETDATE()),
+    -- Đã hủy (2)
+    (3,    3, NULL, 'HD00007', 3190000, 0,      3190000, 2, '2026-05-01 09:00:00'),
+    (4,    3, 2,    'HD00008', 2590000, 100000, 2490000, 2, '2026-05-01 10:30:00'),
+    -- Thanh toán thiếu (3)
+    (1,    4, NULL, 'HD00009', 3990000, 0,      3990000, 3, '2026-05-02 11:00:00'),
+    (2,    4, 3,    'HD00010', 5000000, 300000, 4700000, 3, '2026-05-02 14:20:00'),
+    -- Đã thanh toán thêm (1)
+    (3,    2, NULL, 'HD00011', 2490000, 0,      2490000, 1, '2026-05-03 15:45:00'),
+    (4,    2, NULL, 'HD00012', 3290000, 0,      3290000, 1, '2026-05-03 16:10:00');
 
+-- Chi tiết hóa đơn mẫu
 INSERT INTO hoa_don_chi_tiet (hoa_don_id, spct_id, so_luong, don_gia, thanh_tien, trang_thai)
 VALUES
+    (1, 1, 1, 2200000, 2200000, 1),
+    (2, 7, 1, 2300000, 2300000, 1),
+    (3, 1, 1, 2200000, 2200000, 1),
+    (3, 9, 1, 2500000, 2500000, 1),
     (4, 16, 1, 3190000, 3190000, 1),
     (5, 24, 1, 850000,  850000,  1),
-    (6, 18, 1, 2050000, 2050000, 1);
+    (6, 18, 1, 2050000, 2050000, 1),
+    -- Hóa đơn hủy
+    (7, 16, 1, 3190000, 3190000, 1), -- HD00007
+    (8, 5, 1, 2590000, 2590000, 1),  -- HD00008
+    -- Hóa đơn thiếu
+    (9, 10, 1, 3990000, 3990000, 1), -- HD00009
+    (10, 9, 2, 2500000, 5000000, 1), -- HD00010
+    -- Hóa đơn hoàn thành mới
+    (11, 1, 1, 2490000, 2490000, 1), -- HD00011
+    (12, 9, 1, 3290000, 3290000, 1); -- HD00012
+
+-- Lịch sử thanh toán mẫu
+INSERT INTO lich_su_thanh_toan (hoa_don_id, pttt_id, so_tien, ngay_thanh_toan, trang_thai)
+VALUES
+    (1, 1, 2200000, '2026-04-29 10:31:00', 1),
+    (2, 2, 2070000, '2026-04-29 14:16:00', 1),
+    (3, 1, 4700000, '2026-04-29 16:01:00', 1),
+    -- HD00009 trả thiếu
+    (9, 1, 1000000, '2026-05-02 11:05:00', 1),
+    (9, 2, 2000000, '2026-05-02 11:10:00', 1), -- Tổng 3tr/3tr990
+    -- HD00010 trả thiếu
+    (10, 3, 4000000, '2026-05-02 14:25:00', 1), -- Tổng 4tr/4tr700
+    -- HD00011 hoàn thành
+    (11, 4, 2490000, '2026-05-03 15:50:00', 1),
+    -- HD00012 hoàn thành
+    (12, 5, 3290000, '2026-05-03 16:15:00', 1);
+
+-- Lịch sử hóa đơn mẫu
+INSERT INTO lich_su_hoa_don (hoa_don_id, nguoi_thao_tac, hanh_dong, thoi_gian)
+VALUES
+    (1, N'admin', N'Tạo hóa đơn HD00001', '2026-04-29 10:30:00'),
+    (1, N'admin', N'Thanh toán hóa đơn HD00001', '2026-04-29 10:31:00'),
+    (2, N'banhang', N'Tạo hóa đơn HD00002', '2026-04-29 14:15:00'),
+    (2, N'banhang', N'Thanh toán hóa đơn HD00002', '2026-04-29 14:16:00'),
+    (3, N'banhang', N'Tạo hóa đơn HD00003', '2026-04-29 16:00:00'),
+    (3, N'banhang', N'Thanh toán hóa đơn HD00003', '2026-04-29 16:01:00'),
+    (4, N'banhang', N'Tạo hóa đơn HD00004', GETDATE()),
+    (5, N'banhang', N'Tạo hóa đơn HD00005', GETDATE()),
+    (6, N'banhang', N'Tạo hóa đơn HD00006', GETDATE()),
+    (7, N'khanh', N'Tạo hóa đơn HD00007', '2026-05-01 09:00:00'),
+    (7, N'khanh', N'Hủy hóa đơn do khách đổi ý', '2026-05-01 09:10:00'),
+    (8, N'khanh', N'Tạo hóa đơn HD00008', '2026-05-01 10:30:00'),
+    (8, N'khanh', N'Hủy hóa đơn do sai sản phẩm', '2026-05-01 10:35:00'),
+    (9, N'thuhang', N'Tạo hóa đơn HD00009', '2026-05-02 11:00:00'),
+    (9, N'thuhang', N'Khách thanh toán một phần bằng tiền mặt', '2026-05-02 11:05:00'),
+    (9, N'thuhang', N'Khách chuyển khoản phần lớn', '2026-05-02 11:10:00'),
+    (10, N'thuhang', N'Tạo hóa đơn HD00010', '2026-05-02 14:20:00'),
+    (10, N'thuhang', N'Khách quẹt thẻ thanh toán 4tr', '2026-05-02 14:25:00'),
+    (11, N'banhang', N'Tạo hóa đơn HD00011', '2026-05-03 15:45:00'),
+    (11, N'banhang', N'Khách thanh toán qua MoMo', '2026-05-03 15:50:00'),
+    (12, N'banhang', N'Tạo hóa đơn HD00012', '2026-05-03 16:10:00'),
+    (12, N'banhang', N'Khách thanh toán qua VNPay', '2026-05-03 16:15:00');
 GO
 
 PRINT N'RunMaxDB schema created and seeded successfully!';
