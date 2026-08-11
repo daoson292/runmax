@@ -412,16 +412,24 @@
     <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
     <script>
     $(document).ready(function() {
-        $('#tableKhachHang').DataTable({
+        var t = $('#tableKhachHang').DataTable({
             searching: false,
             paging: false,
             info: false,
             columnDefs: [
                 { orderable: false, targets: [0, 7] }
             ],
-            order: [[1, 'asc']],
+            order: [], // Không tự động sort để giữ đúng thứ tự từ server (1, 2, 3...)
             responsive: true,
         });
+
+        // Đảm bảo cột số thứ tự luôn là 1, 2, 3... dù có bấm sort các cột khác
+        t.on('order.dt search.dt', function () {
+            let i = 1;
+            t.cells(null, 0, { search: 'applied', order: 'applied' }).every(function (cell) {
+                this.data('<span class="text-muted fw-semibold">' + (i++) + '</span>');
+            });
+        }).draw();
     });
 
     document.getElementById('btnExcelKH').addEventListener('click', function () {
