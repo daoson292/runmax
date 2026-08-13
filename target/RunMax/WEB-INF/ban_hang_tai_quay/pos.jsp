@@ -362,7 +362,7 @@
                                             <label class="form-label small fw-semibold text-muted mb-2">Phương thức thanh toán</label>
                                             <div class="row g-2">
                                                 <div class="col-4">
-                                                    <input type="radio" class="btn-check payment-method-radio" name="ptttId" id="ptttCash" value="1" onchange="renderInlinePaymentArea()" checked>
+                                                    <input type="radio" class="btn-check payment-method-radio" name="ptttId" id="ptttCash" value="1" onchange="renderInlinePaymentArea()">
                                                     <label class="btn btn-outline-secondary border-0 w-100 h-100 text-start p-2 payment-method-card" for="ptttCash">
                                                         <div class="d-flex align-items-center">
                                                             <div class="icon-circle bg-light text-secondary me-2 flex-shrink-0">
@@ -2408,8 +2408,14 @@
                 }
             }
             
-            if (currentConNo > 0 && maHd) {
-                const amount = Math.round(currentConNo);
+            // Cập nhật số tiền thực tế cần thu sau khi trừ đi tiền mặt đã nhận cục bộ
+            let thucSuConNo = currentConNo;
+            if (typeof currentCashReceived !== 'undefined') {
+                thucSuConNo = Math.max(0, currentConNo - currentCashReceived);
+            }
+            
+            if (thucSuConNo > 0 && maHd) {
+                const amount = Math.round(thucSuConNo);
                 const addInfo = maHd;
                 
                 const modalEl = document.getElementById('modalVietQR');
@@ -2421,7 +2427,7 @@
                 let savedAmount = sessionStorage.getItem(amountKey);
                 
                 // KIỂM TRA CACHE
-                if (savedAmount == currentConNo && savedTime !== null && parseInt(savedTime) > Date.now()) {
+                if (savedAmount == thucSuConNo && savedTime !== null && parseInt(savedTime) > Date.now()) {
                     qrExpireTime = parseInt(savedTime);
                     currentQrAmount = parseInt(savedAmount);
                     modal.show();
@@ -2497,11 +2503,17 @@
                                         document.getElementById('posDaTra').innerText = new Intl.NumberFormat('vi-VN').format(currentDaTra) + ' ₫';
                                         document.getElementById('posConNo').innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
                                         
-                                        currentQrAmount = currentConNo;
+                                        // Update lại số tiền cần QR sau khi trừ tiền mặt
+                                        let updatedConNo = currentConNo;
+                                        if (typeof currentCashReceived !== 'undefined') {
+                                            updatedConNo = Math.max(0, currentConNo - currentCashReceived);
+                                        }
+                                        
+                                        currentQrAmount = updatedConNo;
                                         qrExpireTime = Date.now() + 10 * 60 * 1000;
                                         sessionStorage.setItem(timerKey, qrExpireTime);
                                         sessionStorage.setItem(amountKey, currentQrAmount);
-                                        const newAmount = Math.round(currentConNo);
+                                        const newAmount = Math.round(updatedConNo);
                                         const bankId = 'MBBank';
                                         const stk = '0347160331';
                                         const accountName = 'DAO VAN SON';
