@@ -68,7 +68,11 @@ public class HoaDonController extends HttpServlet {
             case "/admin/hoa-don/update-status": {
                 Long id = Long.parseLong(req.getParameter("id"));
                 Integer trangThai = Integer.parseInt(req.getParameter("trangThai"));
-                service.updateStatus(id, trangThai);
+                try {
+                    service.updateStatus(id, trangThai);
+                } catch (IllegalArgumentException e) {
+                    req.getSession().setAttribute("error", e.getMessage());
+                }
                 break;
             }
             case "/admin/hoa-don/delete": {

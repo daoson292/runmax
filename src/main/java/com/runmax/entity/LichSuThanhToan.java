@@ -45,4 +45,10 @@ public class LichSuThanhToan {
 
     @Column(name = "noi_dung_ck", length = 255)
     private String noiDungCk;
+
+    @Transient
+    public String getNgayThanhToanFormatted() {
+        if (ngayThanhToan == null) return "--";
+        return ngayThanhToan.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy"));
+    }
 }

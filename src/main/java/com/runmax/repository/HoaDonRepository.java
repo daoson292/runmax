@@ -34,7 +34,7 @@ public class HoaDonRepository {
             if (denNgay != null) {
                 hql.append(" AND h.ngayTao <= :dn");
             }
-            hql.append(" ORDER BY h.ngayTao DESC");
+            hql.append(" ORDER BY COALESCE(h.ngayThanhToan, h.ngayTao) DESC");
 
             Query<HoaDon> query = session.createQuery(hql.toString(), HoaDon.class);
             if (maHd != null && !maHd.trim().isEmpty()) {
@@ -83,16 +83,28 @@ public class HoaDonRepository {
 
     public HoaDon findById(Long id) {
         try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+            // 1. Fetch Hóa đơn + Khách hàng + Địa chỉ (Bỏ Fetch Lịch Sử)
             HoaDon hd = session.createQuery(
                 "SELECT DISTINCT h FROM HoaDon h " +
-                "LEFT JOIN FETCH h.khachHang " +
+                "LEFT JOIN FETCH h.khachHang kh " +
+                "LEFT JOIN FETCH kh.diaChiKhachHangs " +
                 "LEFT JOIN FETCH h.nhanVien " +
                 "LEFT JOIN FETCH h.phieuGiamGia " +
-                "LEFT JOIN FETCH h.lichSuHoaDons " +
                 "WHERE h.id = :id", HoaDon.class)
                 .setParameter("id", id)
                 .uniqueResult();
-            return hd != null ? hd : session.get(HoaDon.class, id);
+                
+            // 2. Fetch bổ sung Lịch sử hóa đơn nếu hóa đơn tồn tại (Sử dụng First-Level Cache của chung 1 Session)
+            if (hd != null) {
+                hd = session.createQuery(
+                    "SELECT DISTINCT h FROM HoaDon h " +
+                    "LEFT JOIN FETCH h.lichSuHoaDons " +
+                    "WHERE h.id = :id", HoaDon.class)
+                    .setParameter("id", id)
+                    .uniqueResult();
+            }
+                
+            return hd;
         }
     }
 

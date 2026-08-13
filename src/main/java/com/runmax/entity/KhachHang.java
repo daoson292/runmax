@@ -2,6 +2,8 @@ package com.runmax.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Entity KhachHang – ánh xạ bảng khach_hang.
@@ -43,6 +45,10 @@ public class KhachHang {
     @Transient
     private String diaChiMacDinh;
 
+    @OneToMany(mappedBy = "khachHang", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<DiaChiKhachHang> diaChiKhachHangs = new ArrayList<>();
+
     @Transient
     public String getNgaySinhFormatted() {
         if (ngaySinh == null) return "";
@@ -57,6 +63,13 @@ public class KhachHang {
 
     @Transient
     public String getDiaChi() {
+        if (diaChiKhachHangs != null && !diaChiKhachHangs.isEmpty()) {
+            return diaChiKhachHangs.stream()
+                    .filter(d -> d.getTrangThai() != null && d.getTrangThai() == 1)
+                    .findFirst()
+                    .map(d -> d.getDiaChiChiTiet() + ", " + d.getPhuongXa() + ", " + d.getQuanHuyen() + ", " + d.getTinhThanhPho())
+                    .orElse("Chưa cập nhật");
+        }
         return diaChiMacDinh != null ? diaChiMacDinh : "Chưa cập nhật";
     }
 }

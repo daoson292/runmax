@@ -98,6 +98,18 @@ public class BanHangServlet extends HttpServlet {
         if (currentHd != null) {
             req.setAttribute("currentHd", currentHd);
             req.setAttribute("chiTiets", hdService.findChiTiet(currentHd.getId()));
+            
+            // Tính toán số tiền đã thu và còn nợ
+            java.math.BigDecimal daThu = hdService.findLichSuTT(currentHd.getId()).stream()
+                    .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1) 
+                    .map(com.runmax.entity.LichSuThanhToan::getSoTien)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            java.math.BigDecimal tongTien = currentHd.getTongTien() != null ? currentHd.getTongTien() : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal conNo = tongTien.subtract(daThu);
+            if (conNo.compareTo(java.math.BigDecimal.ZERO) < 0) conNo = java.math.BigDecimal.ZERO;
+            
+            req.setAttribute("daThanhToan", daThu);
+            req.setAttribute("conNo", conNo);
         }
 
         req.setAttribute("phieuGiamGias", pggService.findActive());
@@ -294,6 +306,17 @@ public class BanHangServlet extends HttpServlet {
             data.addProperty("tienHang", hd.getTienHang());
             data.addProperty("soTienGiam", hd.getSoTienGiam());
             data.addProperty("tongTien", hd.getTongTien());
+            
+            java.math.BigDecimal daThu = hdService.findLichSuTT(hd.getId()).stream()
+                    .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1) 
+                    .map(com.runmax.entity.LichSuThanhToan::getSoTien)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            java.math.BigDecimal tongTien = hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal conNo = tongTien.subtract(daThu);
+            if (conNo.compareTo(java.math.BigDecimal.ZERO) < 0) conNo = java.math.BigDecimal.ZERO;
+            
+            data.addProperty("daThanhToan", daThu);
+            data.addProperty("conNo", conNo);
             if (updatedCt != null) {
                 data.addProperty("thanhTienItem", updatedCt.getThanhTien());
             }
@@ -388,6 +411,17 @@ public class BanHangServlet extends HttpServlet {
             data.addProperty("soTienGiam", hd.getSoTienGiam());
             data.addProperty("tongTien", hd.getTongTien());
             
+            java.math.BigDecimal daThu = hdService.findLichSuTT(hd.getId()).stream()
+                    .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1) 
+                    .map(com.runmax.entity.LichSuThanhToan::getSoTien)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            java.math.BigDecimal tongTien = hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal conNo = tongTien.subtract(daThu);
+            if (conNo.compareTo(java.math.BigDecimal.ZERO) < 0) conNo = java.math.BigDecimal.ZERO;
+            
+            data.addProperty("daThanhToan", daThu);
+            data.addProperty("conNo", conNo);
+            
             if (hd.getPhieuGiamGia() != null) {
                 data.addProperty("pggId", hd.getPhieuGiamGia().getId());
                 data.addProperty("pggMa", hd.getPhieuGiamGia().getMaPhieu());
@@ -429,6 +463,17 @@ public class BanHangServlet extends HttpServlet {
             data.addProperty("soTienGiam", hd.getSoTienGiam());
             data.addProperty("tongTien", hd.getTongTien());
             
+            java.math.BigDecimal daThu = hdService.findLichSuTT(hd.getId()).stream()
+                    .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1) 
+                    .map(com.runmax.entity.LichSuThanhToan::getSoTien)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            java.math.BigDecimal tongTien = hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal conNo = tongTien.subtract(daThu);
+            if (conNo.compareTo(java.math.BigDecimal.ZERO) < 0) conNo = java.math.BigDecimal.ZERO;
+            
+            data.addProperty("daThanhToan", daThu);
+            data.addProperty("conNo", conNo);
+            
             responseJson.add("data", data);
             resp.getWriter().write(new Gson().toJson(responseJson));
             
@@ -446,6 +491,18 @@ public class BanHangServlet extends HttpServlet {
         HoaDon hd = hdService.findById(hdId);
         req.setAttribute("currentHd", hd);
         req.setAttribute("chiTiets", hdService.findChiTiet(hdId));
+        
+        java.math.BigDecimal daThu = hdService.findLichSuTT(hdId).stream()
+                .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1) 
+                .map(com.runmax.entity.LichSuThanhToan::getSoTien)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        java.math.BigDecimal tongTien = hd.getTongTien() != null ? hd.getTongTien() : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal conNo = tongTien.subtract(daThu);
+        if (conNo.compareTo(java.math.BigDecimal.ZERO) < 0) conNo = java.math.BigDecimal.ZERO;
+        
+        req.setAttribute("daThanhToan", daThu);
+        req.setAttribute("conNo", conNo);
+        
         req.setAttribute("phieuGiamGias", pggService.findActive());
         req.setAttribute("ptttList", ptttRepo.findAll());
         req.setAttribute("khachHangs", khService.findAll(null, 1));
@@ -481,6 +538,12 @@ public class BanHangServlet extends HttpServlet {
         PhuongThucThanhToan pttt = new PhuongThucThanhToanRepository().findById(ptttId);
         PhieuGiamGia pgg = (pggId != null) ? pggService.findById(pggId) : null;
 
+        // Xử lý ghi chú
+        String ghiChu = req.getParameter("ghiChu");
+        if (ghiChu != null && !ghiChu.trim().isEmpty()) {
+            hdService.updateGhiChu(hdId, ghiChu.trim(), nv.getTenDangNhap());
+        }
+
         boolean ok = hdService.thanhToan(hdId, ptttId, pggId, khachHangId, pttt, pgg, nv.getTenDangNhap());
         if (ok) {
             resp.sendRedirect(req.getContextPath() + "/ban-hang?success=thanh-toan-thanh-cong&printHdId=" + hdId);
@@ -504,7 +567,26 @@ public class BanHangServlet extends HttpServlet {
         String hdIdStr = req.getParameter("hdId");
         if (hdIdStr == null || hdIdStr.isEmpty()) hdIdStr = req.getParameter("hoaDonId");
         Long hdId = Long.parseLong(hdIdStr);
-        hdService.deleteHoaDon(hdId);
+        
+        // Kiểm tra xem đơn đã được cọc / thanh toán phần nào chưa
+        java.math.BigDecimal daThu = hdService.findLichSuTT(hdId).stream()
+                .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1) // Trạng thái = 1 là thành công
+                .map(com.runmax.entity.LichSuThanhToan::getSoTien)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        if (daThu.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            // Đã có tiền cọc -> Chỉ được hủy, KHÔNG xóa cứng
+            Object nvObj = req.getSession().getAttribute("nhanVien");
+            String nguoiThaoTac = "Hệ thống";
+            if (nvObj != null && nvObj instanceof com.runmax.entity.NhanVien) {
+                nguoiThaoTac = ((com.runmax.entity.NhanVien) nvObj).getTenDangNhap();
+            }
+            hdService.huyHoaDon(hdId, nguoiThaoTac, "Hủy đơn tại POS (Đơn đã có khoản cọc)");
+        } else {
+            // Chưa có thanh toán -> Cho phép xóa cứng
+            hdService.deleteHoaDon(hdId);
+        }
+        
         resp.sendRedirect(req.getContextPath() + "/ban-hang");
     }
 

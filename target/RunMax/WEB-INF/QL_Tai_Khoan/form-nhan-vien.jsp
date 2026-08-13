@@ -114,13 +114,13 @@
 
                             <!-- Hàng 3: Số điện thoại | Email -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Số điện thoại</label>
-                                <input type="text" name="sdt" class="form-control"
+                                <label class="form-label fw-semibold text-secondary small mb-1">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="text" name="sdt" class="form-control" required pattern="^0[0-9]{9}$" maxlength="10" minlength="10" title="Số điện thoại phải bao gồm 10 chữ số và bắt đầu bằng số 0"
                                        value="${nhanVienEdit != null ? nhanVienEdit.sdt : ''}" placeholder="VD: 0912345678">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Email</label>
-                                <input type="email" name="email" class="form-control"
+                                <label class="form-label fw-semibold text-secondary small mb-1">Email <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required
                                        value="${nhanVienEdit != null ? nhanVienEdit.email : ''}" placeholder="VD: abc@gmail.com">
                             </div>
 
@@ -309,6 +309,17 @@
                 hoTenInput.classList.add('is-invalid');
                 showToast("Họ và tên nhân viên phải có ít nhất 2 ký tự!", "danger", "Lỗi dữ liệu");
                 hoTenInput.focus();
+                event.preventDefault();
+                event.stopPropagation();
+                form.classList.add('was-validated');
+                return false;
+            }
+
+            const sdtInput = form.querySelector('input[name="sdt"]');
+            if (sdtInput && !/^0[0-9]{9}$/.test(sdtInput.value.trim())) {
+                sdtInput.classList.add('is-invalid');
+                showToast("Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng số 0!", "danger", "Lỗi dữ liệu");
+                sdtInput.focus();
                 event.preventDefault();
                 event.stopPropagation();
                 form.classList.add('was-validated');

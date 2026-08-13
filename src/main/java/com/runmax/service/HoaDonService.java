@@ -52,6 +52,24 @@ public class HoaDonService {
     public boolean updateStatus(Long id, Integer status, String nguoiThaoTac, String ghiChu) {
         HoaDon hd = hdRepo.findById(id);
         if (hd == null) return false;
+
+        // Logic chặn trạng thái "Đã hoàn thành" (1) nếu chưa trả đủ tiền
+        if (status == 1) {
+            java.math.BigDecimal daThu = lsttRepo.findByHoaDonId(id).stream()
+                .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1)
+                .map(LichSuThanhToan::getSoTien)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                
+            if (hd.getTongTien().compareTo(daThu) > 0) {
+                // Khách chưa trả đủ tiền -> Ném lỗi ra màn hình
+                throw new IllegalArgumentException("Lỗi: Đơn hàng chưa thu đủ tiền, không thể hoàn tất!");
+            } else {
+                hd.setNgayThanhToan(java.time.LocalDateTime.now());
+            }
+        } else if (status == 3) {
+            hd.setNgayThanhToan(java.time.LocalDateTime.now());
+        }
+
         hd.setTrangThai(status);
         if (ghiChu != null && !ghiChu.trim().isEmpty()) {
             hd.setGhiChu(ghiChu.trim());
@@ -337,6 +355,24 @@ public class HoaDonService {
             }
         }
 
+        // Xử lý hoàn tiền cọc nếu có
+        java.math.BigDecimal daThu = lsttRepo.findByHoaDonId(hoaDonId).stream()
+                .filter(tt -> tt.getTrangThai() != null && tt.getTrangThai() == 1)
+                .map(LichSuThanhToan::getSoTien)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        
+        if (daThu.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            LichSuThanhToan hoanTien = LichSuThanhToan.builder()
+                .hoaDon(hd)
+                // Giả định PTTT 1 là Tiền mặt, thực tế nên lưu ID PTTT mặc định hoặc lấy từ LSTT cũ
+                .phuongThucThanhToan(com.runmax.entity.PhuongThucThanhToan.builder().id(1L).build()) 
+                .soTien(daThu.negate()) // Giá trị âm
+                .ngayThanhToan(java.time.LocalDateTime.now())
+                .trangThai(1)
+                .build();
+            lsttRepo.save(hoanTien);
+        }
+
         LichSuHoaDon lshd = LichSuHoaDon.builder()
             .hoaDon(hd)
             .nguoiThaoTac(nguoiThaoTac)
@@ -344,6 +380,28 @@ public class HoaDonService {
             .build();
         hdRepo.saveLichSu(lshd);
         return true;
+    }
+
+    public boolean updateGhiChu(Long id, String ghiChu, String nguoiThaoTac) {
+        HoaDon hd = hdRepo.findById(id);
+        if (hd == null) return false;
+        
+        // Truncate to 255 if longer
+        if (ghiChu != null && ghiChu.length() > 255) {
+            ghiChu = ghiChu.substring(0, 255);
+        }
+        hd.setGhiChu(ghiChu);
+        
+        boolean ok = hdRepo.update(hd);
+        if (ok) {
+            LichSuHoaDon lshd = LichSuHoaDon.builder()
+                .hoaDon(hd)
+                .nguoiThaoTac(nguoiThaoTac)
+                .hanhDong("Cập nhật ghi chú đơn hàng")
+                .build();
+            hdRepo.saveLichSu(lshd);
+        }
+        return ok;
     }
 
     /** Tự động hủy hóa đơn chờ quá hạn 24h */

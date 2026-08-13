@@ -155,6 +155,13 @@ public class NhanVienServlet extends HttpServlet {
             return;
         }
 
+        if (sdt == null || !sdt.trim().matches("^0[0-9]{9}$")) {
+            req.setAttribute("errorMessage", "Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng số 0!");
+            NhanVien nvTmp = NhanVien.builder().anhDaiDien(currentAnh).id(id).maNv(maNv).hoTen(hoTen).sdt(sdt).email(email).tenDangNhap(tdnhap).vaiTro(vt).gioiTinh(gioiTinh).ngaySinh(ngaySinh).tinhThanhPho(tinhThanh).quanHuyen(quanHuyen).phuongXa(phuongXa).diaChiChiTiet(chiTiet).trangThai(tt).build();
+            showForm(req, resp, nvTmp);
+            return;
+        }
+
         if (maNv == null || maNv.trim().isEmpty()) {
             maNv = nvService.getNextMaNv();
         } else {

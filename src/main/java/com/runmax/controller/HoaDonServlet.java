@@ -71,8 +71,12 @@ public class HoaDonServlet extends HttpServlet {
             String nguoiThaoTac = nv != null
                 ? ((com.runmax.entity.NhanVien) nv).getTenDangNhap()
                 : "Quản lý";
-            hdService.updateStatus(hdId, status, nguoiThaoTac, ghiChu);
-            resp.sendRedirect(req.getContextPath() + "/hoa-don?action=detail&id=" + hdId);
+            try {
+                hdService.updateStatus(hdId, status, nguoiThaoTac, ghiChu);
+                resp.sendRedirect(req.getContextPath() + "/hoa-don?action=detail&id=" + hdId);
+            } catch (IllegalArgumentException e) {
+                resp.sendRedirect(req.getContextPath() + "/hoa-don?action=detail&id=" + hdId + "&error=" + java.net.URLEncoder.encode(e.getMessage(), "UTF-8"));
+            }
             return;
         } else if ("them-sp".equals(action)) {
             Long hdId   = Long.parseLong(req.getParameter("hdId"));
@@ -80,6 +84,19 @@ public class HoaDonServlet extends HttpServlet {
             int soLuong = Integer.parseInt(req.getParameter("soLuong") != null ? req.getParameter("soLuong") : "1");
             hdService.themSanPham(hdId, spctId, soLuong);
             resp.sendRedirect(req.getContextPath() + "/hoa-don?action=detail&id=" + hdId);
+            return;
+        } else if ("update-note".equals(action)) {
+            Long hdId = Long.parseLong(req.getParameter("id"));
+            String ghiChu = req.getParameter("ghiChu");
+            var nv = req.getSession().getAttribute("nhanVien");
+            String nguoiThaoTac = nv != null
+                ? ((com.runmax.entity.NhanVien) nv).getTenDangNhap()
+                : "Quản lý";
+            boolean ok = hdService.updateGhiChu(hdId, ghiChu, nguoiThaoTac);
+            
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            resp.getWriter().write("{\"success\": " + ok + ", \"message\": \"Cập nhật ghi chú " + (ok ? "thành công" : "thất bại") + "\"}");
             return;
         }
         resp.sendRedirect(req.getContextPath() + "/hoa-don");

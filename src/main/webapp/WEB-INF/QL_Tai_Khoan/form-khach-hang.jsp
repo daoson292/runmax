@@ -86,7 +86,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
-                                <input type="text" name="sdt" class="form-control" required
+                                <input type="text" name="sdt" class="form-control" required pattern="^0[0-9]{9}$" maxlength="10" minlength="10" title="Số điện thoại phải bao gồm 10 chữ số và bắt đầu bằng số 0"
                                        value="${khachHang != null ? khachHang.sdt : ''}" placeholder="VD: 0912345678">
                             </div>
                             <div class="col-md-6">
@@ -434,11 +434,6 @@
 
         function validateForm() {
             const form = document.getElementById('khachHangForm');
-            if (form && !form.checkValidity()) {
-                form.classList.add('was-validated');
-                showToast("Vui lòng kiểm tra và điền đầy đủ các trường thông tin có viền đỏ!", "danger", "Thiếu thông tin");
-                return false;
-            }
             const hoTenInput = document.querySelector('input[name="hoTen"]');
             if (hoTenInput) {
                 const val = hoTenInput.value.trim();
@@ -449,6 +444,18 @@
                     return false;
                 }
                 hoTenInput.value = val;
+            }
+            const sdtInput = document.querySelector('input[name="sdt"]');
+            if (sdtInput && !/^0[0-9]{9}$/.test(sdtInput.value.trim())) {
+                sdtInput.classList.add('is-invalid');
+                showBootstrapAlert("Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng số 0!", "danger");
+                sdtInput.focus();
+                return false;
+            }
+            if (form && !form.checkValidity()) {
+                form.classList.add('was-validated');
+                showToast("Vui lòng kiểm tra và điền đầy đủ các trường thông tin có viền đỏ!", "danger", "Thiếu thông tin");
+                return false;
             }
             if (form) form.classList.add('was-validated');
 

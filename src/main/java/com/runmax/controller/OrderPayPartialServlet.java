@@ -50,6 +50,17 @@ public class OrderPayPartialServlet extends HttpServlet {
             
             HoaDon hd = hoaDonRepo.findByMaHd(hdId);
             if (hd != null && soTien.compareTo(BigDecimal.ZERO) > 0) {
+                // Xử lý ghi chú nếu có truyền lên từ POS
+                if (json.has("ghiChu")) {
+                    String ghiChu = json.get("ghiChu").getAsString();
+                    if (ghiChu != null && !ghiChu.trim().isEmpty()) {
+                        if (ghiChu.length() > 255) {
+                            ghiChu = ghiChu.substring(0, 255);
+                        }
+                        hd.setGhiChu(ghiChu);
+                    }
+                }
+                
                 LichSuThanhToan ls = new LichSuThanhToan();
                 ls.setHoaDon(hd);
                 

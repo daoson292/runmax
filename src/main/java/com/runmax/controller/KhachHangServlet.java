@@ -161,6 +161,14 @@ public class KhachHangServlet extends HttpServlet {
             return;
         }
 
+        if (sdt == null || !sdt.trim().matches("^0[0-9]{9}$")) {
+            req.setAttribute("errorMessage", "Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng số 0!");
+            KhachHang khTmp = KhachHang.builder().id(id).maKh(maKh).hoTen(hoTen != null ? hoTen.trim() : "").sdt(sdt).email(email).ngaySinh(ngaySinh).gioiTinh(gioiTinh).trangThai(tt).build();
+            req.setAttribute("diaChi", extractAddressesFromRequest(req, khTmp));
+            showForm(req, resp, khTmp);
+            return;
+        }
+
         if (maKh == null || maKh.trim().isEmpty()) {
             maKh = khService.getNextMaKh();
         } else {

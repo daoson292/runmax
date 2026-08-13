@@ -141,16 +141,6 @@
             margin-top: 1rem;
             margin-bottom: 1.5rem;
         }
-        .stepper-wrapper::before {
-            content: '';
-            position: absolute;
-            top: 18px;
-            left: 5%;
-            right: 5%;
-            height: 4px;
-            background: #e2e8f0;
-            z-index: 1;
-        }
         .stepper-item {
             position: relative;
             z-index: 2;
@@ -291,30 +281,69 @@
                         </div>
                     </div>
 
-                    <!-- Stepper bar (chỉ hiển thị theo 3 trạng thái: Đang chờ, Đã hoàn thành, Đã hủy) -->
-                    <c:choose>
-                        <c:when test="${hoaDon.trangThai == 2 || hoaDon.trangThai >= 4}">
-                            <div class="alert alert-secondary mb-0 mt-3 d-flex align-items-center gap-3 py-2">
-                                <i class="bi bi-x-circle-fill fs-4 text-secondary"></i>
-                                <div>
-                                    <strong>Đơn hàng này đã bị hủy.</strong>
-                                    <div class="small">Lý do: ${not empty hoaDon.ghiChu ? hoaDon.ghiChu : 'Không có ghi chú hủy.'}</div>
-                                </div>
+                    <!-- Stepper bar 3 bước -->
+                    <c:set var="progressWidth" value="0%" />
+                    <c:if test="${hoaDon.trangThai == 3}"><c:set var="progressWidth" value="50%" /></c:if>
+                    <c:if test="${hoaDon.trangThai == 1 || hoaDon.trangThai == 2 || hoaDon.trangThai >= 4}"><c:set var="progressWidth" value="100%" /></c:if>
+
+                    <div class="stepper-wrapper">
+                        <!-- Progress background line -->
+                        <div style="position: absolute; top: 18px; left: 10%; right: 10%; height: 4px; background: #e2e8f0; z-index: 1;"></div>
+                        <!-- Progress active line -->
+                        <div style="position: absolute; top: 18px; left: 10%; width: ${progressWidth}; max-width: 80%; height: 4px; background: #10b981; z-index: 1; transition: width 0.3s ease;"></div>
+
+                        <!-- Node 1: Đang chờ -->
+                        <div class="stepper-item ${hoaDon.trangThai == 0 ? 'active' : 'completed'}">
+                            <div class="stepper-circle"><i class="${hoaDon.trangThai == 0 ? 'bi bi-1-circle' : 'bi bi-check-lg'}"></i></div>
+                            <div class="stepper-label">1. Đang chờ</div>
+                        </div>
+
+                        <!-- Node 2: Đang thanh toán -->
+                        <c:set var="n2State" value="" />
+                        <c:choose>
+                            <c:when test="${hoaDon.trangThai == 3}">
+                                <c:set var="n2State" value="active" />
+                            </c:when>
+                            <c:when test="${hoaDon.trangThai == 1 || hoaDon.trangThai == 2 || hoaDon.trangThai >= 4}">
+                                <c:set var="n2State" value="completed" />
+                            </c:when>
+                        </c:choose>
+                        <div class="stepper-item ${n2State}">
+                            <div class="stepper-circle"><i class="${n2State == 'completed' ? 'bi bi-check-lg' : 'bi bi-2-circle'}"></i></div>
+                            <div class="stepper-label">2. Thanh toán</div>
+                        </div>
+
+                        <!-- Node 3: Hoàn thành / Hủy -->
+                        <c:set var="n3State" value="" />
+                        <c:set var="n3Label" value="3. Đã hoàn thành" />
+                        <c:set var="n3Icon" value="bi bi-3-circle" />
+                        <c:choose>
+                            <c:when test="${hoaDon.trangThai == 1}">
+                                <c:set var="n3State" value="active" />
+                                <c:set var="n3Label" value="3. Đã hoàn thành" />
+                                <c:set var="n3Icon" value="bi bi-check-all" />
+                            </c:when>
+                            <c:when test="${hoaDon.trangThai == 2 || hoaDon.trangThai >= 4}">
+                                <c:set var="n3State" value="active" />
+                                <c:set var="n3Label" value="3. Đã hủy" />
+                                <c:set var="n3Icon" value="bi bi-x-circle-fill" />
+                            </c:when>
+                        </c:choose>
+                        <div class="stepper-item ${n3State}">
+                            <div class="stepper-circle"><i class="${n3Icon}"></i></div>
+                            <div class="stepper-label">${n3Label}</div>
+                        </div>
+                    </div>
+
+                    <c:if test="${hoaDon.trangThai == 2 || hoaDon.trangThai >= 4}">
+                        <div class="alert alert-secondary mb-0 mt-3 d-flex align-items-center gap-3 py-2 border-0 shadow-sm rounded-4">
+                            <i class="bi bi-info-circle-fill fs-5 text-secondary"></i>
+                            <div>
+                                <strong class="text-dark">Đơn hàng này đã bị hủy.</strong>
+                                <div class="small text-muted">Lý do: ${not empty hoaDon.ghiChu ? hoaDon.ghiChu : 'Không có ghi chú hủy.'}</div>
                             </div>
-                        </c:when>
-                        <c:otherwise>
-                            <div class="stepper-wrapper">
-                                <div class="stepper-item ${hoaDon.trangThai == 0 ? 'active' : 'completed'}">
-                                    <div class="stepper-circle"><i class="${hoaDon.trangThai > 0 ? 'bi bi-check-lg' : 'bi bi-1-circle'}"></i></div>
-                                    <div class="stepper-label">1. Đang chờ</div>
-                                </div>
-                                <div class="stepper-item ${hoaDon.trangThai == 1 || hoaDon.trangThai == 3 ? 'completed active' : ''}">
-                                    <div class="stepper-circle"><i class="${hoaDon.trangThai == 1 || hoaDon.trangThai == 3 ? 'bi bi-check-lg' : 'bi bi-2-circle'}"></i></div>
-                                    <div class="stepper-label">2. Đã hoàn thành</div>
-                                </div>
-                            </div>
-                        </c:otherwise>
-                    </c:choose>
+                        </div>
+                    </c:if>
                 </div>
 
                 <!-- 3 COLUMNS INFO CARDS -->
@@ -440,17 +469,20 @@
                                     <c:choose>
                                         <c:when test="${not empty lichSuTT}">
                                             <c:forEach var="ls" items="${lichSuTT}">
-                                                <div class="d-flex justify-content-between align-items-center mb-1 bg-light p-2 rounded">
+                                                <div class="d-flex justify-content-between align-items-center mb-1 bg-light p-2 rounded border border-light">
                                                     <div>
-                                                        <strong class="text-dark">${ls.phuongThucThanhToan.tenPhuongThuc}</strong>
-                                                        <div class="text-muted" style="font-size:0.75rem;">${ls.ngayThanhToan.toString().replace('T', ' ')}</div>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <strong class="text-dark">${ls.phuongThucThanhToan.tenPhuongThuc}</strong>
+                                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-2 rounded-pill" style="font-size:0.7rem;"><i class="bi bi-person-fill"></i> ${hoaDon.nhanVien != null ? hoaDon.nhanVien.hoTen : 'Hệ thống'}</span>
+                                                        </div>
+                                                        <div class="text-muted mt-1" style="font-size:0.75rem;"><i class="bi bi-clock"></i> ${ls.ngayThanhToanFormatted}</div>
                                                     </div>
-                                                    <span class="fw-bold text-success"><fmt:formatNumber value="${ls.soTien != null ? ls.soTien : 0}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                                                    <span class="fw-bold text-success fs-6">+ <fmt:formatNumber value="${ls.soTien != null ? ls.soTien : 0}" type="currency" currencySymbol="₫" maxFractionDigits="0"/></span>
                                                 </div>
                                             </c:forEach>
                                         </c:when>
                                         <c:otherwise>
-                                            <div class="text-muted fst-italic">Chưa có giao dịch thanh toán nào.</div>
+                                            <div class="text-muted fst-italic p-2 bg-light rounded text-center">Chưa có giao dịch thanh toán nào.</div>
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
@@ -628,7 +660,7 @@
                             <div>
                                 <div class="fw-bold fs-5 mb-1" style="letter-spacing: 0.5px;">RunMax</div>
                                 <div class="small mb-1">Đền Lừ, Hoàng Mai, Hà Nội</div>
-                                <div class="small mb-1">Hotline: 0968038313</div>
+                                <div class="small mb-1">Hotline: 0394187830</div>
                             </div>
                             <div class="text-center ms-2 flex-shrink-0">
                                 <div id="receipt-thermal-qr" style="width: 78px; height: 78px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; padding: 2px; background: white; margin: 0 auto;">
@@ -643,11 +675,11 @@
                         <div class="divider-dashed"></div>
                         
                         <div class="d-flex justify-content-between small mt-2">
-                            <span>Ngày: ${fn:length(hoaDon.ngayTaoFormatted) > 10 ? fn:substring(hoaDon.ngayTaoFormatted, 0, 10) : hoaDon.ngayTaoFormatted}</span>
+                            <span>Ngày tạo: ${hoaDon.ngayTaoFormatted}</span>
                             <span>Số: ${hoaDon.maHd}</span>
                         </div>
                         <div class="small mb-2">
-                            <span>In lúc: <fmt:formatDate value="${now}" pattern="HH:mm"/></span>
+                            <span>Thanh toán lúc: ${hoaDon.ngayThanhToan != null ? hoaDon.ngayThanhToanFormatted : 'Chưa thanh toán'}</span>
                         </div>
                         <div class="small mb-1">
                             <span>Khách: <strong>${hoaDon.tenKhachHangHienThi}</strong></span>

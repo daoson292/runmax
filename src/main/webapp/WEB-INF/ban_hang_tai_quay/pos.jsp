@@ -267,11 +267,21 @@
                                                 <input type="text" name="tenKhachHang" id="posInputTenKh" class="form-control"
                                                        value="${currentHd.khachHang != null ? currentHd.khachHang.hoTen : ''}"
                                                        placeholder="Nhập tên khách hàng mới..."
+                                                       ${currentHd.khachHang != null ? 'readonly' : ''}
                                                        onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('btnQuickAddKh').click(); }">
+                                                <button class="btn btn-outline-secondary" type="button" id="btnEditTenKh" title="Chỉnh sửa tên" style="${currentHd.khachHang != null ? '' : 'display: none;'}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
                                                 <button type="button" id="btnQuickAddKh" class="btn btn-danger fw-bold px-3" style="display: none;" onclick="quickAddKhachHang(document.getElementById('posInputSdt').value)">
                                                     <i class="bi bi-person-plus-fill me-1"></i> Lưu Nhanh
                                                 </button>
                                             </div>
+                                        </div>
+
+                                        <!-- Ghi chú đơn hàng -->
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-semibold text-muted mb-0">Ghi chú đơn hàng</label>
+                                            <textarea class="form-control bg-white" name="ghiChu" rows="2" placeholder="Nhập ghi chú nếu có..." oninput="if(typeof backupPosInputs === 'function') backupPosInputs('${currentHd.id}')">${currentHd.ghiChu}</textarea>
                                         </div>
 
                                         <!-- Chọn và Áp Dụng Phiếu Giảm Giá -->
@@ -336,12 +346,14 @@
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center mt-2">
                                                 <span class="fw-bold text-dark">ĐÃ THANH TOÁN:</span>
-                                                <span class="fw-bold text-success fs-5 text-nowrap" id="posDaTra">0 đ</span>
+                                                <span class="fw-bold text-success fs-5 text-nowrap" id="posDaTra">
+                                                    <fmt:formatNumber value="${daThanhToan != null ? daThanhToan : 0}" type="number"/> đ
+                                                </span>
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center mt-2">
                                                 <span class="fw-bold text-dark">CÒN NỢ CẦN THU:</span>
                                                 <span class="fw-bold text-danger fs-5 text-nowrap" id="posConNo">
-                                                    <fmt:formatNumber value="${currentHd.tongTien != null ? currentHd.tongTien : 0}" type="number"/> đ
+                                                    <fmt:formatNumber value="${conNo != null ? conNo : (currentHd.tongTien != null ? currentHd.tongTien : 0)}" type="number"/> đ
                                                 </span>
                                             </div>
                                         </div>
@@ -456,6 +468,13 @@
             form.submit();
         }
 
+        function clearPosSessionStorage(hdId) {
+            if (!hdId) return;
+            sessionStorage.removeItem('tempSdt_' + hdId);
+            sessionStorage.removeItem('tempTenKh_' + hdId);
+            sessionStorage.removeItem('tempGhiChu_' + hdId);
+        }
+
         function autoSaveKhachHangPOS() {
             const hdId = ${currentHd != null ? currentHd.id : 'null'};
             if (!hdId) return;
@@ -516,20 +535,39 @@
             autoSaveKhachHangPOS();
         }
 
+        function backupPosInputs(hdId) {
+            if (!hdId) return;
+            const sdtInput = document.getElementById('posInputSdt');
+            const tenKhInput = document.getElementById('posInputTenKh');
+            const ghiChuInput = document.querySelector('textarea[name="ghiChu"]');
+            
+            if (sdtInput) sessionStorage.setItem('tempSdt_' + hdId, sdtInput.value);
+            if (tenKhInput) sessionStorage.setItem('tempTenKh_' + hdId, tenKhInput.value);
+            if (ghiChuInput) sessionStorage.setItem('tempGhiChu_' + hdId, ghiChuInput.value);
+        }
+
         function restorePosCustomerInfo(hdId) {
             if (!hdId) return;
             const sdtInput = document.getElementById('posInputSdt');
             const tenKhInput = document.getElementById('posInputTenKh');
+            const ghiChuInput = document.querySelector('textarea[name="ghiChu"]');
             
             if (sdtInput && sdtInput.dataset.originalSdt === '') {
                 const savedSdt = sessionStorage.getItem('tempSdt_' + hdId);
-                if (savedSdt) {
+                if (savedSdt !== null) {
                     sdtInput.value = savedSdt;
                     sdtInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
                 const savedTen = sessionStorage.getItem('tempTenKh_' + hdId);
-                if (savedTen && tenKhInput) {
+                if (savedTen !== null && tenKhInput) {
                     tenKhInput.value = savedTen;
+                }
+            }
+            
+            if (ghiChuInput) {
+                const savedGhiChu = sessionStorage.getItem('tempGhiChu_' + hdId);
+                if (savedGhiChu !== null) {
+                    ghiChuInput.value = savedGhiChu;
                 }
             }
         }
@@ -637,13 +675,18 @@
 
                     if (!isNaN(amount) && amount > 0) {
                         cashModal.hide();
+                        
+                        const ghiChuInput = document.querySelector('textarea[name="ghiChu"]');
+                        const ghiChuVal = ghiChuInput ? ghiChuInput.value.trim() : "";
+                        
                         fetch('${pageContext.request.contextPath}/api/order/pay-partial', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 hdId: '${currentHd != null ? currentHd.maHd : ""}',
                                 soTien: amount,
-                                phuongThuc: 1
+                                phuongThuc: 1,
+                                ghiChu: ghiChuVal
                             })
                         })
                         .then(res => res.json())
@@ -771,6 +814,15 @@
                     if (tienGiamEl) tienGiamEl.innerText = '- ' + formatCurrency(data.soTienGiam || 0);
                     if (tongTienEl) tongTienEl.innerText = formatCurrency(data.tongTien || 0);
                     
+                    if (data.daThanhToan !== undefined && data.conNo !== undefined) {
+                        currentDaTra = data.daThanhToan;
+                        currentConNo = data.conNo;
+                        const posDaTraEl = document.getElementById('posDaTra');
+                        const posConNoEl = document.getElementById('posConNo');
+                        if (posDaTraEl) posDaTraEl.innerText = formatCurrency(currentDaTra);
+                        if (posConNoEl) posConNoEl.innerText = formatCurrency(currentConNo);
+                    }
+                    
                     // Render lại container voucher
                     const container = document.getElementById('posVoucherContainer');
                     if (container) {
@@ -841,6 +893,42 @@
         }
 
         let searchTimeout;
+
+        // Helper hàm chuyển đổi trạng thái Khóa / Mở ô nhập tên
+        function toggleKhNameEditMode(isNewCustomer) {
+            const tenKhInput = document.getElementById('posInputTenKh');
+            const btnEdit = document.getElementById('btnEditTenKh');
+            const btnQuickAdd = document.getElementById('btnQuickAddKh');
+            const nameBlock = document.getElementById('khNameBlock');
+            const badgeKhachQuen = document.getElementById('badgeKhachQuen');
+            
+            if (!tenKhInput) return;
+            
+            if (isNewCustomer) {
+                tenKhInput.removeAttribute('readonly');
+                if (btnEdit) btnEdit.style.display = 'none';
+                if (btnQuickAdd) btnQuickAdd.style.display = 'block';
+                if (badgeKhachQuen) badgeKhachQuen.style.display = 'none';
+                if (nameBlock) nameBlock.style.display = 'block';
+            } else {
+                tenKhInput.setAttribute('readonly', 'readonly');
+                if (btnEdit) btnEdit.style.display = 'block';
+                if (btnQuickAdd) btnQuickAdd.style.display = 'none';
+                if (badgeKhachQuen) badgeKhachQuen.style.display = 'block';
+                if (nameBlock) nameBlock.style.display = 'block';
+            }
+        }
+
+        // Bắt sự kiện click để edit Tên KH
+        document.addEventListener('click', function(e) {
+            if (e.target && (e.target.id === 'btnEditTenKh' || e.target.closest('#btnEditTenKh'))) {
+                const tenKhInput = document.getElementById('posInputTenKh');
+                if (tenKhInput) {
+                    tenKhInput.removeAttribute('readonly');
+                    tenKhInput.focus();
+                }
+            }
+        });
 
         // Sử dụng event delegation cho toàn bộ document thay vì gắn cứng vào thẻ input
         // Điều này giúp form vẫn hoạt động bình thường kể cả khi bị AJAX thay thế HTML (như khi f5 lại cục pos-payment-block)
@@ -928,22 +1016,17 @@
                                             sdtInput.classList.remove('is-invalid');
                                             
                                             if (tenKhInput) tenKhInput.value = kh.hoTen;
-                                            if (badgeKhachQuen) badgeKhachQuen.style.display = 'block';
                                             
+                                            toggleKhNameEditMode(false);
                                             sdtSuggestions.style.display = 'none';
                                             autoSaveKhachHangPOS();
-                                            if(nameBlock) nameBlock.style.display = 'block';
                                         };
                                         li.appendChild(a);
                                         sdtSuggestions.appendChild(li);
                                     });
                                     sdtSuggestions.style.display = 'block';
                                 } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
-                                    if(nameBlock) nameBlock.style.display = 'block';
-                                    if(btnQuickAdd) {
-                                        btnQuickAdd.style.display = 'block';
-                                        btnQuickAdd.setAttribute('onclick', `quickAddKhachHang("\${kw}")`);
-                                    }
+                                    toggleKhNameEditMode(true);
                                     if (tenKhInput && tenKhInput.value === '') {
                                         tenKhInput.focus();
                                     }
@@ -990,22 +1073,35 @@
                 const sdtInput = e.target;
                 const kw = sdtInput.value.trim();
                 
-                setTimeout(() => {
-                    const sdtSuggestions = document.getElementById('sdtSuggestions');
-                    if (sdtSuggestions && sdtSuggestions.style.display === 'block') {
-                        const firstItem = sdtSuggestions.querySelector('a');
-                        if (firstItem) {
-                            firstItem.click(); // Có gợi ý -> Auto select
-                        } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
-                            const nameBlock = document.getElementById('khNameBlock');
-                            if(nameBlock) nameBlock.style.display = 'block';
-                        }
-                    } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
-                        // Không có dropdown -> Khách mới
-                        const nameBlock = document.getElementById('khNameBlock');
-                        if(nameBlock) nameBlock.style.display = 'block';
-                    }
-                }, 200);
+                if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
+                    // Check directly with API to avoid race conditions with blur/click timeout
+                    fetch('${pageContext.request.contextPath}/api/customers/search?kw=' + encodeURIComponent(kw))
+                        .then(res => res.json())
+                        .then(data => {
+                            const tenKhInput = document.getElementById('posInputTenKh');
+                            if (data && data.results && data.results.length > 0) {
+                                // Lấy chính xác khách có số điện thoại này
+                                const exactMatch = data.results.find(kh => kh.sdt === kw);
+                                if (exactMatch) {
+                                    sdtInput.value = exactMatch.sdt;
+                                    sdtInput.dataset.originalSdt = exactMatch.sdt;
+                                    sdtInput.classList.remove('is-invalid');
+                                    
+                                    if (tenKhInput) tenKhInput.value = exactMatch.hoTen;
+                                    
+                                    toggleKhNameEditMode(false);
+                                    autoSaveKhachHangPOS();
+                                    return;
+                                }
+                            }
+                            // Khách mới
+                            toggleKhNameEditMode(true);
+                            if (tenKhInput && tenKhInput.value === '') {
+                                setTimeout(() => tenKhInput.focus(), 50);
+                            }
+                        })
+                        .catch(err => console.error('Lỗi check khách hàng khi blur:', err));
+                }
             } else if (e.target && e.target.id === 'posInputTenKh') {
                 autoSaveKhachHangPOS();
             }
@@ -1016,34 +1112,18 @@
             if (e.target && e.target.id === 'posInputSdt' && e.key === 'Enter') {
                 e.preventDefault(); // Ngăn submit form
                 const sdtInput = e.target;
-                const sdtSuggestions = document.getElementById('sdtSuggestions');
                 const kw = sdtInput.value.trim();
                 
-                if (sdtSuggestions && sdtSuggestions.style.display === 'block') {
-                    const firstItem = sdtSuggestions.querySelector('a');
-                    if (firstItem) {
-                        firstItem.click();
-                    } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
-                        const tenKhInput = document.getElementById('posInputTenKh');
-                        if (tenKhInput) {
-                            const nameBlock = document.getElementById('khNameBlock');
-                            if(nameBlock) nameBlock.style.display = 'block';
-                            tenKhInput.focus();
-                        }
-                    }
-                } else if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
-                    const tenKhInput = document.getElementById('posInputTenKh');
-                    if (tenKhInput) {
-                        const nameBlock = document.getElementById('khNameBlock');
-                        if(nameBlock) nameBlock.style.display = 'block';
-                        tenKhInput.focus();
-                    }
+                if (kw.length >= 10 && /^[0-9]+$/.test(kw)) {
+                    // Cùng gọi sự kiện blur để tận dụng lại luồng fetch chính xác
+                    sdtInput.blur();
                 }
             }
         });
 
         <c:if test="${not empty param.printHdId}">
         window.addEventListener('DOMContentLoaded', function() {
+            if (typeof clearPosSessionStorage === 'function') clearPosSessionStorage('${param.printHdId}');
             Swal.fire({
                 title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
                 html: '<span style="color: #666; font-size: 15px;">Thanh toán hoàn tất! Bạn có muốn in hóa đơn cho khách không?</span>',
@@ -1230,37 +1310,48 @@
 
                 stopCameraScanQR();
 
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '${pageContext.request.contextPath}/ban-hang';
-                form.style.display = 'none';
+                if (typeof backupPosInputs === 'function') backupPosInputs(activeScanHdId);
 
-                const inputAction = document.createElement('input');
-                inputAction.type = 'hidden';
-                inputAction.name = 'action';
-                inputAction.value = 'them-sp';
-                form.appendChild(inputAction);
+                const formData = new URLSearchParams();
+                formData.append('action', 'them-sp');
+                formData.append('hdId', activeScanHdId);
+                formData.append('spctId', matched.id);
+                formData.append('soLuong', '1');
 
-                const inputHd = document.createElement('input');
-                inputHd.type = 'hidden';
-                inputHd.name = 'hdId';
-                inputHd.value = activeScanHdId;
-                form.appendChild(inputHd);
+                fetch('${pageContext.request.contextPath}/ban-hang', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString(),
+                    redirect: 'follow'
+                })
+                .then(res => res.text())
+                .then(htmlText => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
 
-                const inputSpct = document.createElement('input');
-                inputSpct.type = 'hidden';
-                inputSpct.name = 'spctId';
-                inputSpct.value = matched.id;
-                form.appendChild(inputSpct);
+                    const newCart = doc.getElementById('pos-cart-container');
+                    if (newCart) {
+                        document.getElementById('pos-cart-container').innerHTML = newCart.innerHTML;
+                    }
 
-                const inputSl = document.createElement('input');
-                inputSl.type = 'hidden';
-                inputSl.name = 'soLuong';
-                inputSl.value = '1';
-                form.appendChild(inputSl);
+                    const oldPaymentBlock = document.getElementById('pos-payment-block');
+                    const newPaymentBlock = doc.getElementById('pos-payment-block');
+                    if (oldPaymentBlock && newPaymentBlock) {
+                        oldPaymentBlock.innerHTML = newPaymentBlock.innerHTML;
+                        if (typeof restorePosCustomerInfo === 'function') restorePosCustomerInfo(activeScanHdId);
+                    }
 
-                document.body.appendChild(form);
-                form.submit();
+                    const currentTienHang = parseFloat(document.getElementById('currentTienHang') ? document.getElementById('currentTienHang').value : 0) || 0;
+                    if (typeof autoEvaluateVoucher === 'function') autoEvaluateVoucher(activeScanHdId, currentTienHang);
+
+                    if (typeof syncPosStateAndInventory === 'function') syncPosStateAndInventory();
+
+                    showBootstrapAlert('Đã thêm sản phẩm từ mã QR!', 'success');
+                })
+                .catch(err => {
+                    console.error("Lỗi processScannedSKU: ", err);
+                    showBootstrapAlert('Lỗi kết nối khi thêm vào hóa đơn!', 'danger');
+                });
             } else {
                 alert(`Không tìm thấy biến thể giày nào trong kho ứng với mã QR: "\${code}"!`);
             }
@@ -1529,6 +1620,8 @@
 
             const formData = new FormData(form);
             const data = new URLSearchParams(formData);
+            
+            if (typeof backupPosInputs === 'function') backupPosInputs(formData.get('hdId'));
 
             try {
                 const response = await fetch('${pageContext.request.contextPath}/ban-hang', {
@@ -1801,6 +1894,8 @@
                 formData.append('spctIds[]', id);
                 formData.append('soLuongs[]', 1); // Quick batch add default 1
             });
+            
+            if (typeof backupPosInputs === 'function') backupPosInputs(hdId);
 
             try {
                 const response = await fetch('${pageContext.request.contextPath}/ban-hang', {
@@ -1866,6 +1961,8 @@
             formData.append('hdId', hdId);
             formData.append('chiTietId', spctId);
             formData.append('soLuong', '1');
+            
+            if (typeof backupPosInputs === 'function') backupPosInputs(hdId);
 
             fetch('${pageContext.request.contextPath}/ban-hang', {
                 method: 'POST',
@@ -2258,6 +2355,7 @@
                                         document.getElementById('posConNo').innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
                                         
                                         modal.hide();
+                                        if (typeof clearPosSessionStorage === 'function') clearPosSessionStorage('${currentHd.id}');
                                         Swal.fire({
                                             title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
                                             html: '<span style="color: #666; font-size: 15px;">Thanh toán QR hoàn tất! Bạn có muốn in hóa đơn cho khách không?</span>',
@@ -2590,6 +2688,8 @@
             const plusBtn = btns[1] || btns[0];
             const originalPlusHtml = plusBtn ? plusBtn.innerHTML : '';
             if (plusBtn) plusBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            
+            if (typeof backupPosInputs === 'function') backupPosInputs(formData.get('hdId'));
 
             fetch('${pageContext.request.contextPath}/ban-hang', {
                 method: 'POST',
@@ -2609,13 +2709,21 @@
                     const tienGiamEl = document.getElementById('posTienGiam');
                     const tongTienEl = document.getElementById('posTongTien');
                     const conNoEl = document.getElementById('posConNo');
+                    const daTraEl = document.getElementById('posDaTra');
                     
                     if (tienHangEl) tienHangEl.innerText = formatCurrency(data.data.tienHang || 0);
                     if (tienGiamEl) tienGiamEl.innerText = '- ' + formatCurrency(data.data.soTienGiam || 0);
                     if (tongTienEl) tongTienEl.innerText = formatCurrency(data.data.tongTien || 0);
                     
-                    const daTra = parseInt(document.getElementById('posDaTra').innerText.replace(/[^\d]/g, '')) || 0;
-                    if (conNoEl) conNoEl.innerText = formatCurrency(Math.max(0, (data.data.tongTien || 0) - daTra));
+                    if (data.data.daThanhToan !== undefined && data.data.conNo !== undefined) {
+                        currentDaTra = data.data.daThanhToan;
+                        currentConNo = data.data.conNo;
+                        if (daTraEl) daTraEl.innerText = formatCurrency(currentDaTra);
+                        if (conNoEl) conNoEl.innerText = formatCurrency(currentConNo);
+                    } else {
+                        const daTra = parseInt(daTraEl ? daTraEl.innerText.replace(/[^\d]/g, '') : '0') || 0;
+                        if (conNoEl) conNoEl.innerText = formatCurrency(Math.max(0, (data.data.tongTien || 0) - daTra));
+                    }
                     
                     if (document.getElementById('currentTienHang')) document.getElementById('currentTienHang').value = data.data.tienHang || 0;
                     
@@ -2908,6 +3016,7 @@
                         const modalEl = document.getElementById('modalVietQR');
                         const modal = bootstrap.Modal.getInstance(modalEl);
                         if (modal) modal.hide();
+                        if (typeof clearPosSessionStorage === 'function') clearPosSessionStorage('${currentHd.id}');
                         Swal.fire({
                             title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
                             html: '<span style="color: #666; font-size: 15px;">Thanh toán QR hoàn tất! Bạn có muốn in hóa đơn cho khách không?</span>',
@@ -2951,6 +3060,18 @@
                     }
                 });
         }
+
+        // Format currency input dynamically
+        document.addEventListener('input', function (e) {
+            if (e.target.classList.contains('currency-input')) {
+                let val = e.target.value.replace(/[^0-9]/g, '');
+                if (val) {
+                    e.target.value = new Intl.NumberFormat('vi-VN').format(val);
+                } else {
+                    e.target.value = '';
+                }
+            }
+        });
 
     </script>
 

@@ -55,6 +55,9 @@ public class HoaDon {
     @Builder.Default
     private LocalDateTime ngayTao = LocalDateTime.now();
 
+    @Column(name = "ngay_thanh_toan")
+    private LocalDateTime ngayThanhToan;
+
     /**
      * 0: Đang chờ
      * 1: Đã hoàn thành
@@ -137,6 +140,15 @@ public class HoaDon {
     public String getNgayTaoFormatted() {
         if (ngayTao == null) return "";
         return ngayTao.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy"));
+    }
+
+    /**
+     * Format định dạng ngày thanh toán (VD: 14:30 15/07/2026).
+     */
+    @Transient
+    public String getNgayThanhToanFormatted() {
+        if (ngayThanhToan == null) return "--";
+        return ngayThanhToan.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy"));
     }
 
     /**

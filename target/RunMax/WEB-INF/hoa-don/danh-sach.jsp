@@ -246,7 +246,7 @@
                                     <th>Số điện thoại</th>
 
                                     <th>Tổng tiền</th>
-                                    <th>Ngày tạo</th>
+                                    <th>Ngày thanh toán</th>
                                     <th>Trạng thái</th>
                                     <th class="text-center">Hành động</th>
                                 </tr>
@@ -265,9 +265,16 @@
                                                 <td>${hd.sdtHienThi}</td>
 
                                                 <td class="fw-bold text-danger">${hd.tongTienFormatted}</td>
-                                                <td class="text-muted small">${hd.ngayTaoFormatted}</td>
+                                                <td class="text-muted small">${hd.ngayThanhToanFormatted}</td>
                                                 <td>
-                                                    <span class="${hd.badgeClass}">${hd.tenTrangThai}</span>
+                                                    <c:choose>
+                                                        <c:when test="${hd.trangThai == 3}">
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 rounded-pill">${hd.tenTrangThai}</span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span class="${hd.badgeClass}">${hd.tenTrangThai}</span>
+                                                        </c:otherwise>
+                                                    </c:choose>
                                                 </td>
                                                 <td class="text-center">
                                                     <a href="${pageContext.request.contextPath}/hoa-don?action=detail&id=${hd.id}"

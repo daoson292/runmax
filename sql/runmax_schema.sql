@@ -93,8 +93,8 @@ CREATE TABLE nhan_vien (
     ho_ten            NVARCHAR(100)  NOT NULL,
     gioi_tinh         BIT DEFAULT 1,              -- 1: Nam, 0: Nữ
     ngay_sinh         DATE NULL,
-    sdt               VARCHAR(20)    NULL,
-    email             VARCHAR(100)   NULL,
+    sdt               VARCHAR(10)    NOT NULL,
+    email             VARCHAR(100)   NOT NULL,
     phuong_xa         NVARCHAR(100)  NULL,
     quan_huyen        NVARCHAR(100)  NULL,
     tinh_thanh_pho    NVARCHAR(100)  NULL,
@@ -110,7 +110,7 @@ CREATE TABLE khach_hang (
     id         BIGINT IDENTITY(1,1) PRIMARY KEY,
     ma_kh      VARCHAR(50)   NOT NULL UNIQUE,
     ho_ten     NVARCHAR(100) NOT NULL,
-    sdt        VARCHAR(20)   NULL,
+    sdt        VARCHAR(10)   NULL,
     email      VARCHAR(100)  NULL,
     ngay_sinh  DATE          NULL,
     gioi_tinh  INT NOT NULL  DEFAULT 1,
@@ -204,6 +204,7 @@ CREATE TABLE hoa_don (
     tong_tien          DECIMAL(18, 2) NOT NULL DEFAULT 0,
     ghi_chu            NVARCHAR(500)  NULL,
     ngay_tao           DATETIME NOT NULL DEFAULT GETDATE(),
+    ngay_thanh_toan    DATETIME NULL,
     trang_thai         INT NOT NULL DEFAULT 0,
     -- 0: Chờ thanh toán, 1: Đã thanh toán, 2: Đã hủy, 3: Thanh toán thiếu
     CONSTRAINT FK_hoa_don_khach_hang      FOREIGN KEY (khach_hang_id)     REFERENCES khach_hang(id),
@@ -413,23 +414,23 @@ VALUES
 
 -- Hóa đơn mẫu (Bổ sung đầy đủ các trạng thái)
 INSERT INTO hoa_don (khach_hang_id, nhan_vien_id, phieu_giam_gia_id, ma_hd,
-                     tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao)
+                     tien_hang, so_tien_giam, tong_tien, trang_thai, ngay_tao, ngay_thanh_toan)
 VALUES
     -- Đã thanh toán (1)
-    (1,    2, NULL, 'HD00001', 2200000, 0,      2200000, 1, '2026-04-29 10:30:00'),
-    (2,    2, 1,    'HD00002', 2300000, 230000, 2070000, 1, '2026-04-29 14:15:00'),
-    (NULL, 2, NULL, 'HD00003', 4700000, 0,      4700000, 1, '2026-04-29 16:00:00'),
+    (1,    2, NULL, 'HD00001', 2200000, 0,      2200000, 1, '2026-04-29 10:30:00', '2026-04-29 10:31:00'),
+    (2,    2, 1,    'HD00002', 2300000, 230000, 2070000, 1, '2026-04-29 14:15:00', '2026-04-29 14:16:00'),
+    (NULL, 2, NULL, 'HD00003', 4700000, 0,      4700000, 1, '2026-04-29 16:00:00', '2026-04-29 16:01:00'),
     -- Chờ thanh toán (0)
 
     -- Đã hủy (2)
-    (3,    3, NULL, 'HD00007', 3190000, 0,      3190000, 2, '2026-05-01 09:00:00'),
-    (4,    3, 2,    'HD00008', 2590000, 100000, 2490000, 2, '2026-05-01 10:30:00'),
+    (3,    3, NULL, 'HD00007', 3190000, 0,      3190000, 2, '2026-05-01 09:00:00', NULL),
+    (4,    3, 2,    'HD00008', 2590000, 100000, 2490000, 2, '2026-05-01 10:30:00', NULL),
     -- Thanh toán thiếu (3)
-    (1,    4, NULL, 'HD00009', 3990000, 0,      3990000, 3, '2026-05-02 11:00:00'),
-    (2,    4, 3,    'HD00010', 5000000, 300000, 4700000, 3, '2026-05-02 14:20:00'),
+    (1,    4, NULL, 'HD00009', 3990000, 0,      3990000, 3, '2026-05-02 11:00:00', '2026-05-02 11:10:00'),
+    (2,    4, 3,    'HD00010', 5000000, 300000, 4700000, 3, '2026-05-02 14:20:00', '2026-05-02 14:25:00'),
     -- Đã thanh toán thêm (1)
-    (3,    2, NULL, 'HD00011', 2490000, 0,      2490000, 1, '2026-05-03 15:45:00'),
-    (4,    2, NULL, 'HD00012', 3290000, 0,      3290000, 1, '2026-05-03 16:10:00');
+    (3,    2, NULL, 'HD00011', 2490000, 0,      2490000, 1, '2026-05-03 15:45:00', '2026-05-03 15:50:00'),
+    (4,    2, NULL, 'HD00012', 3290000, 0,      3290000, 1, '2026-05-03 16:10:00', '2026-05-03 16:15:00');
 
 -- Chi tiết hóa đơn mẫu
 INSERT INTO hoa_don_chi_tiet (hoa_don_id, spct_id, so_luong, don_gia, thanh_tien, trang_thai)
