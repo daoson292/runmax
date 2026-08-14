@@ -3,4 +3,7 @@ target/
 *.class
 src/main/java/com/runmax/config/HibernateConfig.java
 docs/
-
+target/
+TestCloudinary.java
+sql/FIX_MISSING_COLUMNS.sql
+sql/INSERT_DATA_SAMPLE.sql
