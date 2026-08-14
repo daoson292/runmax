@@ -2393,7 +2393,7 @@
             });
         }
 
-            function openQrModal() {
+        function openQrModal() {
             const hdId = '${currentHd != null ? currentHd.id : ""}';
             const maHd = '${currentHd != null ? currentHd.maHd : ""}';
             
@@ -2521,42 +2521,78 @@
                                         currentDaTra = data.da_tra;
                                         currentConNo = data.con_no;
                                         const posDaTraEl = document.getElementById('posDaTra');
-                                        if(posDaTraEl) posDaTraEl.innerText = new Intl.NumberFormat('vi-VN').format(currentDaTra) + ' ₫';
+                                        if (posDaTraEl) posDaTraEl.innerText = new Intl.NumberFormat('vi-VN').format(currentDaTra) + ' ₫';
                                         const posConNoEl = document.getElementById('posConNo');
-                                        if(posConNoEl) posConNoEl.innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
+                                        if (posConNoEl) posConNoEl.innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
                                         
-                                        // Update lại số tiền cần QR sau khi trừ tiền mặt
-                                        let updatedConNo = currentConNo;
-                                        if (typeof currentCashReceived !== 'undefined') {
-                                            updatedConNo = Math.max(0, currentConNo - currentCashReceived);
+                                        const cashCover = (typeof currentCashReceived !== 'undefined') ? currentCashReceived : 0;
+                                        
+                                        // Tiền mặt FE đã cover đủ phần nợ DB
+                                        if (currentConNo <= cashCover && cashCover > 0) {
+                                            clearInterval(window.qrInterval);
+                                            window.qrInterval = null;
+                                            modal.hide();
+                                            
+                                            // Khóa nút QR, đổi trạng thái
+                                            const qrBtn = document.querySelector('#inlineQrSection button');
+                                            if (qrBtn) {
+                                                qrBtn.disabled = true;
+                                                qrBtn.classList.remove('btn-outline-primary');
+                                                qrBtn.classList.add('btn-success');
+                                            }
+                                            const qrBtnText = document.getElementById('inlineQrBtnText');
+                                            if (qrBtnText) qrBtnText.innerText = 'Đã nhận đủ tiền CK';
+                                            
+                                            Swal.fire({
+                                                title: '<span style="color: #333; font-weight: 700; font-size: 20px;">Đã nhận tiền chuyển khoản!</span>',
+                                                html: '<span style="color: #555; font-size: 14px;">Thanh toán Kết hợp hoàn tất. Vui lòng bấm <strong>Hoàn tất &amp; Thanh toán</strong> để chốt đơn.</span>',
+                                                icon: 'success',
+                                                iconColor: '#28a745',
+                                                confirmButtonColor: '#dc3545',
+                                                confirmButtonText: 'OK, đã hiểu',
+                                                buttonsStyling: true,
+                                                customClass: {
+                                                    popup: 'rounded-4 shadow-lg border-0',
+                                                    confirmButton: 'px-4 py-2 fw-bold rounded-pill'
+                                                }
+                                            });
+                                        } else {
+                                            // VẪN THIẾU: render lại QR với số tiền đúng
+                                            const updatedConNo = Math.max(0, currentConNo - cashCover);
+                                            currentQrAmount = updatedConNo;
+                                            qrExpireTime = Date.now() + 10 * 60 * 1000;
+                                            sessionStorage.setItem(timerKey, qrExpireTime);
+                                            sessionStorage.setItem(amountKey, currentQrAmount);
+                                            
+                                            const newAmount = Math.round(updatedConNo);
+                                            const bankId = 'MBBank';
+                                            const stk = '0347160331';
+                                            const accountName = 'DAO VAN SON';
+                                            const newQrUrl = `https://img.vietqr.io/image/\${bankId}-\${stk}-compact2.png?amount=\${newAmount}&addInfo=\${addInfo}&accountName=\${encodeURIComponent(accountName)}`;
+                                            
+                                            const imgToUpdate = document.getElementById('imgVietQR');
+                                            if (imgToUpdate) {
+                                                imgToUpdate.src = newQrUrl;
+                                                imgToUpdate.style.opacity = '1';
+                                            }
+                                            const textQrAmt = document.getElementById('textQrAmount');
+                                            if (textQrAmt) textQrAmt.innerText = new Intl.NumberFormat('vi-VN').format(newAmount) + ' ₫';
+                                            const tmrContainer = document.getElementById('qrTimerContainer');
+                                            if (tmrContainer) tmrContainer.innerHTML = 'Thời gian còn lại: <span id="qrCountdown">10:00</span>';
                                         }
-                                        
-                                        currentQrAmount = updatedConNo;
-                                        qrExpireTime = Date.now() + 10 * 60 * 1000;
-                                        sessionStorage.setItem(timerKey, qrExpireTime);
-                                        sessionStorage.setItem(amountKey, currentQrAmount);
-                                        const newAmount = Math.round(updatedConNo);
-                                        const bankId = 'MBBank';
-                                        const stk = '0347160331';
-                                        const accountName = 'DAO VAN SON';
-                                        const newQrUrl = `https://img.vietqr.io/image/\${bankId}-\${stk}-compact2.png?amount=\${newAmount}&addInfo=\${addInfo}&accountName=\${encodeURIComponent(accountName)}`;
-                                        
-                                        document.getElementById('imgVietQR').src = newQrUrl;
-                                        document.getElementById('imgVietQR').style.opacity = '1';
-                                        document.getElementById('textQrAmount').innerText = new Intl.NumberFormat('vi-VN').format(newAmount) + ' ₫';
-                                        document.getElementById('qrTimerContainer').innerHTML = 'Thời gian còn lại: <span id="qrCountdown">10:00</span>';
                                     }
                             }).catch(err => console.error(err));
                         }
-                    } // Closed the else block
+                    } 
                 }, 1000);
-                } else {
-                    if (typeof showBootstrapAlert === 'function') {
-                        showBootstrapAlert('Hóa đơn chưa có sản phẩm hoặc số tiền không hợp lệ để tạo QR!', 'warning');
-                    }
-                    document.getElementById('ptttCash').checked = true;
+            } else {
+                if (typeof showBootstrapAlert === 'function') {
+                    showBootstrapAlert('Hóa đơn chưa có sản phẩm hoặc số tiền không hợp lệ để tạo QR!', 'warning');
                 }
+                const cashRadio = document.getElementById('ptttCash');
+                if (cashRadio) cashRadio.checked = true;
             }
+        }
         // Initialize when modal is fully opened to avoid DOM issues, or just on DOM ready.
         document.addEventListener('DOMContentLoaded', function() {
             initPosFilters();
@@ -3067,7 +3103,7 @@
                     return;
                 }
 
-                if (currentDaTra > 0 && currentConNo > 0) {
+                if (currentDaTra > 0 && (currentConNo - ((typeof currentCashReceived !== 'undefined') ? currentCashReceived : 0)) > 0) {
                     Toast.fire({
                         icon: 'warning',
                         title: `⚠️ Hóa đơn \${currentMaHd} còn thiếu \${new Intl.NumberFormat('vi-VN').format(currentConNo)} đ chưa thu!`
@@ -3133,8 +3169,9 @@
         
         // Cường chế kiểm tra thanh toán bằng tay
         function forceCheckPayment() {
+            const hdId = '${currentHd != null ? currentHd.id : ""}';
             const maHd = '${currentHd != null ? currentHd.maHd : ""}';
-            if (!maHd) return;
+            if (!maHd || !hdId) return;
             
             const btn = document.getElementById('btnForceCheckPayment');
             if (btn) {
@@ -3146,7 +3183,11 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'PAID' || (typeof data.con_no === 'number' && data.con_no <= 0)) {
-                        if (qrPollingInterval) {
+                        if (window.qrInterval) {
+                            clearInterval(window.qrInterval);
+                            window.qrInterval = null;
+                        }
+                        if (typeof qrPollingInterval !== 'undefined' && qrPollingInterval) {
                             clearInterval(qrPollingInterval);
                             qrPollingInterval = null;
                         }
@@ -3158,7 +3199,7 @@
                         const modalEl = document.getElementById('modalVietQR');
                         const modal = bootstrap.Modal.getInstance(modalEl);
                         if (modal) modal.hide();
-                        if (typeof clearPosSessionStorage === 'function') clearPosSessionStorage('${currentHd.id}');
+                        if (typeof clearPosSessionStorage === 'function') clearPosSessionStorage(hdId);
                         Swal.fire({
                             title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
                             html: '<span style="color: #666; font-size: 15px;">Thanh toán QR hoàn tất! Bạn có muốn in hóa đơn cho khách không?</span>',
@@ -3176,13 +3217,101 @@
                                 cancelButton: 'px-4 py-2 fw-bold rounded-pill'
                             }
                         }).then((result) => {
-                            const maHdToPrint = '${currentHd != null ? currentHd.id : ""}';
                             if (result.isConfirmed) {
-                                window.location.href = '${pageContext.request.contextPath}/hoa-don?action=detail&id=' + maHdToPrint + '&print=true';
+                                window.location.href = '${pageContext.request.contextPath}/hoa-don?action=detail&id=' + hdId + '&print=true';
                             } else {
                                 window.location.href = '${pageContext.request.contextPath}/ban-hang';
                             }
                         });
+                    } else if (data.status === 'THIEU') {
+                        currentDaTra = data.da_tra;
+                        currentConNo = data.con_no;
+                        const posDaTraEl = document.getElementById('posDaTra');
+                        if (posDaTraEl) posDaTraEl.innerText = new Intl.NumberFormat('vi-VN').format(currentDaTra) + ' ₫';
+                        const posConNoEl = document.getElementById('posConNo');
+                        if (posConNoEl) posConNoEl.innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
+                        
+                        const cashCover = (typeof currentCashReceived !== 'undefined') ? currentCashReceived : 0;
+                        
+                        // Tiền mặt FE đã cover đủ phần nợ DB
+                        if (currentConNo <= cashCover && cashCover > 0) {
+                            if (window.qrInterval) {
+                                clearInterval(window.qrInterval);
+                                window.qrInterval = null;
+                            }
+                            if (typeof qrPollingInterval !== 'undefined' && qrPollingInterval) {
+                                clearInterval(qrPollingInterval);
+                                qrPollingInterval = null;
+                            }
+                            
+                            const modalEl2 = document.getElementById('modalVietQR');
+                            const modal2 = bootstrap.Modal.getInstance(modalEl2);
+                            if (modal2) modal2.hide();
+                            
+                            // Khóa nút QR, đổi trạng thái
+                            const qrBtn = document.querySelector('#inlineQrSection button');
+                            if (qrBtn) {
+                                qrBtn.disabled = true;
+                                qrBtn.classList.remove('btn-outline-primary');
+                                qrBtn.classList.add('btn-success');
+                            }
+                            const qrBtnText = document.getElementById('inlineQrBtnText');
+                            if (qrBtnText) qrBtnText.innerText = 'Đã nhận đủ tiền CK';
+                            
+                            if (btn) {
+                                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Đã xác nhận';
+                                btn.disabled = true;
+                            }
+                            
+                            Swal.fire({
+                                title: '<span style="color: #333; font-weight: 700; font-size: 20px;">Đã nhận tiền chuyển khoản!</span>',
+                                html: '<span style="color: #555; font-size: 14px;">Thanh toán Kết hợp hoàn tất. Vui lòng bấm <strong>Hoàn tất &amp; Thanh toán</strong> để chốt đơn.</span>',
+                                icon: 'success',
+                                iconColor: '#28a745',
+                                confirmButtonColor: '#dc3545',
+                                confirmButtonText: 'OK, đã hiểu',
+                                buttonsStyling: true,
+                                customClass: {
+                                    popup: 'rounded-4 shadow-lg border-0',
+                                    confirmButton: 'px-4 py-2 fw-bold rounded-pill'
+                                }
+                            });
+                        } else {
+                            // VẪN THIẾU: render lại QR với số tiền đúng
+                            const updatedConNo = Math.max(0, currentConNo - cashCover);
+                            const timerKey2 = 'qr_timer_' + maHd;
+                            const amountKey2 = 'qr_amount_' + maHd;
+                            let currentQrAmount2 = updatedConNo;
+                            let qrExpireTime2 = Date.now() + 10 * 60 * 1000;
+                            sessionStorage.setItem(timerKey2, qrExpireTime2);
+                            sessionStorage.setItem(amountKey2, currentQrAmount2);
+                            
+                            const newAmount = Math.round(updatedConNo);
+                            const bankId = 'MBBank';
+                            const stk = '0347160331';
+                            const accountName = 'DAO VAN SON';
+                            const newQrUrl = `https://img.vietqr.io/image/\${bankId}-\${stk}-compact2.png?amount=\${newAmount}&addInfo=\${maHd}&accountName=\${encodeURIComponent(accountName)}`;
+                            
+                            const imgEl = document.getElementById('imgVietQR');
+                            if(imgEl) {
+                                imgEl.src = newQrUrl;
+                                imgEl.style.opacity = '1';
+                            }
+                            const amountEl = document.getElementById('textQrAmount');
+                            if(amountEl) amountEl.innerText = new Intl.NumberFormat('vi-VN').format(newAmount) + ' ₫';
+                            const timerContainer = document.getElementById('qrTimerContainer');
+                            if(timerContainer) timerContainer.innerHTML = 'Thời gian còn lại: <span id="qrCountdown">10:00</span>';
+                            
+                            if (typeof showBootstrapAlert === 'function') {
+                                showBootstrapAlert('Hệ thống chưa ghi nhận đủ tiền vào. Vui lòng quét lại QR để thanh toán phần còn thiếu!', 'warning');
+                            } else {
+                                Swal.fire('Thông báo', 'Hệ thống chưa ghi nhận đủ tiền vào. Vui lòng quét lại QR!', 'warning');
+                            }
+                            if (btn) {
+                                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Tôi đã chuyển khoản';
+                                btn.disabled = false;
+                            }
+                        }
                     } else {
                         if (typeof showBootstrapAlert === 'function') {
                             showBootstrapAlert('Hệ thống chưa ghi nhận tiền vào. Vui lòng chờ thêm giây lát!', 'warning');
