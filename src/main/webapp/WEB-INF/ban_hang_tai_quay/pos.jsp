@@ -344,13 +344,13 @@
                                                     <fmt:formatNumber value="${currentHd.tongTien != null ? currentHd.tongTien : 0}" type="number"/> đ
                                                 </span>
                                             </div>
-                                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <div class="d-none">
                                                 <span class="fw-bold text-dark">ĐÃ THANH TOÁN:</span>
                                                 <span class="fw-bold text-success fs-5 text-nowrap" id="posDaTra">
                                                     <fmt:formatNumber value="${daThanhToan != null ? daThanhToan : 0}" type="number"/> đ
                                                 </span>
                                             </div>
-                                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <div class="d-none">
                                                 <span class="fw-bold text-dark">CÒN NỢ CẦN THU:</span>
                                                 <span class="fw-bold text-danger fs-5 text-nowrap" id="posConNo">
                                                     <fmt:formatNumber value="${conNo != null ? conNo : (currentHd.tongTien != null ? currentHd.tongTien : 0)}" type="number"/> đ
@@ -632,36 +632,36 @@
             
             // Toggle container
             if (!selectedMethod) {
-                inlineArea.classList.add('d-none');
+                if (inlineArea) inlineArea.classList.add('d-none');
                 return;
             }
-            inlineArea.classList.remove('d-none');
+            if (inlineArea) inlineArea.classList.remove('d-none');
             
             // Calculate debts
-            const khachPhaiTra = parseInt(document.getElementById('posTongTien').innerText.replace(/[^\d]/g, '')) || 0;
-            const daThanhToan = parseInt(document.getElementById('posDaTra').innerText.replace(/[^\d]/g, '')) || 0;
+            const posTongTienEl = document.getElementById('posTongTien');
+            const posDaTraEl = document.getElementById('posDaTra');
+            const khachPhaiTra = posTongTienEl ? parseInt(posTongTienEl.innerText.replace(/[^\d]/g, '')) || 0 : 0;
+            const daThanhToan = posDaTraEl ? parseInt(posDaTraEl.innerText.replace(/[^\d]/g, '')) || 0 : 0;
             const thucSuConNo = khachPhaiTra - daThanhToan;
             
             // Reset input values but keep accumulated cash
             const cashInput = document.getElementById('inlineCashInput');
-            cashInput.value = '';
+            if (cashInput) cashInput.value = '';
             calculateInlineChange();
             
+            const inlineQrBtnText = document.getElementById('inlineQrBtnText');
+
             if (selectedMethod.value === '1') { // Tiền mặt
-                cashSection.classList.remove('d-none');
-                qrSection.classList.add('d-none');
+                if (cashSection) cashSection.classList.remove('d-none');
+                if (qrSection) qrSection.classList.add('d-none');
             } else if (selectedMethod.value === '2') { // QR
-                cashSection.classList.add('d-none');
-                qrSection.classList.remove('d-none');
-                
-                const expectedQr = Math.max(0, thucSuConNo);
-                document.getElementById('inlineQrBtnText').innerText = `Hiển thị mã QR VietQR (\${formatCurrency(expectedQr)})`;
+                if (cashSection) cashSection.classList.add('d-none');
+                if (qrSection) qrSection.classList.remove('d-none');
+                if (inlineQrBtnText) inlineQrBtnText.innerText = 'Hiển thị mã QR VietQR';
             } else if (selectedMethod.value === '3') { // Kết hợp
-                cashSection.classList.remove('d-none');
-                qrSection.classList.remove('d-none');
-                
-                const expectedQr = Math.max(0, thucSuConNo);
-                document.getElementById('inlineQrBtnText').innerText = `Hiển thị mã QR phần còn lại (\${formatCurrency(expectedQr)})`;
+                if (cashSection) cashSection.classList.remove('d-none');
+                if (qrSection) qrSection.classList.remove('d-none');
+                if (inlineQrBtnText) inlineQrBtnText.innerText = 'Hiển thị mã QR VietQR';
             }
         }
 
@@ -675,26 +675,21 @@
         }
 
         function calculateInlineChange() {
-            const selectedMethod = document.querySelector('input[name="ptttId"]:checked');
-            if (!selectedMethod) return;
-            
-            const khachPhaiTra = parseInt(document.getElementById('posTongTien').innerText.replace(/[^\d]/g, '')) || 0;
-            const daThanhToan = parseInt(document.getElementById('posDaTra').innerText.replace(/[^\d]/g, '')) || 0;
-            const thucSuConNo = khachPhaiTra - daThanhToan;
+            const posTongTienEl = document.getElementById('posTongTien');
+            const posDaTraEl = document.getElementById('posDaTra');
+            const khachPhaiTra = posTongTienEl ? parseInt(posTongTienEl.innerText.replace(/[^\d]/g, '')) || 0 : 0;
+            const daThanhToan = posDaTraEl ? parseInt(posDaTraEl.innerText.replace(/[^\d]/g, '')) || 0 : 0;
+            const currentConNo = khachPhaiTra - daThanhToan;
             
             const changeEl = document.getElementById('inlineChangeAmount');
-            
-            const totalCash = currentCashReceived;
-            if (selectedMethod.value === '1') { // Tiền mặt
-                const change = totalCash - thucSuConNo;
-                if (change > 0) {
-                    changeEl.innerText = formatCurrency(change);
-                    changeEl.className = 'fw-bold text-success';
-                } else {
-                    changeEl.innerText = '0 ₫';
-                    changeEl.className = 'fw-bold text-secondary';
-                }
-            } else { // Kết hợp
+            if (!changeEl) return;
+
+            const change = currentCashReceived - currentConNo;
+
+            if (change > 0) {
+                changeEl.innerText = formatCurrency(change);
+                changeEl.className = 'fw-bold text-success';
+            } else {
                 changeEl.innerText = '0 ₫';
                 changeEl.className = 'fw-bold text-secondary';
             }
@@ -727,7 +722,7 @@
                 const khachPhaiTra = parseInt(document.getElementById('posTongTien').innerText.replace(/[^\d]/g, '')) || 0;
                 const daThanhToan = parseInt(document.getElementById('posDaTra').innerText.replace(/[^\d]/g, '')) || 0;
                 const thucSuConNo = Math.max(0, khachPhaiTra - daThanhToan - currentCashReceived);
-                document.getElementById('inlineQrBtnText').innerText = `Hiển thị mã QR phần còn lại (\${formatCurrency(thucSuConNo)})`;
+                document.getElementById('inlineQrBtnText').innerText = 'Hiển thị mã QR VietQR';
             }
         }
 
@@ -743,7 +738,7 @@
                 const khachPhaiTra = parseInt(document.getElementById('posTongTien').innerText.replace(/[^\d]/g, '')) || 0;
                 const daThanhToan = parseInt(document.getElementById('posDaTra').innerText.replace(/[^\d]/g, '')) || 0;
                 const thucSuConNo = Math.max(0, khachPhaiTra - daThanhToan);
-                document.getElementById('inlineQrBtnText').innerText = `Hiển thị mã QR phần còn lại (\${formatCurrency(thucSuConNo)})`;
+                document.getElementById('inlineQrBtnText').innerText = 'Hiển thị mã QR VietQR';
             }
         }
 
@@ -2398,15 +2393,9 @@
             });
         }
 
-        function openQrModal() {
+            function openQrModal() {
+            const hdId = '${currentHd != null ? currentHd.id : ""}';
             const maHd = '${currentHd != null ? currentHd.maHd : ""}';
-            const conNoEl = document.getElementById('posConNo');
-            if (conNoEl) {
-                const parsedAmount = parseInt(conNoEl.innerText.replace(/[^\d]/g, ''), 10);
-                if (!isNaN(parsedAmount)) {
-                    currentConNo = parsedAmount;
-                }
-            }
             
             // Cập nhật số tiền thực tế cần thu sau khi trừ đi tiền mặt đã nhận cục bộ
             let thucSuConNo = currentConNo;
@@ -2419,46 +2408,77 @@
                 const addInfo = maHd;
                 
                 const modalEl = document.getElementById('modalVietQR');
-                const modal = new bootstrap.Modal(modalEl);
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 
                 const timerKey = 'qr_timer_' + maHd;
                 const amountKey = 'qr_amount_' + maHd;
                 let savedTime = sessionStorage.getItem(timerKey);
                 let savedAmount = sessionStorage.getItem(amountKey);
                 
-                // KIỂM TRA CACHE
+                // 1. LUÔN LUÔN RENDER DOM TRƯỚC TIÊN BẤT KỂ CACHE
+                const bankId = 'MBBank';
+                const stk = '0347160331';
+                const accountName = 'DAO VAN SON';
+                const qrUrl = `https://img.vietqr.io/image/\${bankId}-\${stk}-compact2.png?amount=\${amount}&addInfo=\${addInfo}&accountName=\${encodeURIComponent(accountName)}`;
+                
+                const imgEl = document.getElementById('imgVietQR');
+                if (imgEl) {
+                    imgEl.src = qrUrl;
+                    imgEl.style.opacity = '1';
+                }
+                const amountEl = document.getElementById('textQrAmount');
+                if (amountEl) {
+                    amountEl.innerText = new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+                }
+                const addInfoEl = document.getElementById('textQrAddInfo');
+                if (addInfoEl) {
+                    addInfoEl.innerText = addInfo;
+                }
+                
+                // 2. XỬ LÝ LOGIC CACHE VÀ BỘ ĐẾM THỜI GIAN
+                const timerContainer = document.getElementById('qrTimerContainer');
+                let qrExpireTime;
+                let currentQrAmount;
+                
                 if (savedAmount == thucSuConNo && savedTime !== null && parseInt(savedTime) > Date.now()) {
+                    // Cache Hit: Chỉ khôi phục bộ đếm thời gian
                     qrExpireTime = parseInt(savedTime);
                     currentQrAmount = parseInt(savedAmount);
-                    modal.show();
+                    
+                    if (timerContainer) {
+                        const timeLeft = Math.floor((qrExpireTime - Date.now()) / 1000);
+                        const m = Math.floor(timeLeft / 60);
+                        const s = timeLeft % 60;
+                        timerContainer.innerHTML = `Thời gian còn lại: <span id="qrCountdown">\${m.toString().padStart(2, '0')}:\${s.toString().padStart(2, '0')}</span>`;
+                    }
                 } else {
-                    const bankId = 'MBBank';
-                    const stk = '0347160331';
-                    const accountName = 'DAO VAN SON';
-                    const qrUrl = `https://img.vietqr.io/image/\${bankId}-\${stk}-compact2.png?amount=\${amount}&addInfo=\${addInfo}&accountName=\${encodeURIComponent(accountName)}`;
-                    
-                    document.getElementById('imgVietQR').src = qrUrl;
-                    document.getElementById('imgVietQR').style.opacity = '1';
-                    document.getElementById('textQrAmount').innerText = new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
-                    document.getElementById('qrTimerContainer').innerHTML = 'Thời gian còn lại: <span id="qrCountdown">10:00</span>';
-                    
+                    // Cache Miss: Đặt lại mốc 10 phút
+                    if (timerContainer) {
+                        timerContainer.innerHTML = 'Thời gian còn lại: <span id="qrCountdown">10:00</span>';
+                    }
                     qrExpireTime = Date.now() + 10 * 60 * 1000;
                     currentQrAmount = amount;
                     sessionStorage.setItem(timerKey, qrExpireTime);
                     sessionStorage.setItem(amountKey, amount);
-                    
-                    modal.show();
                 }
-
-                if (qrInterval) clearInterval(qrInterval);
-                qrInterval = setInterval(() => {
+                
+                modal.show();
+                
+                // ĐẢM BẢO CLEAR INTERVAL CŨ TRƯỚC KHI TẠO MỚI (CHỐNG MEMORY LEAK)
+                if (window.qrInterval) {
+                    clearInterval(window.qrInterval);
+                    window.qrInterval = null;
+                }
+                
+                window.qrInterval = setInterval(() => {
                     const now = Date.now();
                     const timeLeft = Math.floor((qrExpireTime - now) / 1000);
                     
                     if (timeLeft <= 0) {
-                        clearInterval(qrInterval);
-                        document.getElementById('qrTimerContainer').innerHTML = '<span class="text-danger fw-bold">Mã QR đã hết hạn. Vui lòng thử lại!</span>';
-                        document.getElementById('imgVietQR').style.opacity = '0.3';
+                        clearInterval(window.qrInterval);
+                        window.qrInterval = null;
+                        if (timerContainer) timerContainer.innerHTML = '<span class="text-danger fw-bold">Mã QR đã hết hạn. Vui lòng thử lại!</span>';
+                        if (imgEl) imgEl.style.opacity = '0.3';
                     } else {
                         const m = Math.floor(timeLeft / 60);
                         const s = timeLeft % 60;
@@ -2469,11 +2489,12 @@
                         
                         // AUTO CHECK PAYMENT
                         if (timeLeft % 5 === 0) {
-                            fetch('${pageContext.request.contextPath}/api/order/check-payment?hdId=' + maHd)
+                            fetch(`${pageContext.request.contextPath}/api/order/check-status?orderCode=\${maHd}`)
                                 .then(res => res.json())
                                 .then(data => {
                                     if (data.status === 'PAID') {
-                                        clearInterval(qrInterval);
+                                        clearInterval(window.qrInterval);
+                                        window.qrInterval = null;
                                         modal.hide();
                                         Swal.fire({
                                             title: '<span style="color: #333; font-weight: 700; font-size: 22px;">Thành công!</span>',
@@ -2493,15 +2514,16 @@
                                             }
                                         }).then((result) => {
                                             if (result.isConfirmed) {
-                                                const form = document.getElementById('posActionForm');
                                                 submitPosFormWithCustomer(document.querySelector('form.needs-validation'));
                                             }
                                         });
                                     } else if (data.status === 'THIEU') {
                                         currentDaTra = data.da_tra;
                                         currentConNo = data.con_no;
-                                        document.getElementById('posDaTra').innerText = new Intl.NumberFormat('vi-VN').format(currentDaTra) + ' ₫';
-                                        document.getElementById('posConNo').innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
+                                        const posDaTraEl = document.getElementById('posDaTra');
+                                        if(posDaTraEl) posDaTraEl.innerText = new Intl.NumberFormat('vi-VN').format(currentDaTra) + ' ₫';
+                                        const posConNoEl = document.getElementById('posConNo');
+                                        if(posConNoEl) posConNoEl.innerText = new Intl.NumberFormat('vi-VN').format(currentConNo) + ' ₫';
                                         
                                         // Update lại số tiền cần QR sau khi trừ tiền mặt
                                         let updatedConNo = currentConNo;
